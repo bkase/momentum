@@ -1,18 +1,40 @@
 # Make sure all the files are less than 200 lines, refactor if needed
-**Status:** Refining
+**Status:** InProgress
 **Agent PID:** 20504
 
 ## Original Todo
 ## 3. Make sure all the files are less than 200 lines, refactor if needed
 
 ## Description
-[what we're building]
+Refactor source files that exceed 200 lines to improve code maintainability, readability, and align with the project's coding standards. Four files currently exceed this limit: AppFeature.swift (460 lines), tests.rs (313 lines), PreparationFeature.swift (238 lines), and SessionManagementTests.swift (202 lines).
 
 ## Implementation Plan
-[how we are building it]
-- [ ] Code change with location(s) if applicable (src/file.ts:45-93)
-- [ ] Automated test: ...
-- [ ] User test: ...
+1. **Refactor AppFeature.swift (460 → ~120 lines each)**
+   - [ ] Extract AppFeature+State.swift for state and related types (MomentumApp/Sources/AppFeature+State.swift)
+   - [ ] Extract AppFeature+Navigation.swift for destination handling (MomentumApp/Sources/AppFeature+Navigation.swift)
+   - [ ] Extract AppFeature+Effects.swift for side effects and async actions (MomentumApp/Sources/AppFeature+Effects.swift)
+   - [ ] Keep core reducer logic in AppFeature.swift
+
+2. **Refactor tests.rs (313 → ~80 lines each)**
+   - [ ] Create tests/ directory in momentum/src/
+   - [ ] Extract tests/mock_helpers.rs for mock implementations
+   - [ ] Extract tests/start_tests.rs for start command tests
+   - [ ] Extract tests/stop_tests.rs for stop command tests
+   - [ ] Extract tests/analyze_tests.rs for analyze command tests
+   - [ ] Update tests.rs to be a module declaration file
+
+3. **Refactor PreparationFeature.swift (238 → ~120 lines each)**
+   - [ ] Extract PreparationFeature+Checklist.swift for checklist-specific logic (MomentumApp/Sources/PreparationFeature+Checklist.swift)
+   - [ ] Keep core reducer and basic actions in PreparationFeature.swift
+
+4. **Refactor SessionManagementTests.swift (202 → ~100 lines each)**
+   - [ ] Extract SessionManagementTests+StartStop.swift for start/stop tests
+   - [ ] Keep error handling and edge case tests in SessionManagementTests.swift
+
+5. **Verify refactoring**
+   - [ ] Run all tests to ensure nothing broke
+   - [ ] Build the app successfully
+   - [ ] Verify all files are under 200 lines
 
 ## Notes
-[Implementation notes]
+Following existing patterns in the codebase, using + notation for Swift file extensions and creating proper module structure for Rust tests.
