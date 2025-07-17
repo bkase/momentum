@@ -12,8 +12,8 @@ Refactor source files that exceed 200 lines to improve code maintainability, rea
 1. **Refactor AppFeature.swift (460 → ~120 lines each)**
    - [x] Extract AppFeature+State.swift for state and related types (MomentumApp/Sources/AppFeature+State.swift)
    - [x] Extract AppFeature+Navigation.swift for destination handling (MomentumApp/Sources/AppFeature+Navigation.swift)
-   - [ ] Extract AppFeature+Effects.swift for side effects and async actions (MomentumApp/Sources/AppFeature+Effects.swift)
-   - [ ] Keep core reducer logic in AppFeature.swift
+   - [x] Extract AppFeature+Effects.swift for side effects and async actions (MomentumApp/Sources/AppFeature+Effects.swift)
+   - [x] Keep core reducer logic in AppFeature.swift
 
 2. **Refactor tests.rs (313 → ~80 lines each)**
    - [ ] Create tests/ directory in momentum/src/
