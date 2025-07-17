@@ -24,8 +24,8 @@ Refactor source files that exceed 200 lines to improve code maintainability, rea
    - [x] Update tests.rs to be a module declaration file
 
 3. **Refactor PreparationFeature.swift (238 → ~120 lines each)**
-   - [ ] Extract PreparationFeature+Checklist.swift for checklist-specific logic (MomentumApp/Sources/PreparationFeature+Checklist.swift)
-   - [ ] Keep core reducer and basic actions in PreparationFeature.swift
+   - [x] Extract PreparationFeature+Checklist.swift for checklist-specific logic (MomentumApp/Sources/PreparationFeature+Checklist.swift)
+   - [x] Keep core reducer and basic actions in PreparationFeature.swift
 
 4. **Refactor SessionManagementTests.swift (202 → ~100 lines each)**
    - [ ] Extract SessionManagementTests+StartStop.swift for start/stop tests
