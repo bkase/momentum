@@ -18,10 +18,10 @@ Refactor source files that exceed 200 lines to improve code maintainability, rea
 2. **Refactor tests.rs (313 → ~80 lines each)**
    - [x] Create tests/ directory in momentum/src/
    - [x] Extract tests/mock_helpers.rs for mock implementations
-   - [ ] Extract tests/start_tests.rs for start command tests
-   - [ ] Extract tests/stop_tests.rs for stop command tests
-   - [ ] Extract tests/analyze_tests.rs for analyze command tests
-   - [ ] Update tests.rs to be a module declaration file
+   - [x] Extract tests/start_tests.rs for start command tests
+   - [x] Extract tests/stop_tests.rs for stop command tests
+   - [x] Extract tests/analyze_tests.rs for analyze command tests
+   - [x] Update tests.rs to be a module declaration file
 
 3. **Refactor PreparationFeature.swift (238 → ~120 lines each)**
    - [ ] Extract PreparationFeature+Checklist.swift for checklist-specific logic (MomentumApp/Sources/PreparationFeature+Checklist.swift)
