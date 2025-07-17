@@ -1,83 +1,8 @@
 import ComposableArchitecture
 import Foundation
-import Observation
-import Sharing
 
 @Reducer
 struct AppFeature {
-    @Reducer(state: .equatable, action: .equatable)
-    enum Destination {
-        case preparation(PreparationFeature)
-        case activeSession(ActiveSessionFeature)
-        case reflection(ReflectionFeature)
-        case analysis(AnalysisFeature)
-    }
-    
-    @ObservableState
-    struct State: Equatable {
-        @Shared(.sessionData) var sessionData: SessionData? = nil
-        @Shared(.lastGoal) var lastGoal = ""
-        @Shared(.lastTimeMinutes) var lastTimeMinutes = "30"
-        @Shared(.analysisHistory) var analysisHistory: [AnalysisResult] = []
-        
-        @Presents var destination: Destination.State?
-        @Presents var alert: AlertState<Alert>?
-        @Presents var confirmationDialog: ConfirmationDialogState<ConfirmationDialog>?
-        
-        var isLoading = false
-        var reflectionPath: String?
-        
-        enum Alert: Equatable {
-            case dismiss
-            case retry
-            case openSettings
-            case contactSupport
-        }
-        
-        enum ConfirmationDialog: Equatable {
-            case confirmStopSession
-            case confirmReset
-            case cancel
-        }
-        
-        init() {
-            // Initialize destination based on shared state
-            if let analysis = analysisHistory.last {
-                self.destination = .analysis(AnalysisFeature.State(analysis: analysis))
-            } else if let sessionData = sessionData {
-                self.destination = .activeSession(ActiveSessionFeature.State(
-                    goal: sessionData.goal,
-                    startTime: sessionData.startDate,
-                    expectedMinutes: sessionData.expectedMinutes
-                ))
-            } else {
-                self.destination = .preparation(PreparationFeature.State(
-                    goal: lastGoal,
-                    timeInput: lastTimeMinutes
-                ))
-            }
-        }
-    }
-
-    enum Action: Equatable {
-        case destination(PresentationAction<Destination.Action>)
-        case alert(PresentationAction<State.Alert>)
-        case confirmationDialog(PresentationAction<State.ConfirmationDialog>)
-        case onAppear
-        case rustCoreResponse(TaskResult<RustCoreResponse>)
-        case startSession(goal: String, minutes: UInt64)
-        case stopSession
-        case analyzeReflection(path: String)
-        case resetToIdle
-        case cancelCurrentOperation
-    }
-
-    enum RustCoreResponse: Equatable {
-        case sessionStarted(SessionData)
-        case sessionStopped(reflectionPath: String)
-        case analysisComplete(AnalysisResult)
-    }
-
     @Dependency(\.rustCoreClient) var rustCoreClient
 
     enum CancelID { case rustOperation }
@@ -104,8 +29,6 @@ struct AppFeature {
                     ))
                 }
                 return .none
-                
-            // Removed checklistItemsLoaded case as it's no longer used
                 
             case .destination(.presented(.preparation(.goalChanged(let goal)))):
                 // Save goal to shared state
@@ -154,94 +77,33 @@ struct AppFeature {
                 return .none
                 
             case let .startSession(goal, minutes):
-                guard state.sessionData == nil else {
-                    state.alert = .sessionAlreadyActive()
-                    return .none
-                }
-
-                state.isLoading = true
-                state.alert = nil
-
-                return .run { send in
-                    await send(
-                        .rustCoreResponse(
-                            await TaskResult {
-                                try await .sessionStarted(
-                                    rustCoreClient.start(goal, Int(minutes))
-                                )
-                            }
-                        )
-                    )
-                }
-                .cancellable(id: CancelID.rustOperation)
+                return Self.startSessionEffect(
+                    state: &state,
+                    goal: goal,
+                    minutes: minutes,
+                    rustCoreClient: rustCoreClient
+                )
 
             case .stopSession:
-                guard state.sessionData != nil else {
-                    state.alert = .noActiveSession()
-                    return .none
-                }
-
-                state.isLoading = true
-                state.alert = nil
-
-                return .run { send in
-                    await send(
-                        .rustCoreResponse(
-                            await TaskResult {
-                                try await .sessionStopped(reflectionPath: rustCoreClient.stop())
-                            }
-                        )
-                    )
-                }
-                .cancellable(id: CancelID.rustOperation)
+                return Self.stopSessionEffect(
+                    state: &state,
+                    rustCoreClient: rustCoreClient
+                )
 
             case let .analyzeReflection(path):
-                state.isLoading = true
-                state.alert = nil
-
-                return .run { send in
-                    await send(
-                        .rustCoreResponse(
-                            await TaskResult {
-                                try await .analysisComplete(rustCoreClient.analyze(path))
-                            }
-                        )
-                    )
-                }
-                .cancellable(id: CancelID.rustOperation)
+                return Self.analyzeReflectionEffect(
+                    state: &state,
+                    path: path,
+                    rustCoreClient: rustCoreClient
+                )
 
             case let .rustCoreResponse(.success(response)):
-                state.isLoading = false
-
-                switch response {
-                case let .sessionStarted(sessionData):
-                    state.$sessionData.withLock { $0 = sessionData }
-                    state.reflectionPath = nil
-                    state.$analysisHistory.withLock { $0 = [] }
-                    state.destination = .activeSession(ActiveSessionFeature.State(
-                        goal: sessionData.goal,
-                        startTime: sessionData.startDate,
-                        expectedMinutes: sessionData.expectedMinutes
-                    ))
-
-                case let .sessionStopped(reflectionPath):
-                    state.$sessionData.withLock { $0 = nil }
-                    state.reflectionPath = reflectionPath
-                    state.destination = .reflection(ReflectionFeature.State(reflectionPath: reflectionPath))
-
-                case let .analysisComplete(analysis):
-                    state.reflectionPath = nil
-                    state.$analysisHistory.withLock { $0.append(analysis) }
-                    state.destination = .analysis(AnalysisFeature.State(analysis: analysis))
-                }
-
+                Self.handleRustCoreSuccess(state: &state, response: response)
                 return .none
 
             case let .rustCoreResponse(.failure(error)):
                 state.isLoading = false
-                
                 state.alert = .error(error)
-                
                 return .none
 
             case .resetToIdle:
@@ -305,157 +167,5 @@ struct AppFeature {
         .ifLet(\.$destination, action: \.destination)
         .ifLet(\.$alert, action: \.alert)
         .ifLet(\.$confirmationDialog, action: \.confirmationDialog)
-    }
-}
-
-// Extension to handle start session from preparation
-extension AppFeature {
-    static func handleStartFromPreparation(state: inout State) -> Effect<Action> {
-        guard case let .preparation(preparationState) = state.destination else {
-            return .none
-        }
-        
-        guard let minutes = UInt64(preparationState.timeInput) else {
-            state.alert = .invalidTime()
-            return .none
-        }
-        
-        return .send(.startSession(goal: preparationState.goal, minutes: minutes))
-    }
-}
-
-// MARK: - Alert Helpers
-
-extension AlertState where Action == AppFeature.State.Alert {
-    static func sessionAlreadyActive() -> Self {
-        AlertState {
-            TextState("Session Already Active")
-        } actions: {
-            ButtonState(action: .dismiss) {
-                TextState("OK")
-            }
-        } message: {
-            TextState("Please stop the current session before starting a new one.")
-        }
-    }
-    
-    static func noActiveSession() -> Self {
-        AlertState {
-            TextState("No Active Session")
-        } actions: {
-            ButtonState(action: .dismiss) {
-                TextState("OK")
-            }
-        } message: {
-            TextState("There is no active session to stop.")
-        }
-    }
-    
-    static func invalidTime() -> Self {
-        AlertState {
-            TextState("Invalid Time")
-        } actions: {
-            ButtonState(action: .dismiss) {
-                TextState("OK")
-            }
-        } message: {
-            TextState("Time must be a positive number.")
-        }
-    }
-    
-    static func error(_ error: Error) -> Self {
-        if let rustError = error as? RustCoreError {
-            return rustCoreError(rustError)
-        } else if let appError = error as? AppError {
-            return Self.appError(appError)
-        } else {
-            return genericError(error)
-        }
-    }
-    
-    static func rustCoreError(_ error: RustCoreError) -> Self {
-        let appError = AppError.rustCore(error)
-        return AlertState {
-            TextState(appError.errorDescription ?? "Error")
-        } actions: {
-            // Check if error is related to API key
-            if case let .commandFailed(_, stderr) = error,
-               stderr.contains("ANTHROPIC_API_KEY") {
-                ButtonState(action: .openSettings) {
-                    TextState("Open Settings")
-                }
-            }
-            ButtonState(role: .cancel, action: .dismiss) {
-                TextState("OK")
-            }
-        } message: {
-            if let recovery = appError.recoverySuggestion {
-                TextState(recovery)
-            } else {
-                TextState("An error occurred while communicating with the Rust core.")
-            }
-        }
-    }
-    
-    static func appError(_ error: AppError) -> Self {
-        AlertState {
-            TextState(error.errorDescription ?? "Error")
-        } actions: {
-            ButtonState(action: .dismiss) {
-                TextState("OK")
-            }
-        } message: {
-            if let recovery = error.recoverySuggestion {
-                TextState(recovery)
-            } else {
-                TextState("An unexpected error occurred.")
-            }
-        }
-    }
-    
-    static func genericError(_ error: Error) -> Self {
-        AlertState {
-            TextState("Error")
-        } actions: {
-            ButtonState(action: .dismiss) {
-                TextState("OK")
-            }
-        } message: {
-            TextState(error.localizedDescription)
-        }
-    }
-}
-
-// MARK: - Confirmation Dialog Helpers
-
-extension ConfirmationDialogState where Action == AppFeature.State.ConfirmationDialog {
-    static func stopSession() -> Self {
-        ConfirmationDialogState {
-            TextState("Stop Session?")
-        } actions: {
-            ButtonState(role: .destructive, action: .confirmStopSession) {
-                TextState("Stop Session")
-            }
-            ButtonState(role: .cancel, action: .cancel) {
-                TextState("Continue Working")
-            }
-        } message: {
-            TextState("Are you sure you want to stop the current session? You'll be prompted to write a reflection.")
-        }
-    }
-    
-    static func resetToIdle() -> Self {
-        ConfirmationDialogState {
-            TextState("Reset App?")
-        } actions: {
-            ButtonState(role: .destructive, action: .confirmReset) {
-                TextState("Reset")
-            }
-            ButtonState(role: .cancel, action: .cancel) {
-                TextState("Cancel")
-            }
-        } message: {
-            TextState("This will clear all session data and return to the preparation screen.")
-        }
     }
 }
