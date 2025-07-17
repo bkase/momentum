@@ -32,9 +32,9 @@ Refactor source files that exceed 200 lines to improve code maintainability, rea
    - [x] Keep error handling and edge case tests in SessionManagementTests.swift
 
 5. **Verify refactoring**
-   - [ ] Run all tests to ensure nothing broke
-   - [ ] Build the app successfully
-   - [ ] Verify all files are under 200 lines
+   - [x] Run all tests to ensure nothing broke
+   - [x] Build the app successfully
+   - [x] Verify all files are under 200 lines
 
 ## Notes
 Following existing patterns in the codebase, using + notation for Swift file extensions and creating proper module structure for Rust tests.

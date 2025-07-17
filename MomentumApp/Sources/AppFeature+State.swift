@@ -50,6 +50,7 @@ extension AppFeature {
         }
     }
     
+    @CasePathable
     enum Action: Equatable {
         case destination(PresentationAction<Destination.Action>)
         case alert(PresentationAction<State.Alert>)
