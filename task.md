@@ -16,8 +16,8 @@ Refactor source files that exceed 200 lines to improve code maintainability, rea
    - [x] Keep core reducer logic in AppFeature.swift
 
 2. **Refactor tests.rs (313 → ~80 lines each)**
-   - [ ] Create tests/ directory in momentum/src/
-   - [ ] Extract tests/mock_helpers.rs for mock implementations
+   - [x] Create tests/ directory in momentum/src/
+   - [x] Extract tests/mock_helpers.rs for mock implementations
    - [ ] Extract tests/start_tests.rs for start command tests
    - [ ] Extract tests/stop_tests.rs for stop command tests
    - [ ] Extract tests/analyze_tests.rs for analyze command tests
