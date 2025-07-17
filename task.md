@@ -28,8 +28,8 @@ Refactor source files that exceed 200 lines to improve code maintainability, rea
    - [x] Keep core reducer and basic actions in PreparationFeature.swift
 
 4. **Refactor SessionManagementTests.swift (202 → ~100 lines each)**
-   - [ ] Extract SessionManagementTests+StartStop.swift for start/stop tests
-   - [ ] Keep error handling and edge case tests in SessionManagementTests.swift
+   - [x] Extract SessionManagementTests+StartStop.swift for start/stop tests
+   - [x] Keep error handling and edge case tests in SessionManagementTests.swift
 
 5. **Verify refactoring**
    - [ ] Run all tests to ensure nothing broke
