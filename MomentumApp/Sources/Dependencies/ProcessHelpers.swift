@@ -60,8 +60,8 @@ func executeCommand(_ command: String, arguments: [String]) async throws -> Proc
                 let error = String(data: errorData, encoding: .utf8)
                 
                 if process.terminationStatus != 0 {
-                    let stderr = error?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "Unknown error"
-                    continuation.resume(throwing: RustCoreError.commandFailed(command: command, stderr: stderr))
+                    let stderr = error?.trimmingCharacters(in: .whitespacesAndNewlines)
+                    continuation.resume(throwing: RustCoreError.commandFailed(command: command, exitCode: process.terminationStatus, stderr: stderr))
                 } else {
                     continuation.resume(returning: ProcessResult(
                         output: output,

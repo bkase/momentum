@@ -41,16 +41,63 @@ struct AppFeature {
                 return .none
                 
             case .destination(.presented(.preparation(.startButtonTapped))):
-                return Self.handleStartFromPreparation(state: &state)
+                // PreparationFeature now handles this internally
+                return .none
+                
+            case let .destination(.presented(.preparation(.delegate(.sessionStarted(sessionData))))):
+                // Handle successful session start from PreparationFeature
+                state.isLoading = false
+                state.$sessionData.withLock { $0 = sessionData }
+                state.reflectionPath = nil
+                state.$analysisHistory.withLock { $0 = [] }
+                state.destination = .activeSession(ActiveSessionFeature.State(
+                    goal: sessionData.goal,
+                    startTime: sessionData.startDate,
+                    expectedMinutes: sessionData.expectedMinutes
+                ))
+                return .none
+                
+            case let .destination(.presented(.preparation(.delegate(.sessionFailedToStart(error))))):
+                // Handle failed session start from PreparationFeature
+                state.isLoading = false
+                state.alert = .error(error)
+                return .none
                 
             case .destination(.presented(.activeSession(.stopButtonTapped))):
                 state.confirmationDialog = .stopSession()
                 return .none
                 
+            case let .destination(.presented(.activeSession(.delegate(.sessionStopped(reflectionPath))))):
+                // Handle successful session stop from ActiveSessionFeature
+                state.isLoading = false
+                state.$sessionData.withLock { $0 = nil }
+                state.reflectionPath = reflectionPath
+                state.destination = .reflection(ReflectionFeature.State(reflectionPath: reflectionPath))
+                return .none
+                
+            case let .destination(.presented(.activeSession(.delegate(.sessionFailedToStop(error))))):
+                // Handle failed session stop from ActiveSessionFeature
+                state.isLoading = false
+                state.alert = .error(error)
+                return .none
+                
             case .destination(.presented(.reflection(.analyzeButtonTapped))):
-                if let path = state.reflectionPath {
-                    return .send(.analyzeReflection(path: path))
-                }
+                // ReflectionFeature will handle the analysis
+                state.isLoading = true
+                return .none
+                
+            case let .destination(.presented(.reflection(.delegate(.analysisRequested(analysisResult))))):
+                // Handle successful analysis from ReflectionFeature
+                state.isLoading = false
+                state.reflectionPath = nil
+                state.$analysisHistory.withLock { $0.append(analysisResult) }
+                state.destination = .analysis(AnalysisFeature.State(analysis: analysisResult))
+                return .none
+                
+            case let .destination(.presented(.reflection(.delegate(.analysisFailedToStart(error))))):
+                // Handle failed analysis from ReflectionFeature
+                state.isLoading = false
+                state.alert = .error(error)
                 return .none
                 
             case .destination(.presented(.reflection(.cancelButtonTapped))):
@@ -76,35 +123,9 @@ struct AppFeature {
                 ))
                 return .none
                 
-            case let .startSession(goal, minutes):
-                return Self.startSessionEffect(
-                    state: &state,
-                    goal: goal,
-                    minutes: minutes,
-                    rustCoreClient: rustCoreClient
-                )
 
-            case .stopSession:
-                return Self.stopSessionEffect(
-                    state: &state,
-                    rustCoreClient: rustCoreClient
-                )
 
-            case let .analyzeReflection(path):
-                return Self.analyzeReflectionEffect(
-                    state: &state,
-                    path: path,
-                    rustCoreClient: rustCoreClient
-                )
 
-            case let .rustCoreResponse(.success(response)):
-                Self.handleRustCoreSuccess(state: &state, response: response)
-                return .none
-
-            case let .rustCoreResponse(.failure(error)):
-                state.isLoading = false
-                state.alert = .error(error)
-                return .none
 
             case .resetToIdle:
                 state.$sessionData.withLock { $0 = nil }
@@ -147,7 +168,11 @@ struct AppFeature {
                 
             case .confirmationDialog(.presented(.confirmStopSession)):
                 state.confirmationDialog = nil
-                return .send(.stopSession)
+                if case .activeSession = state.destination {
+                    state.isLoading = true
+                    return .send(.destination(.presented(.activeSession(.performStop))))
+                }
+                return .none
                 
             case .confirmationDialog(.presented(.confirmReset)):
                 state.confirmationDialog = nil

@@ -56,17 +56,8 @@ extension AppFeature {
         case alert(PresentationAction<State.Alert>)
         case confirmationDialog(PresentationAction<State.ConfirmationDialog>)
         case onAppear
-        case rustCoreResponse(TaskResult<RustCoreResponse>)
-        case startSession(goal: String, minutes: UInt64)
-        case stopSession
-        case analyzeReflection(path: String)
         case resetToIdle
         case cancelCurrentOperation
     }
     
-    enum RustCoreResponse: Equatable {
-        case sessionStarted(SessionData)
-        case sessionStopped(reflectionPath: String)
-        case analysisComplete(AnalysisResult)
-    }
 }

@@ -37,7 +37,7 @@ struct AnalysisResult: Equatable, Codable {
 enum RustCoreError: LocalizedError, Equatable {
     case binaryNotFound
     case invalidOutput(String)
-    case commandFailed(command: String, stderr: String)
+    case commandFailed(command: String, exitCode: Int32, stderr: String?)
     case decodingFailed(Error)
     case sessionLoadFailed(path: String, error: Error)
     
@@ -47,8 +47,8 @@ enum RustCoreError: LocalizedError, Equatable {
             return true
         case let (.invalidOutput(l), .invalidOutput(r)):
             return l == r
-        case let (.commandFailed(lCommand, lStderr), .commandFailed(rCommand, rStderr)):
-            return lCommand == rCommand && lStderr == rStderr
+        case let (.commandFailed(lCommand, lCode, lStderr), .commandFailed(rCommand, rCode, rStderr)):
+            return lCommand == rCommand && lCode == rCode && lStderr == rStderr
         case let (.decodingFailed(lError), .decodingFailed(rError)):
             return lError.localizedDescription == rError.localizedDescription
         case let (.sessionLoadFailed(lPath, lError), .sessionLoadFailed(rPath, rError)):
@@ -64,8 +64,8 @@ enum RustCoreError: LocalizedError, Equatable {
             return "Momentum CLI binary not found in app bundle"
         case .invalidOutput(let message):
             return "Invalid output from command: \(message)"
-        case .commandFailed(let command, let stderr):
-            return "Command '\(command)' failed: \(stderr)"
+        case .commandFailed(let command, let exitCode, let stderr):
+            return "Command '\(command)' failed with exit code \(exitCode): \(stderr ?? "Unknown error")"
         case .decodingFailed(let error):
             return "Failed to decode response: \(error.localizedDescription)"
         case .sessionLoadFailed(let path, let error):

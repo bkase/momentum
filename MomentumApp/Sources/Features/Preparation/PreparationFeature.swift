@@ -82,10 +82,18 @@ struct PreparationFeature {
         case goalChanged(String)
         case timeInputChanged(String)
         case startButtonTapped
+        case startSessionResponse(TaskResult<SessionData>)
+        case delegate(Delegate)
+        
+        enum Delegate: Equatable {
+            case sessionStarted(SessionData)
+            case sessionFailedToStart(AppError)
+        }
     }
     
     @Dependency(\.checklistClient) var checklistClient
     @Dependency(\.continuousClock) var clock
+    @Dependency(\.rustCoreClient) var rustCoreClient
     
     var body: some ReducerOf<Self> {
         Reduce { state, action in
@@ -155,7 +163,40 @@ struct PreparationFeature {
                 return .none
                 
             case .startButtonTapped:
-                // This will be handled by parent
+                // Validate inputs
+                guard let minutes = UInt64(state.timeInput), minutes > 0 else {
+                    return .send(.delegate(.sessionFailedToStart(.invalidInput(reason: "Please enter a valid time in minutes"))))
+                }
+                
+                guard !state.goal.isEmpty else {
+                    return .send(.delegate(.sessionFailedToStart(.invalidInput(reason: "Please enter a goal"))))
+                }
+                
+                // Start the session
+                return .run { [goal = state.goal] send in
+                    await send(
+                        .startSessionResponse(
+                            await TaskResult {
+                                try await rustCoreClient.start(goal, Int(minutes))
+                            }
+                        )
+                    )
+                }
+                
+            case let .startSessionResponse(.success(sessionData)):
+                return .send(.delegate(.sessionStarted(sessionData)))
+                
+            case let .startSessionResponse(.failure(error)):
+                let appError: AppError
+                if let rustError = error as? RustCoreError {
+                    appError = .rustCore(rustError)
+                } else {
+                    appError = .other(error.localizedDescription)
+                }
+                return .send(.delegate(.sessionFailedToStart(appError)))
+                
+            case .delegate:
+                // Delegate actions are handled by parent
                 return .none
             }
         }

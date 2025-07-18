@@ -36,11 +36,63 @@ struct SessionManagementTests {
         store.exhaustivity = .off
         
         // Analyze reflection
-        await store.send(.destination(.presented(.reflection(.analyzeButtonTapped))))
-        
-        await store.receive(.analyzeReflection(path: "/tmp/test-reflection.md")) {
+        await store.send(.destination(.presented(.reflection(.analyzeButtonTapped)))) {
             $0.isLoading = true
-            $0.alert = nil
+        }
+        
+        // Receive delegate response from ReflectionFeature
+        await store.receive(.destination(.presented(.reflection(.delegate(.analysisRequested(analysisResult: AnalysisResult.mock)))))) {
+            $0.isLoading = false
+            $0.reflectionPath = nil
+            $0.destination = .analysis(AnalysisFeature.State(analysis: AnalysisResult.mock))
+        }
+    }
+    
+    @Test("Stop Active Session")
+    func stopActiveSession() async {
+        let sessionData = SessionData.mock()
+        
+        // Set up shared state before creating the store
+        @Shared(.sessionData) var sharedSessionData: SessionData?
+        $sharedSessionData.withLock { $0 = sessionData }
+        
+        let store = TestStore(
+            initialState: AppFeature.State.test(
+                sessionData: sessionData,
+                destination: .activeSession(ActiveSessionFeature.State(
+                    goal: sessionData.goal,
+                    startTime: sessionData.startDate,
+                    expectedMinutes: sessionData.expectedMinutes
+                ))
+            )
+        ) {
+            AppFeature()
+        } withDependencies: {
+            $0.rustCoreClient.stop = {
+                "/tmp/test-reflection.md"
+            }
+        }
+        store.exhaustivity = .off
+        
+        // Request to stop session
+        await store.send(.destination(.presented(.activeSession(.stopButtonTapped)))) {
+            $0.confirmationDialog = .stopSession()
+        }
+        
+        // Confirm stop
+        await store.send(.confirmationDialog(.presented(.confirmStopSession))) {
+            $0.confirmationDialog = nil
+            $0.isLoading = true
+        }
+        
+        // Forward the performStop action to ActiveSessionFeature
+        await store.receive(.destination(.presented(.activeSession(.performStop))))
+        
+        // Receive delegate response from ActiveSessionFeature
+        await store.receive(.destination(.presented(.activeSession(.delegate(.sessionStopped(reflectionPath: "/tmp/test-reflection.md")))))) {
+            $0.isLoading = false
+            $0.reflectionPath = "/tmp/test-reflection.md"
+            $0.destination = .reflection(ReflectionFeature.State(reflectionPath: "/tmp/test-reflection.md"))
         }
     }
     

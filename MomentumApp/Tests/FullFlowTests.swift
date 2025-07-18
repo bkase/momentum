@@ -74,19 +74,16 @@ struct FullFlowTests {
         }
         
         // Since we can't complete all 10 items easily in the test, 
-        // let's test the flow by calling startSession directly
-        // 1. Start session
-        await store.send(.startSession(goal: "Full Flow Test", minutes: 20)) {
-            $0.isLoading = true
-            $0.alert = nil
-        }
-        
-        await store.receive(.rustCoreResponse(.success(.sessionStarted(SessionData(
+        // let's test the flow by simulating the delegate from PreparationFeature
+        // 1. Start session via delegate
+        let sessionData = SessionData(
             goal: "Full Flow Test",
             startTime: fixedTime,
             timeExpected: 20,  // 20 minutes
             reflectionFilePath: nil
-        ))))) {
+        )
+        
+        await store.send(.destination(.presented(.preparation(.delegate(.sessionStarted(sessionData)))))) {
             $0.isLoading = false
             // Don't manually update shared state - the reducer handles it
             $0.reflectionPath = nil
@@ -105,14 +102,14 @@ struct FullFlowTests {
         // Confirm stop
         await store.send(.confirmationDialog(.presented(.confirmStopSession))) {
             $0.confirmationDialog = nil
-        }
-        
-        await store.receive(.stopSession) {
             $0.isLoading = true
-            $0.alert = nil
         }
         
-        await store.receive(.rustCoreResponse(.success(.sessionStopped(reflectionPath: "/tmp/test-reflection.md")))) {
+        // Forward the performStop action to ActiveSessionFeature
+        await store.receive(.destination(.presented(.activeSession(.performStop))))
+        
+        // Receive delegate response from ActiveSessionFeature
+        await store.receive(.destination(.presented(.activeSession(.delegate(.sessionStopped(reflectionPath: "/tmp/test-reflection.md")))))) {
             $0.isLoading = false
             // Don't manually update shared state - the reducer handles it
             $0.reflectionPath = "/tmp/test-reflection.md"
@@ -120,18 +117,15 @@ struct FullFlowTests {
         }
         
         // 3. Analyze reflection
-        await store.send(.destination(.presented(.reflection(.analyzeButtonTapped))))
-        
-        await store.receive(.analyzeReflection(path: "/tmp/test-reflection.md")) {
+        await store.send(.destination(.presented(.reflection(.analyzeButtonTapped)))) {
             $0.isLoading = true
-            $0.alert = nil
         }
         
-        await store.receive(.rustCoreResponse(.success(.analysisComplete(AnalysisResult(
+        await store.receive(.destination(.presented(.reflection(.delegate(.analysisRequested(analysisResult: AnalysisResult(
             summary: "Test analysis summary",
             suggestion: "Test suggestion",
             reasoning: "Test reasoning"
-        ))))) {
+        ))))))) {
             $0.isLoading = false
             $0.reflectionPath = nil
             // The reducer automatically appends to analysisHistory, so we don't do it here
