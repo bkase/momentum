@@ -116,11 +116,13 @@ Respond in JSON format with these exact fields:
 
         // Use zsh -c to ensure user's shell configuration is loaded
         // Set a timeout of 90 seconds for the claude CLI
+        // Escape the prompt for shell - replace ' with '\'' 
+        let escaped_prompt = prompt.replace("'", "'\"'\"'");
         let output = tokio::time::timeout(
             std::time::Duration::from_secs(90),
             tokio::process::Command::new("zsh")
                 .arg("-c")
-                .arg(format!("claude -p '{}'", prompt.replace("'", "'\\''")))
+                .arg(format!("claude -p '{}'", escaped_prompt))
                 .output()
         )
         .await
