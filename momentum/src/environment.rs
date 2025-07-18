@@ -15,7 +15,7 @@ impl Environment {
     pub fn new() -> Result<Self> {
         Ok(Environment {
             file_system: Box::new(RealFileSystem),
-            api_client: Box::new(RealApiClient::new()?),
+            api_client: Box::new(RealApiClient::new()),
             clock: Box::new(RealClock),
         })
     }
@@ -83,20 +83,11 @@ impl FileSystem for RealFileSystem {
     }
 }
 
-struct RealApiClient {
-    _client: reqwest::Client,
-    _api_key: String,
-}
+struct RealApiClient;
 
 impl RealApiClient {
-    fn new() -> Result<Self> {
-        let api_key = std::env::var("ANTHROPIC_API_KEY")
-            .map_err(|_| anyhow::anyhow!("ANTHROPIC_API_KEY environment variable not set"))?;
-
-        Ok(Self {
-            _client: reqwest::Client::new(),
-            _api_key: api_key,
-        })
+    fn new() -> Self {
+        Self
     }
 }
 
@@ -123,46 +114,56 @@ Respond in JSON format with these exact fields:
             content
         );
 
-        let request_body = serde_json::json!({
-            "model": "claude-3-5-sonnet-20241022",
-            "max_tokens": 1024,
-            "messages": [{
-                "role": "user",
-                "content": prompt
-            }],
-            "temperature": 0.7
-        });
+        // Use zsh -c to ensure user's shell configuration is loaded
+        // Set a timeout of 90 seconds for the claude CLI
+        // Escape the prompt for shell - replace ' with '\'' 
+        let escaped_prompt = prompt.replace("'", "'\"'\"'");
+        let output = tokio::time::timeout(
+            std::time::Duration::from_secs(90),
+            tokio::process::Command::new("zsh")
+                .arg("-c")
+                .arg(format!("claude -p '{}'", escaped_prompt))
+                .output()
+        )
+        .await
+        .map_err(|_| anyhow::anyhow!("claude CLI timed out after 90 seconds"))?
+        .map_err(|e| {
+            if e.kind() == std::io::ErrorKind::NotFound {
+                anyhow::anyhow!("zsh not found. Please ensure zsh is installed.")
+            } else {
+                anyhow::anyhow!("Failed to execute zsh: {}", e)
+            }
+        })?;
 
-        let response = self
-            ._client
-            .post("https://api.anthropic.com/v1/messages")
-            .header("x-api-key", &self._api_key)
-            .header("anthropic-version", "2023-06-01")
-            .header("content-type", "application/json")
-            .json(&request_body)
-            .send()
-            .await?;
-
-        if !response.status().is_success() {
-            let error_text = response.text().await?;
-            return Err(anyhow::anyhow!("Claude API error: {}", error_text));
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            if stderr.contains("command not found: claude") {
+                return Err(anyhow::anyhow!(
+                    "claude CLI tool not found. Please ensure it is installed and available in your PATH."
+                ));
+            }
+            return Err(anyhow::anyhow!("claude command failed: {}", stderr));
         }
 
-        let response_json: serde_json::Value = response.json().await?;
-
-        // Extract the content from Claude's response with safe navigation
-        let claude_response = response_json
-            .get("content")
-            .and_then(|c| c.as_array())
-            .and_then(|a| a.first())
-            .and_then(|t| t.get("text"))
-            .and_then(|s| s.as_str())
-            .ok_or_else(|| anyhow::anyhow!("Could not extract text from Claude API response"))?;
-
-        // Parse the JSON response from Claude
-        let analysis: AnalysisResult = serde_json::from_str(claude_response)?;
-
-        Ok(analysis)
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        
+        // The claude CLI output might contain extra text before/after the JSON
+        // Try to extract JSON object from the output
+        let json_start = stdout.find('{');
+        let json_end = stdout.rfind('}');
+        
+        match (json_start, json_end) {
+            (Some(start), Some(end)) if start <= end => {
+                let json_str = &stdout[start..=end];
+                let analysis: AnalysisResult = serde_json::from_str(json_str)
+                    .map_err(|e| anyhow::anyhow!("Failed to parse claude output as JSON: {}", e))?;
+                Ok(analysis)
+            }
+            _ => Err(anyhow::anyhow!(
+                "Could not find valid JSON in claude output. Output was: {}",
+                stdout
+            )),
+        }
     }
 }
 
