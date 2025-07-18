@@ -42,14 +42,14 @@ struct AwaitingAnalysisView: View {
                         Button("Open Reflection") {
                             NSWorkspace.shared.open(URL(fileURLWithPath: store.reflectionPath))
                         }
-                        .buttonStyle(SecondaryButtonStyle())
+                        .buttonStyle(.secondary)
                         .frame(maxWidth: .infinity)
                         .keyboardShortcut("o", modifiers: .command)
                         
                         Button("New Session") {
                             store.send(.cancelButtonTapped)
                         }
-                        .buttonStyle(SecondaryButtonStyle())
+                        .buttonStyle(.secondary)
                         .frame(maxWidth: .infinity)
                         .keyboardShortcut("n", modifiers: .command)
                     }
@@ -61,30 +61,5 @@ struct AwaitingAnalysisView: View {
         .padding(.horizontal, .momentumContainerPaddingHorizontal)
         .padding(.bottom, .momentumContainerPaddingBottom)
         .background(Color.canvasBackground)
-    }
-}
-
-// Secondary button style for less prominent actions
-struct SecondaryButtonStyle: ButtonStyle {
-    @State private var isHovered = false
-    
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 14))
-            .foregroundStyle(isHovered ? Color.textPrimary : Color.textSecondary)
-            .padding(.horizontal, .momentumButtonPaddingHorizontal)
-            .padding(.vertical, .momentumSpacingMedium)
-            .background(
-                RoundedRectangle(cornerRadius: .momentumCornerRadiusMain)
-                    .fill(Color.white.opacity(isHovered ? 1 : 0))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: .momentumCornerRadiusMain)
-                            .stroke(Color.borderNeutral, lineWidth: .momentumBorderWidthNeutral)
-                    )
-            )
-            .onHover { hovering in
-                isHovered = hovering
-            }
-            .animation(.easeOut(duration: .momentumAnimationDurationQuick), value: isHovered)
     }
 }
