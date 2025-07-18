@@ -60,11 +60,11 @@ struct AppFeature {
             case let .destination(.presented(.preparation(.delegate(.sessionFailedToStart(error))))):
                 // Handle failed session start from PreparationFeature
                 state.isLoading = false
-                // Error will be handled inline in PreparationView
+                // Error handled in PreparationView
                 return .none
                 
             case .destination(.presented(.activeSession(.stopButtonTapped))):
-                // Direct stop without confirmation
+                // Stop session immediately
                 state.isLoading = true
                 return .send(.destination(.presented(.activeSession(.performStop))))
                 
@@ -79,7 +79,7 @@ struct AppFeature {
             case let .destination(.presented(.activeSession(.delegate(.sessionFailedToStop(error))))):
                 // Handle failed session stop from ActiveSessionFeature
                 state.isLoading = false
-                // Error will be handled inline in ActiveSessionView
+                // Error handled in ActiveSessionView
                 return .none
                 
             case .destination(.presented(.reflection(.analyzeButtonTapped))):
@@ -98,7 +98,7 @@ struct AppFeature {
             case let .destination(.presented(.reflection(.delegate(.analysisFailedToStart(error))))):
                 // Handle failed analysis from ReflectionFeature
                 state.isLoading = false
-                // Error will be handled inline in AwaitingAnalysisView
+                // Error handled in AwaitingAnalysisView
                 return .none
                 
             case .destination(.presented(.reflection(.cancelButtonTapped))):
@@ -112,7 +112,7 @@ struct AppFeature {
                 return .none
                 
             case .destination(.presented(.analysis(.resetButtonTapped))):
-                // Direct reset without confirmation
+                // Reset immediately
                 return .send(.resetToIdle)
                 
             case .destination(.presented(.analysis(.dismissButtonTapped))):

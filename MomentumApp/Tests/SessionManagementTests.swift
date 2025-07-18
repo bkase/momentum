@@ -76,12 +76,6 @@ struct SessionManagementTests {
         
         // Request to stop session
         await store.send(.destination(.presented(.activeSession(.stopButtonTapped)))) {
-            $0.confirmationDialog = .stopSession()
-        }
-        
-        // Confirm stop
-        await store.send(.confirmationDialog(.presented(.confirmStopSession))) {
-            $0.confirmationDialog = nil
             $0.isLoading = true
         }
         
@@ -116,19 +110,13 @@ struct SessionManagementTests {
         // Destination already set by init, onAppear should not change anything
         await store.send(.onAppear)
         
-        await store.send(.destination(.presented(.analysis(.resetButtonTapped)))) {
-            $0.confirmationDialog = .resetToIdle()
-        }
-        
-        // Confirm reset
-        await store.send(.confirmationDialog(.presented(.confirmReset))) {
-            $0.confirmationDialog = nil
-        }
+        // Reset immediately
+        await store.send(.destination(.presented(.analysis(.resetButtonTapped))))
         
         await store.receive(.resetToIdle) {
             // Don't manually update shared state - the reducer handles it
             $0.reflectionPath = nil
-            $0.alert = nil
+            // Clear state
             $0.isLoading = false
             $0.destination = .preparation(PreparationFeature.State(
                 goal: "",
