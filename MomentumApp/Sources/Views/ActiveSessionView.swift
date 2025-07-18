@@ -37,66 +37,107 @@ struct ActiveSessionView: View {
     }
     
     var body: some View {
-        VStack(spacing: 24) {
-            VStack(spacing: 12) {
-                Image(systemName: "timer")
-                    .font(.largeTitle)
-                    .foregroundStyle(.tint)
-                    .symbolEffect(.pulse, value: currentTime)
-                
-                Text("Active Session")
-                    .font(.headline)
-                
-                Text(store.goal)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-            }
+        VStack(spacing: 0) {
+            // Title section
+            Text("Active Session")
+                .font(.momentumTitle)
+                .foregroundStyle(Color.textPrimary)
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, .momentumTitleBottomPadding)
             
-            ZStack {
-                Circle()
-                    .stroke(.quaternary, lineWidth: 8)
+            // Content sections
+            VStack(spacing: .momentumSectionSpacing) {
+                // Goal display
+                VStack(spacing: .momentumSpacingMedium) {
+                    Text("INTENTION")
+                        .font(.sectionLabel)
+                        .foregroundStyle(Color.textSecondary)
+                    
+                    Text(store.goal)
+                        .font(.system(size: 16))
+                        .foregroundStyle(Color.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .padding(.horizontal, .momentumFieldPaddingHorizontal)
+                }
                 
-                Circle()
-                    .trim(from: 0, to: progress)
-                    .stroke(
-                        isOvertime ? Color.orange : Color.accentColor,
-                        style: StrokeStyle(lineWidth: 8, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(-90))
-                    .animation(.linear(duration: 1), value: progress)
+                // Timer display
+                ZStack {
+                    Circle()
+                        .stroke(Color.borderNeutral, lineWidth: .momentumBorderWidthFocused)
+                    
+                    Circle()
+                        .trim(from: 0, to: progress)
+                        .stroke(
+                            isOvertime ? Color.red : Color.accentGold,
+                            style: StrokeStyle(lineWidth: .momentumBorderWidthFocused, lineCap: .round)
+                        )
+                        .rotationEffect(.degrees(-90))
+                        .animation(.linear(duration: 1), value: progress)
+                    
+                    VStack(spacing: .momentumSpacingSmall) {
+                        Text(elapsedFormatted)
+                            .font(.system(size: 36, weight: .regular, design: .serif))
+                            .foregroundStyle(Color.textPrimary)
+                            .contentTransition(.numericText())
+                        
+                        Text("of \(store.expectedMinutes) min")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.textSecondary)
+                    }
+                }
+                .frame(width: 180, height: 180)
+                .onReceive(timer) { _ in
+                    withAnimation(.linear(duration: 0.5)) {
+                        currentTime = Date()
+                    }
+                }
                 
-                Text(elapsedFormatted)
-                    .font(.system(size: 36, weight: .light, design: .monospaced))
-                    .contentTransition(.numericText())
-            }
-            .frame(width: 180, height: 180)
-            .onReceive(timer) { _ in
-                withAnimation(.linear(duration: 0.5)) {
-                    currentTime = Date()
+                // Status indicators
+                HStack(spacing: .momentumSpacingLarge) {
+                    VStack(spacing: .momentumSpacingSmall) {
+                        Text("ELAPSED")
+                            .font(.system(size: 11, weight: .semibold))
+                            .tracking(2)
+                            .foregroundStyle(Color.textSecondary)
+                        
+                        Text("\(elapsedMinutes) min")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(isOvertime ? Color.red : Color.textPrimary)
+                    }
+                    
+                    Rectangle()
+                        .fill(Color.borderNeutral)
+                        .frame(width: 1, height: 24)
+                    
+                    VStack(spacing: .momentumSpacingSmall) {
+                        Text("STATUS")
+                            .font(.system(size: 11, weight: .semibold))
+                            .tracking(2)
+                            .foregroundStyle(Color.textSecondary)
+                        
+                        Text(isOvertime ? "Overtime" : "In Progress")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(isOvertime ? Color.red : Color.accentGold)
+                    }
                 }
             }
             
-            HStack(spacing: 20) {
-                Label("\(elapsedMinutes) min", systemImage: "clock.fill")
-                    .foregroundStyle(isOvertime ? .orange : .secondary)
-                
-                Divider()
-                    .frame(height: 16)
-                
-                Label("Goal: \(store.expectedMinutes) min", systemImage: "target")
-                    .foregroundStyle(.secondary)
+            // Stop button
+            VStack(spacing: 0) {
+                Button(action: { store.send(.stopButtonTapped) }) {
+                    Text("Stop Session")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.sanctuary)
+                .keyboardShortcut("s", modifiers: .command)
             }
-            .font(.caption)
-            
-            Button(action: { store.send(.stopButtonTapped) }) {
-                Label("Stop Session", systemImage: "stop.fill")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .keyboardShortcut("s", modifiers: .command)
+            .padding(.top, .momentumButtonSectionTopPadding)
         }
+        .frame(width: .momentumContainerWidth)
+        .padding(.top, .momentumContainerPaddingTop)
+        .padding(.horizontal, .momentumContainerPaddingHorizontal)
+        .padding(.bottom, .momentumContainerPaddingBottom)
+        .background(Color.canvasBackground)
     }
 }
