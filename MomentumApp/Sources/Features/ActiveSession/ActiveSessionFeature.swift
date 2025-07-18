@@ -15,6 +15,7 @@ struct ActiveSessionFeature {
         case stopButtonTapped
         case performStop
         case stopSessionResponse(TaskResult<String>)
+        case clearOperationError
         case delegate(Delegate)
         
         enum Delegate: Equatable {
@@ -24,6 +25,9 @@ struct ActiveSessionFeature {
     }
     
     @Dependency(\.rustCoreClient) var rustCoreClient
+    @Dependency(\.continuousClock) var clock
+    
+    enum CancelID { case errorDismissal }
     
     var body: some ReducerOf<Self> {
         Reduce { state, action in
@@ -48,6 +52,15 @@ struct ActiveSessionFeature {
                 
             case let .stopSessionResponse(.failure(error)):
                 state.operationError = error.localizedDescription
+                // Auto-dismiss operation error after 5 seconds
+                return .run { send in
+                    try await clock.sleep(for: .seconds(5))
+                    await send(.clearOperationError)
+                }
+                .cancellable(id: CancelID.errorDismissal)
+                
+            case .clearOperationError:
+                state.operationError = nil
                 return .none
                 
             case .delegate:

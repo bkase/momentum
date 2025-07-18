@@ -93,6 +93,7 @@ struct PreparationFeature {
         case timeInputChanged(String)
         case startButtonTapped
         case startSessionResponse(TaskResult<SessionData>)
+        case clearOperationError
         case delegate(Delegate)
         
         enum Delegate: Equatable {
@@ -104,6 +105,8 @@ struct PreparationFeature {
     @Dependency(\.checklistClient) var checklistClient
     @Dependency(\.continuousClock) var clock
     @Dependency(\.rustCoreClient) var rustCoreClient
+    
+    enum CancelID { case errorDismissal }
     
     var body: some ReducerOf<Self> {
         Reduce { state, action in
@@ -211,6 +214,15 @@ struct PreparationFeature {
                 } else {
                     state.operationError = error.localizedDescription
                 }
+                // Auto-dismiss operation error after 5 seconds
+                return .run { send in
+                    try await clock.sleep(for: .seconds(5))
+                    await send(.clearOperationError)
+                }
+                .cancellable(id: CancelID.errorDismissal)
+                
+            case .clearOperationError:
+                state.operationError = nil
                 return .none
                 
             case .delegate:
