@@ -1,0 +1,140 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  ANTHROPIC_API_KEY: "dummy-key-for-ci"
+
+jobs:
+  rust:
+    name: Rust Build and Test
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install mise
+      run: |
+        curl https://mise.run | sh
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        
+    - name: Install Rust toolchain via mise
+      run: |
+        mise install rust
+        eval "$(mise activate bash)"
+        rustc --version
+        
+    - name: Cache Cargo dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          momentum/target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        
+    - name: Run Rust tests
+      run: |
+        eval "$(mise activate bash)"
+        cd momentum
+        cargo test
+        
+    - name: Check Rust formatting
+      run: |
+        eval "$(mise activate bash)"
+        cd momentum
+        cargo fmt -- --check
+        
+    - name: Run Clippy
+      run: |
+        eval "$(mise activate bash)"
+        cd momentum
+        cargo clippy -- -D warnings
+        
+    - name: Build Rust release binary
+      run: |
+        eval "$(mise activate bash)"
+        cd momentum
+        cargo build --release
+        
+    - name: Verify binary exists
+      run: |
+        test -f momentum/target/release/momentum
+
+  swift:
+    name: Swift Build and Test
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install mise
+      run: |
+        curl https://mise.run | sh
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        
+    - name: Install Tuist via mise
+      run: |
+        mise install tuist
+        eval "$(mise activate bash)"
+        tuist version
+        
+    - name: Generate Xcode project
+      run: |
+        eval "$(mise activate bash)"
+        tuist generate
+        
+    - name: Build Rust CLI for Swift app
+      run: |
+        eval "$(mise activate bash)"
+        cd momentum
+        cargo build --release
+        mkdir -p ../MomentumApp/Resources
+        cp target/release/momentum ../MomentumApp/Resources/
+        
+    - name: Build Swift app
+      run: |
+        xcodebuild -workspace Momentum.xcworkspace \
+          -scheme MomentumApp \
+          -configuration Debug \
+          build \
+          -skipMacroValidation
+          
+    - name: Run Swift tests
+      run: |
+        xcodebuild -workspace Momentum.xcworkspace \
+          -scheme MomentumApp \
+          -configuration Debug \
+          test \
+          -skipMacroValidation
+
+  integration:
+    name: Integration Tests
+    needs: [rust, swift]
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install mise
+      run: |
+        curl https://mise.run | sh
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        
+    - name: Install tools via mise
+      run: |
+        mise install
+        eval "$(mise activate bash)"
+        
+    - name: Run full build and test suite
+      run: |
+        eval "$(mise activate bash)"
+        cd momentum && cargo test && cd ..
+        tuist generate
+        xcodebuild -workspace Momentum.xcworkspace -scheme MomentumApp test -skipMacroValidation
