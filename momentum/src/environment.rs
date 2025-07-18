@@ -91,12 +91,6 @@ impl RealApiClient {
     }
 }
 
-impl Default for RealApiClient {
-    fn default() -> Self {
-        Self
-    }
-}
-
 #[async_trait]
 impl ApiClient for RealApiClient {
     async fn analyze(&self, content: &str) -> Result<AnalysisResult> {
