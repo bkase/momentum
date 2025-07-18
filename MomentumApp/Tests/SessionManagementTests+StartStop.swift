@@ -110,15 +110,14 @@ extension SessionManagementTests {
         // Confirm stop
         await store.send(.confirmationDialog(.presented(.confirmStopSession))) {
             $0.confirmationDialog = nil
-        }
-        
-        await store.receive(.stopSession) {
             $0.isLoading = true
-            $0.alert = nil
         }
         
-        // Receive response
-        await store.receive(.rustCoreResponse(.success(.sessionStopped(reflectionPath: "/tmp/test-reflection.md")))) {
+        // Forward the stop action to ActiveSessionFeature
+        await store.receive(.destination(.presented(.activeSession(.stopButtonTapped))))
+        
+        // Receive delegate response from ActiveSessionFeature
+        await store.receive(.destination(.presented(.activeSession(.delegate(.sessionStopped(reflectionPath: "/tmp/test-reflection.md")))))) {
             $0.isLoading = false
             // Don't manually update shared state - the reducer handles it
             $0.reflectionPath = "/tmp/test-reflection.md"

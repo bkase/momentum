@@ -53,7 +53,8 @@ struct SessionManagementTests {
         $sharedSessionData.withLock { $0 = sessionData }
         
         let store = TestStore(
-            initialState: AppFeature.State(
+            initialState: AppFeature.State.test(
+                sessionData: sessionData,
                 destination: .activeSession(ActiveSessionFeature.State(
                     goal: sessionData.goal,
                     startTime: sessionData.startDate,

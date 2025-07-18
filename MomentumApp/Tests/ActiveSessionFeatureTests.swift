@@ -45,6 +45,6 @@ struct ActiveSessionFeatureTests {
         }
         
         await store.send(.stopButtonTapped)
-        await store.receive(.delegate(.sessionFailedToStop(.systemError("Test error"))))
+        await store.receive(.delegate(.sessionFailedToStop(.other("Test error"))))
     }
 }

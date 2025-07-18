@@ -15,7 +15,7 @@ struct PreparationFeatureTests {
             reflectionFilePath: nil
         )
         
-        let store = TestStore(
+        let store = await TestStore(
             initialState: PreparationFeature.State(
                 goal: "Test goal",
                 timeInput: "30"
@@ -37,7 +37,7 @@ struct PreparationFeatureTests {
     
     @Test("Start session with empty goal sends error delegate")
     func startSessionEmptyGoal() async {
-        let store = TestStore(
+        let store = await TestStore(
             initialState: PreparationFeature.State(
                 goal: "",
                 timeInput: "30"
@@ -52,7 +52,7 @@ struct PreparationFeatureTests {
     
     @Test("Start session with invalid time sends error delegate")
     func startSessionInvalidTime() async {
-        let store = TestStore(
+        let store = await TestStore(
             initialState: PreparationFeature.State(
                 goal: "Test goal",
                 timeInput: "invalid"
@@ -67,7 +67,7 @@ struct PreparationFeatureTests {
     
     @Test("Start session with zero time sends error delegate")
     func startSessionZeroTime() async {
-        let store = TestStore(
+        let store = await TestStore(
             initialState: PreparationFeature.State(
                 goal: "Test goal",
                 timeInput: "0"
@@ -82,7 +82,7 @@ struct PreparationFeatureTests {
     
     @Test("Start session with RustCoreError sends error delegate")
     func startSessionRustCoreError() async {
-        let store = TestStore(
+        let store = await TestStore(
             initialState: PreparationFeature.State(
                 goal: "Test goal",
                 timeInput: "30"
@@ -107,7 +107,7 @@ struct PreparationFeatureTests {
             var localizedDescription: String { message }
         }
         
-        let store = TestStore(
+        let store = await TestStore(
             initialState: PreparationFeature.State(
                 goal: "Test goal",
                 timeInput: "30"
@@ -132,7 +132,7 @@ struct PreparationFeatureTests {
     
     @Test("Goal and time changes update state")
     func goalAndTimeChanges() async {
-        let store = TestStore(
+        let store = await TestStore(
             initialState: PreparationFeature.State()
         ) {
             PreparationFeature()

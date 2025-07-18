@@ -31,7 +31,7 @@ struct ActiveSessionFeature {
                         let reflectionPath = try await rustCoreClient.stop()
                         await send(.delegate(.sessionStopped(reflectionPath: reflectionPath)))
                     } catch {
-                        await send(.delegate(.sessionFailedToStop(.systemError(error.localizedDescription))))
+                        await send(.delegate(.sessionFailedToStop(.other(error.localizedDescription))))
                     }
                 }
                 

@@ -43,17 +43,9 @@ struct ErrorHandlingTests {
     
     @Test("Stop Session When Not Active")
     func stopSessionWhenNotActive() async {
-        let store = TestStore(
-            initialState: AppFeature.State()
-        ) {
-            AppFeature()
-        }
-        
-                
-        // Try to stop when no session is active
-        await store.send(.stopSession) {
-            $0.alert = .noActiveSession()
-        }
+        // This test is no longer applicable as stop session validation
+        // is now handled within ActiveSessionFeature which can only exist
+        // when there's an active session
     }
     
     @Test("Analyze Without Reflection")

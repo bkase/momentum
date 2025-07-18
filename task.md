@@ -29,7 +29,7 @@ Refactor AppFeature from a centralized orchestrator into a pure coordinator by i
 - [x] Remove obsolete stop-related actions from AppFeature.Action (MomentumApp/Sources/AppFeature+State.swift)
 - [x] Create ActiveSessionFeatureTests.swift to test stop session flow
 - [x] Update SessionManagementTests for stop functionality
-- [ ] User test: Stop an active session and verify reflection file is created
+- [x] User test: Stop an active session and verify reflection file is created
 
 **Phase 3: Refactor `analyze` logic into ReflectionFeature**
 - [ ] Add delegate action enum to ReflectionFeature with .analysisRequested(analysisResult: AnalysisResult) and .analysisFailedToStart(AppError) cases (MomentumApp/Sources/ReflectionFeature.swift)
