@@ -6,6 +6,14 @@ struct AppFeature {
     @Dependency(\.rustCoreClient) var rustCoreClient
 
     enum CancelID { case rustOperation }
+    
+    @Reducer(state: .equatable, action: .equatable)
+    enum Destination {
+        case preparation(PreparationFeature)
+        case activeSession(ActiveSessionFeature)
+        case reflection(ReflectionFeature)
+        case analysis(AnalysisFeature)
+    }
 
     var body: some ReducerOf<Self> {
         Reduce { state, action in
