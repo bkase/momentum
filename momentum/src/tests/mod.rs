@@ -9,3 +9,6 @@ mod stop_tests;
 
 #[cfg(test)]
 mod analyze_tests;
+
+#[cfg(test)]
+mod filename_tests;

@@ -4,6 +4,23 @@ use anyhow::Result;
 use chrono::Local;
 use std::path::PathBuf;
 
+/// Sanitize a goal string for use in a filename
+#[cfg(test)]
+pub fn sanitize_goal_for_filename(goal: &str) -> String {
+    goal.to_lowercase()
+        .chars()
+        .map(|c| if c == ' ' { '-' } else { c })
+        .collect()
+}
+
+#[cfg(not(test))]
+fn sanitize_goal_for_filename(goal: &str) -> String {
+    goal.to_lowercase()
+        .chars()
+        .map(|c| if c == ' ' { '-' } else { c })
+        .collect()
+}
+
 /// Side effects that can be executed
 #[derive(Debug, Clone)]
 pub enum Effect {
@@ -34,7 +51,8 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
         Effect::CreateReflection { mut session } => {
             // Create timestamp for filename
             let now = Local::now();
-            let filename = now.format("%Y-%m-%d-%H%M.md").to_string();
+            let sanitized_goal = sanitize_goal_for_filename(&session.goal);
+            let filename = format!("{}-{}.md", now.format("%Y-%m-%d-%H%M"), sanitized_goal);
 
             let mut reflection_path = env.get_reflections_dir()?;
             reflection_path.push(&filename);
