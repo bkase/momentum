@@ -12,7 +12,7 @@ We'll update ActiveSessionView, AnalysisResultView, and AwaitingAnalysisView to 
 - [x] Create shared spacing constants in a new file `MomentumApp/Sources/Extensions/Spacing+Constants.swift`
 - [x] Update ActiveSessionView to use brand design system (MomentumApp/Sources/Views/ActiveSessionView.swift)
 - [x] Update AnalysisResultView to use brand design system (MomentumApp/Sources/Views/AnalysisResultView.swift)
-- [ ] Update AwaitingAnalysisView to use brand design system (MomentumApp/Sources/Views/AwaitingAnalysisView.swift)
+- [x] Update AwaitingAnalysisView to use brand design system (MomentumApp/Sources/Views/AwaitingAnalysisView.swift)
 - [ ] Create reusable view modifiers for consistent styling in `MomentumApp/Sources/Extensions/View+Styling.swift`
 - [ ] Generate brand reference documentation in `docs/brand-reference.md`
 - [ ] Automated test: Verify all views compile and pass existing tests
