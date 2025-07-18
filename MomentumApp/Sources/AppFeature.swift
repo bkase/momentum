@@ -96,9 +96,6 @@ struct AppFeature {
                 ))
                 return .none
                 
-            case .startSession:
-                // This action is now obsolete - PreparationFeature handles starting sessions
-                return .none
 
             case .stopSession:
                 return Self.stopSessionEffect(
