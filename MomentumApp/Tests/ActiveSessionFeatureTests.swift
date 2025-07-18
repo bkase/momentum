@@ -22,15 +22,17 @@ struct ActiveSessionFeatureTests {
         }
         
         await store.send(.performStop)
+        await store.receive(.stopSessionResponse(.success("/test/reflection/path.md")))
         await store.receive(.delegate(.sessionStopped(reflectionPath: "/test/reflection/path.md")))
     }
     
     @Test
     func stopSession_Failure() async {
-        struct TestError: Error, LocalizedError {
+        struct TestError: Error, LocalizedError, Equatable {
             var errorDescription: String? { "Test error" }
         }
         
+        let clock = TestClock()
         let store = TestStore(
             initialState: ActiveSessionFeature.State(
                 goal: "Test goal",
@@ -43,9 +45,18 @@ struct ActiveSessionFeatureTests {
             $0.rustCoreClient.stop = {
                 throw TestError()
             }
+            $0.continuousClock = clock
         }
         
         await store.send(.performStop)
-        await store.receive(.delegate(.sessionFailedToStop(.other("Test error"))))
+        await store.receive(.stopSessionResponse(.failure(TestError()))) {
+            $0.operationError = "Test error"
+        }
+        
+        // Advance clock to trigger error dismissal
+        await clock.advance(by: .seconds(5))
+        await store.receive(.clearOperationError) {
+            $0.operationError = nil
+        }
     }
 }

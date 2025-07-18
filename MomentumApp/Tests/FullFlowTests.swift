@@ -94,14 +94,8 @@ struct FullFlowTests {
             ))
         }
         
-        // 2. Stop session - shows confirmation dialog
+        // 2. Stop session immediately
         await store.send(.destination(.presented(.activeSession(.stopButtonTapped)))) {
-            $0.confirmationDialog = .stopSession()
-        }
-        
-        // Confirm stop
-        await store.send(.confirmationDialog(.presented(.confirmStopSession))) {
-            $0.confirmationDialog = nil
             $0.isLoading = true
         }
         
@@ -136,20 +130,13 @@ struct FullFlowTests {
             )))
         }
         
-        // 4. Reset to preparing - shows confirmation dialog
-        await store.send(.destination(.presented(.analysis(.resetButtonTapped)))) {
-            $0.confirmationDialog = .resetToIdle()
-        }
-        
-        // Confirm reset
-        await store.send(.confirmationDialog(.presented(.confirmReset))) {
-            $0.confirmationDialog = nil
-        }
+        // 4. Reset to preparing immediately
+        await store.send(.destination(.presented(.analysis(.resetButtonTapped))))
         
         await store.receive(.resetToIdle) {
             // Don't manually update shared state - the reducer handles it
             $0.reflectionPath = nil
-            $0.alert = nil
+            // Clear state
             $0.isLoading = false
             $0.destination = .preparation(PreparationFeature.State(
                 goal: "Full Flow Test",

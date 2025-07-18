@@ -131,6 +131,9 @@ struct ActiveSessionView: View {
                 }
                 .buttonStyle(.sanctuary)
                 .keyboardShortcut("s", modifiers: .command)
+                
+                // Operation error
+                OperationErrorView(error: store.operationError)
             }
             .padding(.top, .momentumButtonSectionTopPadding)
         }

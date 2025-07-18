@@ -141,6 +141,9 @@ struct PreparationView: View {
                 .font(.system(size: 12))
                 .foregroundStyle(Color.textSecondary)
                 .opacity(store.totalItemsCompleted > 0 ? 1 : 0)
+            
+            // Operation error
+            OperationErrorView(error: store.operationError)
         }
         .padding(.top, 24)
     }

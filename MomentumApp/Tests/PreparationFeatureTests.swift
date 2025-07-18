@@ -51,7 +51,7 @@ struct PreparationFeatureTests {
         await store.receive(.delegate(.sessionStarted(testSessionData)))
     }
     
-    @Test("Start session with empty goal sends error delegate")
+    @Test("Start session with empty goal shows error")
     func startSessionEmptyGoal() async {
         let store = await TestStore(
             initialState: PreparationFeature.State(
@@ -62,11 +62,12 @@ struct PreparationFeatureTests {
             PreparationFeature()
         }
         
-        await store.send(.startButtonTapped)
-        await store.receive(.delegate(.sessionFailedToStart(.invalidInput(reason: "Please enter a goal"))))
+        await store.send(.startButtonTapped) {
+            $0.operationError = "Please enter a goal"
+        }
     }
     
-    @Test("Start session with invalid time sends error delegate")
+    @Test("Start session with invalid time shows error")
     func startSessionInvalidTime() async {
         let store = await TestStore(
             initialState: PreparationFeature.State(
@@ -77,11 +78,12 @@ struct PreparationFeatureTests {
             PreparationFeature()
         }
         
-        await store.send(.startButtonTapped)
-        await store.receive(.delegate(.sessionFailedToStart(.invalidInput(reason: "Please enter a valid time in minutes"))))
+        await store.send(.startButtonTapped) {
+            $0.operationError = "Please enter a valid time in minutes"
+        }
     }
     
-    @Test("Start session with zero time sends error delegate")
+    @Test("Start session with zero time shows error")
     func startSessionZeroTime() async {
         let store = await TestStore(
             initialState: PreparationFeature.State(
@@ -92,12 +94,14 @@ struct PreparationFeatureTests {
             PreparationFeature()
         }
         
-        await store.send(.startButtonTapped)
-        await store.receive(.delegate(.sessionFailedToStart(.invalidInput(reason: "Please enter a valid time in minutes"))))
+        await store.send(.startButtonTapped) {
+            $0.operationError = "Please enter a valid time in minutes"
+        }
     }
     
-    @Test("Start session with RustCoreError sends error delegate")
+    @Test("Start session with RustCoreError shows error")
     func startSessionRustCoreError() async {
+        let clock = TestClock()
         let store = await TestStore(
             initialState: PreparationFeature.State(
                 goal: "Test goal",
@@ -109,20 +113,28 @@ struct PreparationFeatureTests {
             $0.rustCoreClient.start = { _, _ in
                 throw RustCoreError.binaryNotFound
             }
+            $0.continuousClock = clock
         }
         
         await store.send(.startButtonTapped)
-        await store.receive(.startSessionResponse(.failure(RustCoreError.binaryNotFound)))
-        await store.receive(.delegate(.sessionFailedToStart(.rustCore(.binaryNotFound))))
-    }
-    
-    @Test("Start session with generic error sends other error delegate")
-    func startSessionGenericError() async {
-        struct TestError: Error {
-            let message = "Test error"
-            var localizedDescription: String { message }
+        await store.receive(.startSessionResponse(.failure(RustCoreError.binaryNotFound))) {
+            $0.operationError = "Momentum CLI binary not found in app bundle"
         }
         
+        // Advance clock to trigger error dismissal
+        await clock.advance(by: .seconds(5))
+        await store.receive(.clearOperationError) {
+            $0.operationError = nil
+        }
+    }
+    
+    @Test("Start session with generic error shows error")
+    func startSessionGenericError() async {
+        struct TestError: Error, LocalizedError, Equatable {
+            var errorDescription: String? { "Test error" }
+        }
+        
+        let clock = TestClock()
         let store = await TestStore(
             initialState: PreparationFeature.State(
                 goal: "Test goal",
@@ -134,38 +146,45 @@ struct PreparationFeatureTests {
             $0.rustCoreClient.start = { _, _ in
                 throw TestError()
             }
+            $0.continuousClock = clock
         }
         
         await store.send(.startButtonTapped)
-        await store.receive { action in
-            guard case let .startSessionResponse(.failure(error)) = action else {
-                return false
-            }
-            return error is TestError
+        await store.receive(.startSessionResponse(.failure(TestError()))) {
+            $0.operationError = "Test error"
         }
-        await store.receive { action in
-            guard case let .delegate(.sessionFailedToStart(.other(message))) = action else {
-                return false
-            }
-            // The error message will include type information, so just check it contains our message
-            return message.contains("TestError")
+        
+        // Advance clock to trigger error dismissal
+        await clock.advance(by: .seconds(5))
+        await store.receive(.clearOperationError) {
+            $0.operationError = nil
         }
     }
     
-    @Test("Goal and time changes update state")
+    @Test("Goal and time changes update state and clear errors")
     func goalAndTimeChanges() async {
+        var initialState = PreparationFeature.State()
+        initialState.operationError = "Some error"
+        
         let store = await TestStore(
-            initialState: PreparationFeature.State()
+            initialState: initialState
         ) {
             PreparationFeature()
         }
         
         await store.send(.goalChanged("New goal")) {
             $0.goal = "New goal"
+            $0.operationError = nil  // Error should be cleared
+        }
+        
+        // Set error again
+        await store.send(.startButtonTapped) {
+            $0.operationError = "Please enter a valid time in minutes"
         }
         
         await store.send(.timeInputChanged("45")) {
             $0.timeInput = "45"
+            $0.operationError = nil  // Error should be cleared
         }
     }
 }

@@ -71,7 +71,7 @@ extension SessionManagementTests {
         let error = AppError.rustCore(.binaryNotFound)
         await store.send(.destination(.presented(.preparation(.delegate(.sessionFailedToStart(error)))))) {
             $0.isLoading = false
-            $0.alert = .error(error)
+            // Error handled in PreparationFeature
         }
     }
     
@@ -102,14 +102,8 @@ extension SessionManagementTests {
         // Destination already set by init, onAppear should not change anything
         await store.send(.onAppear)
         
-        // Stop session - shows confirmation dialog
+        // Stop session immediately
         await store.send(.destination(.presented(.activeSession(.stopButtonTapped)))) {
-            $0.confirmationDialog = .stopSession()
-        }
-        
-        // Confirm stop
-        await store.send(.confirmationDialog(.presented(.confirmStopSession))) {
-            $0.confirmationDialog = nil
             $0.isLoading = true
         }
         

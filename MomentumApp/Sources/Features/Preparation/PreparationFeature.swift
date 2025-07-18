@@ -1,15 +1,18 @@
 import ComposableArchitecture
 import Foundation
 import Sharing
+import OSLog
 
 @Reducer
 struct PreparationFeature {
+    private static let logger = Logger(subsystem: "com.bkase.MomentumApp", category: "PreparationFeature")
     @ObservableState
     struct State: Equatable {
         var goal: String = ""
         var timeInput: String = ""
         @Shared(.preparationState) var persistentState = PreparationPersistentState.initial
         var activeTransitions: [Int: ItemTransition] = [:] // Key is slot ID
+        var operationError: String?
         
         // Computed properties for accessing persistent state
         var checklistSlots: [ChecklistSlot] {
@@ -92,6 +95,7 @@ struct PreparationFeature {
         case timeInputChanged(String)
         case startButtonTapped
         case startSessionResponse(TaskResult<SessionData>)
+        case clearOperationError
         case delegate(Delegate)
         
         enum Delegate: Equatable {
@@ -103,6 +107,8 @@ struct PreparationFeature {
     @Dependency(\.checklistClient) var checklistClient
     @Dependency(\.continuousClock) var clock
     @Dependency(\.rustCoreClient) var rustCoreClient
+    
+    enum CancelID { case errorDismissal }
     
     var body: some ReducerOf<Self> {
         Reduce { state, action in
@@ -165,20 +171,33 @@ struct PreparationFeature {
                 
             case let .goalChanged(newGoal):
                 state.goal = newGoal
+                // Clear operation error when user types
+                state.operationError = nil
                 return .none
                 
             case let .timeInputChanged(newTime):
                 state.timeInput = newTime
+                // Clear operation error when user types
+                state.operationError = nil
                 return .none
                 
             case .startButtonTapped:
+                // Clear any previous errors
+                state.operationError = nil
+                
                 // Validate inputs
                 guard let minutes = UInt64(state.timeInput), minutes > 0 else {
-                    return .send(.delegate(.sessionFailedToStart(.invalidInput(reason: "Please enter a valid time in minutes"))))
+                    let error = "Please enter a valid time in minutes"
+                    state.operationError = error
+                    Self.logger.error("Start button validation failed: \(error)")
+                    return .none
                 }
                 
                 guard !state.goal.isEmpty else {
-                    return .send(.delegate(.sessionFailedToStart(.invalidInput(reason: "Please enter a goal"))))
+                    let error = "Please enter a goal"
+                    state.operationError = error
+                    Self.logger.error("Start button validation failed: \(error)")
+                    return .none
                 }
                 
                 // Start the session
@@ -196,13 +215,23 @@ struct PreparationFeature {
                 return .send(.delegate(.sessionStarted(sessionData)))
                 
             case let .startSessionResponse(.failure(error)):
-                let appError: AppError
                 if let rustError = error as? RustCoreError {
-                    appError = .rustCore(rustError)
+                    state.operationError = rustError.errorDescription ?? "An error occurred"
+                    Self.logger.error("Failed to start session - RustCoreError: \(String(describing: rustError))")
                 } else {
-                    appError = .other(error.localizedDescription)
+                    state.operationError = error.localizedDescription
+                    Self.logger.error("Failed to start session: \(error.localizedDescription)")
                 }
-                return .send(.delegate(.sessionFailedToStart(appError)))
+                // Auto-dismiss operation error after 5 seconds
+                return .run { send in
+                    try await clock.sleep(for: .seconds(5))
+                    await send(.clearOperationError)
+                }
+                .cancellable(id: CancelID.errorDismissal)
+                
+            case .clearOperationError:
+                state.operationError = nil
+                return .none
                 
             case .delegate:
                 // Delegate actions are handled by parent

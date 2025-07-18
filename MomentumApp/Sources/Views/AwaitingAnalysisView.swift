@@ -54,6 +54,9 @@ struct AwaitingAnalysisView: View {
                         .keyboardShortcut("n", modifiers: .command)
                     }
                 }
+                
+                // Operation error
+                OperationErrorView(error: store.operationError)
             }
         }
         .frame(width: .momentumContainerWidth)

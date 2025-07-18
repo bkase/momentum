@@ -19,37 +19,43 @@ struct ErrorHandlingTests {
         $analysisHistory.withLock { $0 = [] }
     }
     
-    @Test("Error Handling via Delegate")
-    func errorHandlingViaDelegate() async {
+    @Test("Error Handling")
+    func errorHandling() async {
         let store = TestStore(initialState: AppFeature.State()) {
             AppFeature()
         }
         store.exhaustivity = .off
                 
-        // Test error handling via delegate from PreparationFeature
+        // Test that delegate error is handled
         let error = AppError.rustCore(.binaryNotFound)
         await store.send(.destination(.presented(.preparation(.delegate(.sessionFailedToStart(error)))))) {
             $0.isLoading = false
-            $0.alert = .error(error)
+            // Error handled in PreparationFeature
         }
     }
     
     
-    @Test("Dismiss Alert")
-    func dismissAlert() async {
+    @Test("Direct Session Stop")
+    func directSessionStop() async {
         var state = AppFeature.State()
-        state.alert = .genericError(AppError.other("Test Error"))
+        state.destination = .activeSession(ActiveSessionFeature.State(
+            goal: "Test Goal",
+            startTime: Date(timeIntervalSince1970: 1700000000),
+            expectedMinutes: 30
+        ))
         
         let store = TestStore(
             initialState: state
         ) {
             AppFeature()
         }
+        store.exhaustivity = .off
         
-                
-        await store.send(.alert(.dismiss)) {
-            $0.alert = nil
+        // Stop button triggers stop action
+        await store.send(.destination(.presented(.activeSession(.stopButtonTapped)))) {
+            $0.isLoading = true
         }
+        await store.receive(.destination(.presented(.activeSession(.performStop))))
     }
     
     

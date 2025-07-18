@@ -67,6 +67,9 @@ struct AnalysisResultView: View {
                     .buttonStyle(.sanctuary)
                     .frame(maxWidth: .infinity)
                     .keyboardShortcut("n", modifiers: .command)
+                    
+                    // Operation error
+                    OperationErrorView(error: store.operationError)
                 }
                 .padding(.top, .momentumButtonSectionTopPadding)
             }

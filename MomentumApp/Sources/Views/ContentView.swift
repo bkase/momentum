@@ -30,8 +30,6 @@ struct ContentView: View {
             }
             return .ignored
         }
-        .alert($store.scope(state: \.alert, action: \.alert))
-        .confirmationDialog($store.scope(state: \.confirmationDialog, action: \.confirmationDialog))
         .onAppear {
             store.send(.onAppear)
         }

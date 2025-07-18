@@ -6,6 +6,14 @@ struct AppFeature {
     @Dependency(\.rustCoreClient) var rustCoreClient
 
     enum CancelID { case rustOperation }
+    
+    @Reducer(state: .equatable, action: .equatable)
+    enum Destination {
+        case preparation(PreparationFeature)
+        case activeSession(ActiveSessionFeature)
+        case reflection(ReflectionFeature)
+        case analysis(AnalysisFeature)
+    }
 
     var body: some ReducerOf<Self> {
         Reduce { state, action in
@@ -60,12 +68,13 @@ struct AppFeature {
             case let .destination(.presented(.preparation(.delegate(.sessionFailedToStart(error))))):
                 // Handle failed session start from PreparationFeature
                 state.isLoading = false
-                state.alert = .error(error)
+                // Error handled in PreparationView
                 return .none
                 
             case .destination(.presented(.activeSession(.stopButtonTapped))):
-                state.confirmationDialog = .stopSession()
-                return .none
+                // Stop session immediately
+                state.isLoading = true
+                return .send(.destination(.presented(.activeSession(.performStop))))
                 
             case let .destination(.presented(.activeSession(.delegate(.sessionStopped(reflectionPath))))):
                 // Handle successful session stop from ActiveSessionFeature
@@ -78,7 +87,7 @@ struct AppFeature {
             case let .destination(.presented(.activeSession(.delegate(.sessionFailedToStop(error))))):
                 // Handle failed session stop from ActiveSessionFeature
                 state.isLoading = false
-                state.alert = .error(error)
+                // Error handled in ActiveSessionView
                 return .none
                 
             case .destination(.presented(.reflection(.analyzeButtonTapped))):
@@ -97,7 +106,7 @@ struct AppFeature {
             case let .destination(.presented(.reflection(.delegate(.analysisFailedToStart(error))))):
                 // Handle failed analysis from ReflectionFeature
                 state.isLoading = false
-                state.alert = .error(error)
+                // Error handled in AwaitingAnalysisView
                 return .none
                 
             case .destination(.presented(.reflection(.cancelButtonTapped))):
@@ -111,8 +120,8 @@ struct AppFeature {
                 return .none
                 
             case .destination(.presented(.analysis(.resetButtonTapped))):
-                state.confirmationDialog = .resetToIdle()
-                return .none
+                // Reset immediately
+                return .send(.resetToIdle)
                 
             case .destination(.presented(.analysis(.dismissButtonTapped))):
                 state.destination = nil
@@ -131,7 +140,6 @@ struct AppFeature {
                 state.$sessionData.withLock { $0 = nil }
                 state.reflectionPath = nil
                 state.$analysisHistory.withLock { $0 = [] }
-                state.alert = nil
                 state.isLoading = false
                 state.destination = .preparation(PreparationFeature.State(
                     goal: state.lastGoal,
@@ -143,54 +151,10 @@ struct AppFeature {
                 state.isLoading = false
                 return .cancel(id: CancelID.rustOperation)
                 
-            case .alert(.presented(.dismiss)):
-                // Alert dismissed, no action needed
-                return .none
-                
-            case .alert(.presented(.retry)):
-                // Retry the last failed operation
-                // For now, we'll just dismiss the alert
-                state.alert = nil
-                return .none
-                
-            case .alert(.presented(.openSettings)):
-                // TODO: Open settings when implemented
-                state.alert = nil
-                return .none
-                
-            case .alert(.presented(.contactSupport)):
-                // TODO: Open support link when implemented
-                state.alert = nil
-                return .none
-                
-            case .alert(.dismiss):
-                return .none
-                
-            case .confirmationDialog(.presented(.confirmStopSession)):
-                state.confirmationDialog = nil
-                if case .activeSession = state.destination {
-                    state.isLoading = true
-                    return .send(.destination(.presented(.activeSession(.performStop))))
-                }
-                return .none
-                
-            case .confirmationDialog(.presented(.confirmReset)):
-                state.confirmationDialog = nil
-                return .send(.resetToIdle)
-                
-            case .confirmationDialog(.presented(.cancel)):
-                state.confirmationDialog = nil
-                return .none
-                
-            case .confirmationDialog(.dismiss):
-                return .none
-                
             case .destination:
                 return .none
             }
         }
         .ifLet(\.$destination, action: \.destination)
-        .ifLet(\.$alert, action: \.alert)
-        .ifLet(\.$confirmationDialog, action: \.confirmationDialog)
     }
 }
