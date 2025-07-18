@@ -4,8 +4,7 @@ set -e
 echo "=== Testing CI Workflow Locally ==="
 echo
 
-# Set CI environment variable
-export ANTHROPIC_API_KEY="dummy-key-for-ci"
+# No special environment variables needed
 
 echo "1. Testing mise installation and tool setup..."
 if ! command -v mise &> /dev/null; then

@@ -63,9 +63,16 @@ jobs:
     - name: Verify binary exists
       run: |
         test -f momentum/target/release/momentum
+        
+    - name: Upload Rust binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: momentum-binary
+        path: momentum/target/release/momentum
 
   swift:
     name: Swift Build and Test
+    needs: rust
     runs-on: macos-latest
     
     steps:
@@ -87,13 +94,14 @@ jobs:
         eval "$(mise activate bash)"
         tuist generate
         
-    - name: Build Rust CLI for Swift app
-      run: |
-        eval "$(mise activate bash)"
-        cd momentum
-        cargo build --release
-        mkdir -p ../MomentumApp/Resources
-        cp target/release/momentum ../MomentumApp/Resources/
+    - name: Download Rust binary
+      uses: actions/download-artifact@v4
+      with:
+        name: momentum-binary
+        path: MomentumApp/Resources/
+        
+    - name: Make binary executable
+      run: chmod +x MomentumApp/Resources/momentum
         
     - name: Build Swift app
       run: |
@@ -111,27 +119,3 @@ jobs:
           test \
           -skipMacroValidation
 
-  integration:
-    name: Integration Tests
-    needs: [rust, swift]
-    runs-on: macos-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Install mise
-      run: |
-        curl https://mise.run | sh
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
-        
-    - name: Install tools via mise
-      run: |
-        mise install
-        eval "$(mise activate bash)"
-        
-    - name: Run full build and test suite
-      run: |
-        eval "$(mise activate bash)"
-        cd momentum && cargo test && cd ..
-        tuist generate
-        xcodebuild -workspace Momentum.xcworkspace -scheme MomentumApp test -skipMacroValidation
