@@ -12,8 +12,8 @@ We need to modify the reflection file naming to include the session goal in addi
 
 ## Implementation Plan
 - [x] Add goal validation to PreparationFeature that checks for invalid filename characters (momentum/src/effects.rs)
-- [ ] Create goal sanitization function in Rust that converts to lowercase and replaces spaces with hyphens (momentum/src/effects.rs:35-40)
-- [ ] Update filename generation to include sanitized goal after timestamp (momentum/src/effects.rs:37)
+- [x] Create goal sanitization function in Rust that converts to lowercase and replaces spaces with hyphens (momentum/src/effects.rs:35-40)
+- [x] Update filename generation to include sanitized goal after timestamp (momentum/src/effects.rs:37)
 - [ ] Update Swift tests that expect the old filename format in SessionManagementTests (MomentumApp/Tests/SessionManagementTests.swift)
 - [ ] Update Rust tests that verify reflection file creation in stop_tests (momentum/src/tests/stop_tests.rs)
 - [ ] Add test cases for goal validation in PreparationFeature (MomentumApp/Tests/PreparationFeatureTests.swift)
