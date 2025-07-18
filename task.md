@@ -18,7 +18,7 @@ Refactor AppFeature from a centralized orchestrator into a pure coordinator by i
 - [x] Update AppFeature to handle .destination(.presented(.preparation(.delegate(...)))) actions instead of .startSession (MomentumApp/Sources/AppFeature.swift)
 - [x] Remove obsolete start-related actions from AppFeature.Action (MomentumApp/Sources/AppFeature+State.swift)
 - [x] Create PreparationFeatureTests.swift to test start session flow with mocked rustCoreClient
-- [ ] Update SessionManagementTests to test coordination via delegate actions instead of direct effects
+- [x] Update SessionManagementTests to test coordination via delegate actions instead of direct effects
 - [ ] User test: Start a new session and verify it works as before
 
 **Phase 2: Refactor `stop` logic into ActiveSessionFeature**

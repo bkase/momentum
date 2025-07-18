@@ -4,8 +4,8 @@ import ComposableArchitecture
 @testable import MomentumApp
 
 extension SessionManagementTests {
-    @Test("Start Session")
-    func startSession() async {
+    @Test("Start Session Success via Delegate")
+    func startSessionSuccessViaDelegate() async {
         // Set up shared state before creating the store
         @Shared(.lastGoal) var lastGoal: String
         @Shared(.lastTimeMinutes) var lastTimeMinutes: String
@@ -17,13 +17,6 @@ extension SessionManagementTests {
         ) {
             AppFeature()
         } withDependencies: {
-            $0.rustCoreClient.start = { goal, minutes in
-                SessionData.mock(
-                    goal: goal,
-                    startTime: Date(timeIntervalSince1970: 1_700_000_000),
-                    timeExpected: UInt64(minutes)  // timeExpected is in minutes
-                )
-            }
             $0.checklistClient.load = { ChecklistItem.mockItems }
         }
         store.exhaustivity = .off
@@ -45,19 +38,15 @@ extension SessionManagementTests {
             }
         }
         
-        // Start session directly instead of going through the checklist flow
-        await store.send(.startSession(goal: "Test Goal", minutes: 30)) {
-            $0.isLoading = true
-            $0.alert = nil
-        }
-        
-        // The effect executes immediately and sends the response
+        // Start session through delegate action from PreparationFeature
         let sessionData = SessionData.mock(
             goal: "Test Goal",
             startTime: Date(timeIntervalSince1970: 1_700_000_000),
             timeExpected: 30  // 30 minutes
         )
-        await store.receive(.rustCoreResponse(.success(.sessionStarted(sessionData)))) {
+        
+        // Send delegate action from PreparationFeature
+        await store.send(.destination(.presented(.preparation(.delegate(.sessionStarted(sessionData)))))) {
             $0.isLoading = false
             // Don't manually update shared state - the reducer handles it
             $0.reflectionPath = nil
@@ -66,6 +55,23 @@ extension SessionManagementTests {
                 startTime: Date(timeIntervalSince1970: 1_700_000_000),
                 expectedMinutes: 30
             ))
+        }
+    }
+    
+    @Test("Start Session Error via Delegate")
+    func startSessionErrorViaDelegate() async {
+        let store = TestStore(
+            initialState: AppFeature.State()
+        ) {
+            AppFeature()
+        }
+        store.exhaustivity = .off
+        
+        // Send error delegate action from PreparationFeature
+        let error = AppError.rustCore(.binaryNotFound)
+        await store.send(.destination(.presented(.preparation(.delegate(.sessionFailedToStart(error)))))) {
+            $0.isLoading = false
+            $0.alert = .error(error)
         }
     }
     
