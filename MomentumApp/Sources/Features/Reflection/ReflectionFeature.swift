@@ -12,6 +12,7 @@ struct ReflectionFeature {
     enum Action: Equatable {
         case analyzeButtonTapped
         case cancelButtonTapped
+        case analyzeResponse(TaskResult<AnalysisResult>)
         case delegate(Delegate)
         
         enum Delegate: Equatable {
@@ -26,16 +27,29 @@ struct ReflectionFeature {
         Reduce { state, action in
             switch action {
             case .analyzeButtonTapped:
+                state.operationError = nil
                 return .run { [reflectionPath = state.reflectionPath] send in
-                    do {
-                        let analysisResult = try await rustCoreClient.analyze(reflectionPath)
-                        await send(.delegate(.analysisRequested(analysisResult: analysisResult)))
-                    } catch {
-                        await send(.delegate(.analysisFailedToStart(.other(error.localizedDescription))))
-                    }
+                    await send(
+                        .analyzeResponse(
+                            await TaskResult {
+                                try await rustCoreClient.analyze(reflectionPath)
+                            }
+                        )
+                    )
                 }
                 
             case .cancelButtonTapped:
+                return .none
+                
+            case let .analyzeResponse(.success(analysisResult)):
+                return .send(.delegate(.analysisRequested(analysisResult: analysisResult)))
+                
+            case let .analyzeResponse(.failure(error)):
+                if let rustError = error as? RustCoreError {
+                    state.operationError = rustError.errorDescription ?? "An error occurred"
+                } else {
+                    state.operationError = error.localizedDescription
+                }
                 return .none
                 
             case .delegate:

@@ -166,20 +166,29 @@ struct PreparationFeature {
                 
             case let .goalChanged(newGoal):
                 state.goal = newGoal
+                // Clear operation error when user types
+                state.operationError = nil
                 return .none
                 
             case let .timeInputChanged(newTime):
                 state.timeInput = newTime
+                // Clear operation error when user types
+                state.operationError = nil
                 return .none
                 
             case .startButtonTapped:
+                // Clear any previous errors
+                state.operationError = nil
+                
                 // Validate inputs
                 guard let minutes = UInt64(state.timeInput), minutes > 0 else {
-                    return .send(.delegate(.sessionFailedToStart(.invalidInput(reason: "Please enter a valid time in minutes"))))
+                    state.operationError = "Please enter a valid time in minutes"
+                    return .none
                 }
                 
                 guard !state.goal.isEmpty else {
-                    return .send(.delegate(.sessionFailedToStart(.invalidInput(reason: "Please enter a goal"))))
+                    state.operationError = "Please enter a goal"
+                    return .none
                 }
                 
                 // Start the session
@@ -197,13 +206,12 @@ struct PreparationFeature {
                 return .send(.delegate(.sessionStarted(sessionData)))
                 
             case let .startSessionResponse(.failure(error)):
-                let appError: AppError
                 if let rustError = error as? RustCoreError {
-                    appError = .rustCore(rustError)
+                    state.operationError = rustError.errorDescription ?? "An error occurred"
                 } else {
-                    appError = .other(error.localizedDescription)
+                    state.operationError = error.localizedDescription
                 }
-                return .send(.delegate(.sessionFailedToStart(appError)))
+                return .none
                 
             case .delegate:
                 // Delegate actions are handled by parent

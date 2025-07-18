@@ -13,9 +13,9 @@ Replace all alert modals and confirmation dialogs with inline error messages and
 - [x] Remove alert presentation modifier from ContentView.swift
 - [x] Add error state properties to each feature (Preparation, ActiveSession, Reflection, Analysis)
 - [x] Remove all alert-related actions and cases from AppFeature.swift
-- [ ] Update error handling to set feature-specific error states instead of alerts
+- [x] Update error handling to set feature-specific error states instead of alerts
 - [ ] Add inline error display UI to each view (following PreparationView pattern)
-- [ ] Remove confirmation dialogs - make stop session and reset immediate actions
+- [x] Remove confirmation dialogs - make stop session and reset immediate actions
 - [ ] Update tests to check for inline errors instead of alerts
 - [ ] Remove AppFeature+Navigation.swift alert factory methods
 - [ ] Add smart error dismissal: validation errors persist until fixed, operation errors auto-dismiss after 5 seconds

@@ -14,6 +14,7 @@ struct ActiveSessionFeature {
     enum Action: Equatable {
         case stopButtonTapped
         case performStop
+        case stopSessionResponse(TaskResult<String>)
         case delegate(Delegate)
         
         enum Delegate: Equatable {
@@ -33,13 +34,21 @@ struct ActiveSessionFeature {
                 
             case .performStop:
                 return .run { send in
-                    do {
-                        let reflectionPath = try await rustCoreClient.stop()
-                        await send(.delegate(.sessionStopped(reflectionPath: reflectionPath)))
-                    } catch {
-                        await send(.delegate(.sessionFailedToStop(.other(error.localizedDescription))))
-                    }
+                    await send(
+                        .stopSessionResponse(
+                            await TaskResult {
+                                try await rustCoreClient.stop()
+                            }
+                        )
+                    )
                 }
+                
+            case let .stopSessionResponse(.success(reflectionPath)):
+                return .send(.delegate(.sessionStopped(reflectionPath: reflectionPath)))
+                
+            case let .stopSessionResponse(.failure(error)):
+                state.operationError = error.localizedDescription
+                return .none
                 
             case .delegate:
                 return .none
