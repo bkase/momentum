@@ -6,50 +6,75 @@ struct AnalysisResultView: View {
     
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack {
-                    Image(systemName: "sparkles")
-                        .foregroundColor(.accentColor)
-                    Text("AI Analysis")
-                        .font(.headline)
+            VStack(spacing: 0) {
+                // Title section
+                Text("Session Insights")
+                    .font(.momentumTitle)
+                    .foregroundStyle(Color.textPrimary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, .momentumTitleBottomPadding)
+                
+                // Content sections
+                VStack(alignment: .leading, spacing: .momentumSectionSpacing) {
+                    // Summary section
+                    VStack(alignment: .leading, spacing: .momentumSpacingMedium) {
+                        Text("SUMMARY")
+                            .font(.sectionLabel)
+                            .foregroundStyle(Color.textSecondary)
+                        
+                        Text(store.analysis.summary)
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.textPrimary)
+                            .lineSpacing(4)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, .momentumSpacingSmall)
+                    }
+                    
+                    // Suggestion section
+                    VStack(alignment: .leading, spacing: .momentumSpacingMedium) {
+                        Text("SUGGESTION")
+                            .font(.sectionLabel)
+                            .foregroundStyle(Color.textSecondary)
+                        
+                        Text(store.analysis.suggestion)
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.textPrimary)
+                            .lineSpacing(4)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, .momentumSpacingSmall)
+                    }
+                    
+                    // Reasoning section
+                    VStack(alignment: .leading, spacing: .momentumSpacingMedium) {
+                        Text("REASONING")
+                            .font(.sectionLabel)
+                            .foregroundStyle(Color.textSecondary)
+                        
+                        Text(store.analysis.reasoning)
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.textPrimary)
+                            .lineSpacing(4)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, .momentumSpacingSmall)
+                    }
                 }
                 
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Summary")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                    Text(store.analysis.summary)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    Divider()
-                    
-                    Text("Suggestion")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                    Text(store.analysis.suggestion)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    Divider()
-                    
-                    Text("Reasoning")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                    Text(store.analysis.reasoning)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                // Button section
+                VStack(spacing: 0) {
+                    Button("Begin New Sanctuary") {
+                        store.send(.resetButtonTapped)
+                    }
+                    .buttonStyle(.sanctuary)
+                    .frame(maxWidth: .infinity)
+                    .keyboardShortcut("n", modifiers: .command)
                 }
-                
-                Button("Start New Session") {
-                    store.send(.resetButtonTapped)
-                }
-                .buttonStyle(.borderedProminent)
-                .frame(maxWidth: .infinity)
-                .padding(.top, 8)
-                .keyboardShortcut("n", modifiers: .command)
+                .padding(.top, .momentumButtonSectionTopPadding)
             }
-            .padding(.vertical)
+            .frame(width: .momentumContainerWidth)
+            .padding(.top, .momentumContainerPaddingTop)
+            .padding(.horizontal, .momentumContainerPaddingHorizontal)
+            .padding(.bottom, .momentumContainerPaddingBottom)
         }
+        .background(Color.canvasBackground)
     }
 }
