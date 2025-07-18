@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [ main, master ]
 
-env:
-  ANTHROPIC_API_KEY: "dummy-key-for-ci"
-
 jobs:
   rust:
     name: Rust Build and Test
