@@ -15,7 +15,10 @@ fn test_sanitize_goal_multiple_spaces() {
 
 #[test]
 fn test_sanitize_goal_already_lowercase() {
-    assert_eq!(sanitize_goal_for_filename("already lowercase"), "already-lowercase");
+    assert_eq!(
+        sanitize_goal_for_filename("already lowercase"),
+        "already-lowercase"
+    );
 }
 
 #[test]
@@ -35,17 +38,11 @@ fn test_sanitize_goal_only_spaces() {
 
 #[test]
 fn test_sanitize_goal_with_numbers() {
-    assert_eq!(
-        sanitize_goal_for_filename("Fix Bug 123"),
-        "fix-bug-123"
-    );
+    assert_eq!(sanitize_goal_for_filename("Fix Bug 123"), "fix-bug-123");
 }
 
 #[test]
 fn test_sanitize_goal_preserves_valid_chars() {
     // The sanitization should preserve valid filename characters
-    assert_eq!(
-        sanitize_goal_for_filename("test_goal-123"),
-        "test_goal-123"
-    );
+    assert_eq!(sanitize_goal_for_filename("test_goal-123"), "test_goal-123");
 }

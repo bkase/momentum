@@ -103,15 +103,14 @@ Please analyze the following reflection and provide:
 3. Your reasoning for this suggestion
 
 Reflection:
-{}
+{content}
 
 Respond in JSON format with these exact fields:
 {{
     "summary": "brief summary of the session",
     "suggestion": "specific actionable suggestion",
     "reasoning": "why this suggestion would help"
-}}"#,
-            content
+}}"#
         );
 
         // Use zsh -c to ensure user's shell configuration is loaded

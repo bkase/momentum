@@ -11,13 +11,13 @@ Set up GitHub Actions CI/CD workflow to automatically build and test the Momentu
 ## Implementation Plan
 - [x] Create `.mise.toml` in project root to pin tool versions (rust 1.88.0, tuist 4.55.6)
 - [x] Create `.github/workflows/ci.yml` with build and test jobs for both Rust and Swift
-- [ ] Configure mise installation and tool setup in CI workflow
-- [ ] Set up Rust job: install toolchain via mise, run cargo test, cargo fmt check, cargo clippy
-- [ ] Set up Swift job: install Tuist via mise, generate project, build with -skipMacroValidation, run tests
-- [ ] Add test for successful Rust binary build and copy to Resources
-- [ ] Configure workflow triggers for push to main/master and pull requests
-- [ ] Add ANTHROPIC_API_KEY as dummy value for CI environment
-- [ ] Add build status badge to README.md
+- [x] Configure mise installation and tool setup in CI workflow
+- [x] Set up Rust job: install toolchain via mise, run cargo test, cargo fmt check, cargo clippy
+- [x] Set up Swift job: install Tuist via mise, generate project, build with -skipMacroValidation, run tests
+- [x] Add test for successful Rust binary build and copy to Resources
+- [x] Configure workflow triggers for push to main/master and pull requests
+- [x] Add ANTHROPIC_API_KEY as dummy value for CI environment
+- [x] Add build status badge to README.md
 - [ ] User test: Create a test PR to verify CI runs successfully
 
 ## Notes

@@ -1,5 +1,5 @@
-use crate::{action::Action, environment::*, models::Session, state::State, update::update};
 use super::mock_helpers::*;
+use crate::{action::Action, environment::*, models::Session, state::State, update::update};
 
 #[test]
 fn test_stop_active_session() {
