@@ -13,6 +13,10 @@ cat combined.txt | gemini -y -p "Please critique this code focusing on: 1) Archi
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## CI Notes
+
+- CI takes around ~3min so we know how long to wait when checking ci status if it's in progress
+
 ## Important Build Notes
 
 ### Swift Package Manager Macros
@@ -213,3 +217,4 @@ When moving types between files/extensions in Swift:
 - Move shared types (ProcessResult, SessionData, etc.) to top level
 - Avoid nested types in extensions when used across files
 - Use explicit module imports if needed
+```
