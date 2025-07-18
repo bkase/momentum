@@ -16,8 +16,8 @@ Replace direct HTTP API calls to Claude with subprocess calls to the `claude` CL
 - [x] Implement zsh shell invocation to load user's .zshrc configuration
 - [x] Parse claude CLI output and convert to AnalysisResult struct
 - [x] Update error handling to cover subprocess failures and missing claude CLI
-- [ ] Automated test: Update mock_helpers.rs to simulate CLI output (momentum/src/tests/mock_helpers.rs)
-- [ ] Automated test: Add integration tests for CLI subprocess calls
+- [x] Automated test: Update mock_helpers.rs to simulate CLI output (momentum/src/tests/mock_helpers.rs)
+- [x] Automated test: Add integration tests for CLI subprocess calls
 - [ ] User test: Run `momentum analyze --file <reflection-file>` and verify it uses claude CLI tool
 - [ ] User test: Test with missing claude CLI to ensure proper error message
 - [ ] User test: Verify output format matches expected JSON structure
