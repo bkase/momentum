@@ -50,25 +50,8 @@ struct ErrorHandlingTests {
     
     @Test("Analyze Without Reflection")
     func analyzeWithoutReflection() async {
-        let store = TestStore(
-            initialState: AppFeature.State()
-        ) {
-            AppFeature()
-        } withDependencies: {
-            $0.rustCoreClient.analyze = { _ in
-                throw AppError.other("No reflection file")
-            }
-        }
-        store.exhaustivity = .off
-        
-        // Try to analyze when no reflection exists - should trigger error
-        await store.send(.analyzeReflection(path: "")) {
-            $0.isLoading = true
-            $0.alert = nil
-        }
-        
-        // Skip handling the response since we're testing error path
-        await store.skipReceivedActions()
+        // This test is now handled by ReflectionFeatureTests
+        // Analysis errors are tested in ReflectionFeature which owns the analyze logic
     }
     
     @Test("Dismiss Alert")
