@@ -113,8 +113,8 @@ extension SessionManagementTests {
             $0.isLoading = true
         }
         
-        // Forward the stop action to ActiveSessionFeature
-        await store.receive(.destination(.presented(.activeSession(.stopButtonTapped))))
+        // Forward the performStop action to ActiveSessionFeature
+        await store.receive(.destination(.presented(.activeSession(.performStop))))
         
         // Receive delegate response from ActiveSessionFeature
         await store.receive(.destination(.presented(.activeSession(.delegate(.sessionStopped(reflectionPath: "/tmp/test-reflection.md")))))) {

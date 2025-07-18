@@ -20,7 +20,7 @@ struct ActiveSessionFeatureTests {
             }
         }
         
-        await store.send(.stopButtonTapped)
+        await store.send(.performStop)
         await store.receive(.delegate(.sessionStopped(reflectionPath: "/test/reflection/path.md")))
     }
     
@@ -44,7 +44,7 @@ struct ActiveSessionFeatureTests {
             }
         }
         
-        await store.send(.stopButtonTapped)
+        await store.send(.performStop)
         await store.receive(.delegate(.sessionFailedToStop(.other("Test error"))))
     }
 }

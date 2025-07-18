@@ -12,6 +12,7 @@ struct ActiveSessionFeature {
     
     enum Action: Equatable {
         case stopButtonTapped
+        case performStop
         case delegate(Delegate)
         
         enum Delegate: Equatable {
@@ -26,6 +27,10 @@ struct ActiveSessionFeature {
         Reduce { state, action in
             switch action {
             case .stopButtonTapped:
+                // Just signal that stop was requested - AppFeature will show confirmation
+                return .none
+                
+            case .performStop:
                 return .run { send in
                     do {
                         let reflectionPath = try await rustCoreClient.stop()

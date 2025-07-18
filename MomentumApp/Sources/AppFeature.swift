@@ -171,7 +171,7 @@ struct AppFeature {
                 state.confirmationDialog = nil
                 if case .activeSession = state.destination {
                     state.isLoading = true
-                    return .send(.destination(.presented(.activeSession(.stopButtonTapped))))
+                    return .send(.destination(.presented(.activeSession(.performStop))))
                 }
                 return .none
                 
