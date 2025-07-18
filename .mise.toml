@@ -1,0 +1,6 @@
+[tools]
+rust = "1.88.0"
+tuist = "4.55.6"
+
+[env]
+RUST_BACKTRACE = "1"

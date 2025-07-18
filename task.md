@@ -9,7 +9,7 @@ We should build and run the tests. Let's make sure it's a consistent environment
 Set up GitHub Actions CI/CD workflow to automatically build and test the Momentum application on every push and pull request. The workflow will use mise for consistent tool version management, ensuring the CI environment matches local development. It will build both the Rust CLI and Swift macOS app, run all tests, and validate the entire build process.
 
 ## Implementation Plan
-- [ ] Create `.mise.toml` in project root to pin tool versions (rust 1.88.0, tuist 4.55.6)
+- [x] Create `.mise.toml` in project root to pin tool versions (rust 1.88.0, tuist 4.55.6)
 - [ ] Create `.github/workflows/ci.yml` with build and test jobs for both Rust and Swift
 - [ ] Configure mise installation and tool setup in CI workflow
 - [ ] Set up Rust job: install toolchain via mise, run cargo test, cargo fmt check, cargo clippy
