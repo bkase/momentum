@@ -38,13 +38,13 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         
     - name: Run Rust tests
-      run: make ci-rust-test
+      run: make rust-test
         
     - name: Run Rust linting
-      run: make ci-rust-lint
+      run: make rust-lint
         
     - name: Build Rust release binary
-      run: make ci-rust-build
+      run: make rust-build
         
     - name: Verify binary exists
       run: |
@@ -76,7 +76,7 @@ jobs:
         tuist version
         
     - name: Generate Xcode project
-      run: make ci-swift-generate
+      run: make swift-generate
         
     - name: Download Rust binary
       uses: actions/download-artifact@v4
@@ -87,9 +87,23 @@ jobs:
     - name: Make binary executable
       run: chmod +x MomentumApp/Resources/momentum
         
-    - name: Build Swift app
-      run: make ci-swift-build
+    - name: Build Swift app  
+      run: |
+        # Don't run rust-build since we're using the artifact
+        mkdir -p MomentumApp/Resources
+        chmod +x MomentumApp/Resources/momentum
+        xcodebuild -workspace Momentum.xcworkspace \
+          -scheme MomentumApp \
+          -configuration Debug \
+          build \
+          -skipMacroValidation
           
     - name: Run Swift tests
-      run: make ci-swift-test
+      run: |
+        # Don't run rust-build since we're using the artifact
+        xcodebuild -workspace Momentum.xcworkspace \
+          -scheme MomentumApp \
+          -configuration Debug \
+          test \
+          -skipMacroValidation
 
