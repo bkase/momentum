@@ -18,7 +18,3 @@ Application state must be saved while application is running in between the menu
 
 At the moment, the application is forgetting about the checklist state across preparation view opens and it's remembering that it's within an active session across app terminations. We need to fix that.
 
-## 5. Don't use the API calls but use the cli tools `claude -p` and `gemini -p` instead
-
-These are installed in different ways per user, but `zsg -c "gemini -p '<query>'"` should do the trick because it will load from the user's `.zshrc`
-
