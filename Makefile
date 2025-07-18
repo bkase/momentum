@@ -1,4 +1,4 @@
-.PHONY: all test build clean rust-test rust-build rust-lint swift-test swift-build install-tools
+.PHONY: all test build clean rust-test rust-build rust-lint swift-test swift-build install-tools tail-logs
 
 # Default target
 all: build test
@@ -76,3 +76,8 @@ clean:
 	@if [ -d "Momentum.xcworkspace" ]; then \
 		xcodebuild -workspace Momentum.xcworkspace -scheme MomentumApp clean -quiet; \
 	fi
+
+# Tail logs from the Momentum app
+tail-logs:
+	@echo "Tailing Momentum app logs..."
+	@log stream --predicate 'subsystem == "com.bkase.MomentumApp"' --level debug

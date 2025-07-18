@@ -1,8 +1,10 @@
 import ComposableArchitecture
 import Foundation
+import OSLog
 
 @Reducer
 struct ReflectionFeature {
+    private static let logger = Logger(subsystem: "com.bkase.MomentumApp", category: "ReflectionFeature")
     @ObservableState
     struct State: Equatable {
         let reflectionPath: String
@@ -51,8 +53,10 @@ struct ReflectionFeature {
             case let .analyzeResponse(.failure(error)):
                 if let rustError = error as? RustCoreError {
                     state.operationError = rustError.errorDescription ?? "An error occurred"
+                    Self.logger.error("Failed to analyze reflection - RustCoreError: \(String(describing: rustError))")
                 } else {
                     state.operationError = error.localizedDescription
+                    Self.logger.error("Failed to analyze reflection: \(error.localizedDescription)")
                 }
                 // Auto-dismiss operation error after 5 seconds
                 return .run { send in

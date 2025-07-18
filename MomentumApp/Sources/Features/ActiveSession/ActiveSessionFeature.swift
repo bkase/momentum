@@ -1,8 +1,10 @@
 import ComposableArchitecture
 import Foundation
+import OSLog
 
 @Reducer
 struct ActiveSessionFeature {
+    private static let logger = Logger(subsystem: "com.bkase.MomentumApp", category: "ActiveSessionFeature")
     @ObservableState
     struct State: Equatable {
         let goal: String
@@ -52,6 +54,7 @@ struct ActiveSessionFeature {
                 
             case let .stopSessionResponse(.failure(error)):
                 state.operationError = error.localizedDescription
+                Self.logger.error("Failed to stop session: \(error.localizedDescription)")
                 // Auto-dismiss operation error after 5 seconds
                 return .run { send in
                     try await clock.sleep(for: .seconds(5))

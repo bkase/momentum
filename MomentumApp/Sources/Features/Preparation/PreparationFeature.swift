@@ -1,9 +1,11 @@
 import ComposableArchitecture
 import Foundation
 import Sharing
+import OSLog
 
 @Reducer
 struct PreparationFeature {
+    private static let logger = Logger(subsystem: "com.bkase.MomentumApp", category: "PreparationFeature")
     @ObservableState
     struct State: Equatable {
         var goal: String = ""
@@ -185,12 +187,16 @@ struct PreparationFeature {
                 
                 // Validate inputs
                 guard let minutes = UInt64(state.timeInput), minutes > 0 else {
-                    state.operationError = "Please enter a valid time in minutes"
+                    let error = "Please enter a valid time in minutes"
+                    state.operationError = error
+                    Self.logger.error("Start button validation failed: \(error)")
                     return .none
                 }
                 
                 guard !state.goal.isEmpty else {
-                    state.operationError = "Please enter a goal"
+                    let error = "Please enter a goal"
+                    state.operationError = error
+                    Self.logger.error("Start button validation failed: \(error)")
                     return .none
                 }
                 
@@ -211,8 +217,10 @@ struct PreparationFeature {
             case let .startSessionResponse(.failure(error)):
                 if let rustError = error as? RustCoreError {
                     state.operationError = rustError.errorDescription ?? "An error occurred"
+                    Self.logger.error("Failed to start session - RustCoreError: \(String(describing: rustError))")
                 } else {
                     state.operationError = error.localizedDescription
+                    Self.logger.error("Failed to start session: \(error.localizedDescription)")
                 }
                 // Auto-dismiss operation error after 5 seconds
                 return .run { send in
