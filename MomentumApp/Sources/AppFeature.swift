@@ -41,7 +41,27 @@ struct AppFeature {
                 return .none
                 
             case .destination(.presented(.preparation(.startButtonTapped))):
-                return Self.handleStartFromPreparation(state: &state)
+                // PreparationFeature now handles this internally
+                return .none
+                
+            case let .destination(.presented(.preparation(.delegate(.sessionStarted(sessionData))))):
+                // Handle successful session start from PreparationFeature
+                state.isLoading = false
+                state.$sessionData.withLock { $0 = sessionData }
+                state.reflectionPath = nil
+                state.$analysisHistory.withLock { $0 = [] }
+                state.destination = .activeSession(ActiveSessionFeature.State(
+                    goal: sessionData.goal,
+                    startTime: sessionData.startDate,
+                    expectedMinutes: sessionData.expectedMinutes
+                ))
+                return .none
+                
+            case let .destination(.presented(.preparation(.delegate(.sessionFailedToStart(error))))):
+                // Handle failed session start from PreparationFeature
+                state.isLoading = false
+                state.alert = .error(error)
+                return .none
                 
             case .destination(.presented(.activeSession(.stopButtonTapped))):
                 state.confirmationDialog = .stopSession()
@@ -76,13 +96,9 @@ struct AppFeature {
                 ))
                 return .none
                 
-            case let .startSession(goal, minutes):
-                return Self.startSessionEffect(
-                    state: &state,
-                    goal: goal,
-                    minutes: minutes,
-                    rustCoreClient: rustCoreClient
-                )
+            case .startSession:
+                // This action is now obsolete - PreparationFeature handles starting sessions
+                return .none
 
             case .stopSession:
                 return Self.stopSessionEffect(

@@ -15,7 +15,7 @@ Refactor AppFeature from a centralized orchestrator into a pure coordinator by i
 - [x] Add delegate action enum to PreparationFeature with .sessionStarted(SessionData) and .sessionFailedToStart(AppError) cases (MomentumApp/Sources/PreparationFeature.swift)
 - [x] Define RustCoreError enum in MomentumApp/Sources/Models/
 - [x] Add @Dependency(\.rustCoreClient) to PreparationFeature and move start session effect logic from AppFeature (MomentumApp/Sources/PreparationFeature.swift)
-- [ ] Update AppFeature to handle .destination(.presented(.preparation(.delegate(...)))) actions instead of .startSession (MomentumApp/Sources/AppFeature.swift)
+- [x] Update AppFeature to handle .destination(.presented(.preparation(.delegate(...)))) actions instead of .startSession (MomentumApp/Sources/AppFeature.swift)
 - [ ] Remove obsolete start-related actions from AppFeature.Action (MomentumApp/Sources/AppFeature+State.swift)
 - [ ] Create PreparationFeatureTests.swift to test start session flow with mocked rustCoreClient
 - [ ] Update SessionManagementTests to test coordination via delegate actions instead of direct effects
