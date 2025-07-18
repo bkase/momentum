@@ -9,7 +9,7 @@ This means for the ActiveSessionView, AnalysisResultView, and AwaitingAnalysisVi
 We'll update ActiveSessionView, AnalysisResultView, and AwaitingAnalysisView to match PreparationView's sophisticated design system. This involves applying the existing brand colors, typography, spacing, and custom styles to create a cohesive "digital sanctuary" experience across all views. Rather than creating a new asset catalog (which would add unnecessary complexity), we'll leverage the existing Color and Font extensions while ensuring consistent application of the brand guidelines.
 
 ## Implementation Plan
-- [ ] Create shared spacing constants in a new file `MomentumApp/Sources/Extensions/Spacing+Constants.swift`
+- [x] Create shared spacing constants in a new file `MomentumApp/Sources/Extensions/Spacing+Constants.swift`
 - [ ] Update ActiveSessionView to use brand design system (MomentumApp/Sources/Views/ActiveSessionView.swift)
 - [ ] Update AnalysisResultView to use brand design system (MomentumApp/Sources/Views/AnalysisResultView.swift)
 - [ ] Update AwaitingAnalysisView to use brand design system (MomentumApp/Sources/Views/AwaitingAnalysisView.swift)
