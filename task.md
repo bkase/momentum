@@ -1,6 +1,6 @@
 # Refactor the AppFeature into little features
 **Status:** InProgress
-**Agent PID:** 4553
+**Agent PID:** 3112
 
 ## Original Todo
 ## 3. Refactor the AppFeature into little features
@@ -20,7 +20,7 @@ Refactor AppFeature from a centralized orchestrator into a pure coordinator by i
 - [x] Create PreparationFeatureTests.swift to test start session flow with mocked rustCoreClient
 - [x] Update SessionManagementTests to test coordination via delegate actions instead of direct effects
 - [x] Fix ErrorHandlingTests.swift and FullFlowTests.swift to use the new delegate pattern
-- [ ] User test: Start a new session and verify it works as before
+- [x] User test: Start a new session and verify it works as before
 
 **Phase 2: Refactor `stop` logic into ActiveSessionFeature**
 - [ ] Add delegate action enum to ActiveSessionFeature with .sessionStopped(reflectionPath: String) and .sessionFailedToStop(AppError) cases (MomentumApp/Sources/ActiveSessionFeature.swift)
