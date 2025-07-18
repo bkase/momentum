@@ -27,10 +27,19 @@ struct PreparationFeature {
             set { $persistentState.withLock { $0.nextItemIndex = newValue } }
         }
         
+        var goalValidationError: String? {
+            let invalidCharacters = CharacterSet(charactersIn: "/:*?\"<>|")
+            if goal.rangeOfCharacter(from: invalidCharacters) != nil {
+                return "Goal contains invalid characters. Please avoid: / : * ? \" < > |"
+            }
+            return nil
+        }
+        
         var isStartButtonEnabled: Bool {
             !goal.isEmpty &&
             Int(timeInput).map { $0 > 0 } == true &&
-            totalItemsCompleted == 10
+            totalItemsCompleted == 10 &&
+            goalValidationError == nil
         }
         
         init(

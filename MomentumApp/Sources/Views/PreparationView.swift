@@ -37,15 +37,25 @@ struct PreparationView: View {
     }
     
     private var intentionInput: some View {
-        TextField("What will you accomplish?", text: Binding(
-            get: { store.goal },
-            set: { store.send(.goalChanged($0)) }
-        ))
-        .textFieldStyle(.intention)
-        .focused($isGoalFieldFocused)
-        .onSubmit {
-            if store.isStartButtonEnabled {
-                startSession()
+        VStack(alignment: .leading, spacing: 8) {
+            TextField("What will you accomplish?", text: Binding(
+                get: { store.goal },
+                set: { store.send(.goalChanged($0)) }
+            ))
+            .textFieldStyle(.intention)
+            .focused($isGoalFieldFocused)
+            .onSubmit {
+                if store.isStartButtonEnabled {
+                    startSession()
+                }
+            }
+            
+            if let error = store.goalValidationError {
+                Text(error)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 4)
             }
         }
     }
