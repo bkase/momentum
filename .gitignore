@@ -17,6 +17,7 @@ DerivedData/
 *.dSYM
 *.xcuserstate
 .DS_Store
+MomentumApp/Resources/momentum
 
 # Swift Package Manager
 Packages/
