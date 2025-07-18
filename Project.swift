@@ -52,21 +52,20 @@ let project = Project(
             scripts: [
                 .pre(
                     script: """
-                    #!/bin/bash
+                    #!/bin/zsh
                     set -e
                     
-                    echo "Building Rust CLI using make..."
-                    cd "$SRCROOT"
-                    
-                    # Check if make is available
-                    if ! command -v make &> /dev/null; then
-                        echo "Error: make not found."
-                        exit 1
+                    # Source user's zsh configuration to get mise/cargo in PATH
+                    if [ -f "$HOME/.zshrc" ]; then
+                        source "$HOME/.zshrc"
                     fi
                     
-                    # Use make commands to build Rust and copy binary
-                    make rust-build
-                    make copy-rust-binary
+                    echo "Building Rust CLI..."
+                    cd "$SRCROOT"
+                    
+                    # Build Rust and copy binary
+                    make rust-build || { echo "Error: make rust-build failed"; exit 1; }
+                    make copy-rust-binary || { echo "Error: make copy-rust-binary failed"; exit 1; }
                     
                     # Verify the binary was copied
                     if [ ! -f "$SRCROOT/MomentumApp/Resources/momentum" ]; then
@@ -74,7 +73,7 @@ let project = Project(
                         exit 1
                     fi
                     
-                    echo "Rust CLI build complete"
+                    echo "✓ Rust CLI build complete"
                     """,
                     name: "Build Rust CLI",
                     inputPaths: [
