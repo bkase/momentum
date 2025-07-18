@@ -1,5 +1,5 @@
 # Add Github actions CI
-**Status:** InProgress
+**Status:** AwaitingCommit
 **Agent PID:** 76321
 
 ## Original Todo
