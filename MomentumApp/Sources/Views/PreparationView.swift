@@ -143,15 +143,7 @@ struct PreparationView: View {
                 .opacity(store.totalItemsCompleted > 0 ? 1 : 0)
             
             // Operation error
-            if let error = store.operationError {
-                Text(error)
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.red)
-                    .frame(maxWidth: .infinity)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 4)
-                    .transition(.opacity)
-            }
+            OperationErrorView(error: store.operationError)
         }
         .padding(.top, 24)
     }

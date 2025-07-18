@@ -69,16 +69,7 @@ struct AnalysisResultView: View {
                     .keyboardShortcut("n", modifiers: .command)
                     
                     // Operation error
-                    if let error = store.operationError {
-                        Text(error)
-                            .font(.system(size: 12))
-                            .foregroundStyle(Color.red)
-                            .frame(maxWidth: .infinity)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 4)
-                            .padding(.top, 8)
-                            .transition(.opacity)
-                    }
+                    OperationErrorView(error: store.operationError)
                 }
                 .padding(.top, .momentumButtonSectionTopPadding)
             }
