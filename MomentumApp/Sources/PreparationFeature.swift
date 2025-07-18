@@ -82,6 +82,12 @@ struct PreparationFeature {
         case goalChanged(String)
         case timeInputChanged(String)
         case startButtonTapped
+        case delegate(Delegate)
+        
+        enum Delegate: Equatable {
+            case sessionStarted(SessionData)
+            case sessionFailedToStart(AppError)
+        }
     }
     
     @Dependency(\.checklistClient) var checklistClient
@@ -156,6 +162,10 @@ struct PreparationFeature {
                 
             case .startButtonTapped:
                 // This will be handled by parent
+                return .none
+                
+            case .delegate:
+                // Delegate actions are handled by parent
                 return .none
             }
         }

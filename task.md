@@ -12,7 +12,7 @@ Refactor AppFeature from a centralized orchestrator into a pure coordinator by i
 
 ## Implementation Plan
 **Phase 1: Refactor `start` logic into PreparationFeature**
-- [ ] Add delegate action enum to PreparationFeature with .sessionStarted(SessionData) and .sessionFailedToStart(AppError) cases (MomentumApp/Sources/PreparationFeature.swift)
+- [x] Add delegate action enum to PreparationFeature with .sessionStarted(SessionData) and .sessionFailedToStart(AppError) cases (MomentumApp/Sources/PreparationFeature.swift)
 - [ ] Add @Dependency(\.rustCoreClient) to PreparationFeature and move start session effect logic from AppFeature (MomentumApp/Sources/PreparationFeature.swift)
 - [ ] Update AppFeature to handle .destination(.presented(.preparation(.delegate(...)))) actions instead of .startSession (MomentumApp/Sources/AppFeature.swift)
 - [ ] Remove obsolete start-related actions from AppFeature.Action (MomentumApp/Sources/AppFeature+State.swift)
