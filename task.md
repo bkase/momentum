@@ -1,5 +1,5 @@
 # Don't use the API calls but use the cli tools
-**Status:** InProgress
+**Status:** AwaitingCommit
 **Agent PID:** 3112
 
 ## Original Todo
