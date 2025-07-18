@@ -6,6 +6,7 @@ struct AnalysisFeature {
     @ObservableState
     struct State: Equatable {
         let analysis: AnalysisResult
+        var operationError: String?
     }
     
     enum Action: Equatable {

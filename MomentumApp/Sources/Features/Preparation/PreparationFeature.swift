@@ -10,6 +10,7 @@ struct PreparationFeature {
         var timeInput: String = ""
         @Shared(.preparationState) var persistentState = PreparationPersistentState.initial
         var activeTransitions: [Int: ItemTransition] = [:] // Key is slot ID
+        var operationError: String?
         
         // Computed properties for accessing persistent state
         var checklistSlots: [ChecklistSlot] {

@@ -8,6 +8,7 @@ struct ActiveSessionFeature {
         let goal: String
         let startTime: Date
         let expectedMinutes: UInt64
+        var operationError: String?
     }
     
     enum Action: Equatable {

@@ -6,6 +6,7 @@ struct ReflectionFeature {
     @ObservableState
     struct State: Equatable {
         let reflectionPath: String
+        var operationError: String?
     }
     
     enum Action: Equatable {
