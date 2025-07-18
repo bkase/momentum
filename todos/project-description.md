@@ -33,6 +33,15 @@ Momentum is a macOS menu bar productivity application that helps users track and
 - **Key Files**: AppFeature.swift (root reducer), main.rs (CLI entry)
 
 ## Commands
+### Using Makefile (Recommended)
+- Build all: `make build`
+- Test all: `make test`
+- Rust test: `make rust-test`
+- Rust lint: `make rust-lint`
+- Swift test: `make swift-test`
+- Clean: `make clean`
+
+### Manual Commands
 - Build: `xcodebuild -workspace Momentum.xcworkspace -scheme MomentumApp build -skipMacroValidation`
 - Test: `cd momentum && cargo test && cd .. && xcodebuild -workspace Momentum.xcworkspace -scheme MomentumApp test -skipMacroValidation`
 - Lint: `cd momentum && cargo fmt && cargo clippy`

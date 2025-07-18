@@ -24,12 +24,22 @@ fn sanitize_goal_for_filename(goal: &str) -> String {
 /// Side effects that can be executed
 #[derive(Debug, Clone)]
 pub enum Effect {
-    CreateSession { session: Session },
-    CreateReflection { session: Session },
-    AnalyzeReflection { path: PathBuf },
-    PrintError { message: String },
+    CreateSession {
+        session: Session,
+    },
+    CreateReflection {
+        session: Session,
+    },
+    AnalyzeReflection {
+        path: PathBuf,
+    },
+    PrintError {
+        message: String,
+    },
     #[allow(dead_code)]
-    SaveState { state: crate::state::State },
+    SaveState {
+        state: crate::state::State,
+    },
     ClearState,
     Composite(Vec<Effect>),
 }
@@ -95,12 +105,12 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
 
             // Print the raw JSON result to stdout
             let json = serde_json::to_string(&result)?;
-            println!("{}", json);
+            println!("{json}");
             Ok(())
         }
 
         Effect::PrintError { message } => {
-            eprintln!("{}", message);
+            eprintln!("{message}");
             Ok(())
         }
 
@@ -136,4 +146,3 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
         }
     }
 }
-

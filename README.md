@@ -1,5 +1,7 @@
 # Momentum
 
+[![CI](https://github.com/bkase/momentum/actions/workflows/ci.yml/badge.svg)](https://github.com/bkase/momentum/actions/workflows/ci.yml)
+
 A macOS productivity application for tracking focus sessions and generating AI-powered insights.
 
 ## Architecture

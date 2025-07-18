@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Session {
     pub goal: String,
-    pub start_time: u64, // Unix timestamp
+    pub start_time: u64,    // Unix timestamp
     pub time_expected: u64, // Minutes
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reflection_file_path: Option<String>,

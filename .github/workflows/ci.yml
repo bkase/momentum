@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  rust:
+    name: Rust Build and Test
+    runs-on: macos-14
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install mise
+      run: |
+        curl https://mise.run | sh
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        
+    - name: Install tools via mise
+      run: |
+        mise install
+        eval "$(mise activate bash)"
+        rustc --version
+        rustup component add rustfmt clippy
+        
+    - name: Cache Cargo dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          momentum/target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        
+    - name: Run Rust tests
+      run: make rust-test
+        
+    - name: Run Rust linting
+      run: make rust-lint
+        
+    - name: Build Rust release binary
+      run: make rust-build
+        
+    - name: Verify binary exists
+      run: |
+        test -f momentum/target/release/momentum
+        
+    - name: Upload Rust binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: momentum-binary
+        path: momentum/target/release/momentum
+
+  swift:
+    name: Swift Build and Test
+    needs: rust
+    runs-on: macos-14
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: '16.1'
+    
+    - name: Install mise
+      run: |
+        curl https://mise.run | sh
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+    - name: Install tools via mise
+      run: |
+        mise install
+        eval "$(mise activate bash)"
+        tuist version
+        
+    - name: Generate Xcode project
+      run: make swift-generate
+        
+    - name: Download Rust binary
+      uses: actions/download-artifact@v4
+      with:
+        name: momentum-binary
+        path: momentum/target/release/
+        
+    - name: Copy Rust binary to Resources
+      run: make copy-rust-binary
+        
+    - name: Build Swift app  
+      run: make swift-build-only
+          
+    - name: Run Swift tests
+      run: make swift-test-only
+

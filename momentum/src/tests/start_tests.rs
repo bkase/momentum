@@ -1,5 +1,5 @@
-use crate::{action::Action, environment::*, state::State, update::update};
 use super::mock_helpers::*;
+use crate::{action::Action, environment::*, state::State, update::update};
 
 #[test]
 fn test_start_session_when_idle() {
