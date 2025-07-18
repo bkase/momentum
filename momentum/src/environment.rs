@@ -121,7 +121,7 @@ Respond in JSON format with these exact fields:
             std::time::Duration::from_secs(90),
             tokio::process::Command::new("zsh")
                 .arg("-c")
-                .arg(format!("claude -p '{}'", escaped_prompt))
+                .arg(format!("claude -p '{escaped_prompt}'"))
                 .output()
         )
         .await
