@@ -1,6 +1,10 @@
 # Todos
 
-## 1. Better handling of application state
+## 1. Remove the alerts
+
+Alert modals are lazy design. All errors should be presented inline, and we don't need "are you sure" dialogs, just do it.
+
+## 2. Better handling of application state
 
 Application state must be saved while application is running in between the menu icon being clicked, but should be reset from scratch if the application process is starting for the first
 

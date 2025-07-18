@@ -5,40 +5,61 @@ struct AwaitingAnalysisView: View {
     @Bindable var store: StoreOf<ReflectionFeature>
     
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "doc.text")
-                .font(.system(size: 48))
-                .foregroundColor(.accentColor)
+        VStack(spacing: 0) {
+            // Title section
+            Text("Reflection Complete")
+                .font(.momentumTitle)
+                .foregroundStyle(Color.textPrimary)
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, .momentumTitleBottomPadding)
             
-            Text("Reflection Created")
-                .font(.headline)
-            
-            Text("Your reflection has been saved. Review it and then analyze it for insights.")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-            
-            VStack(spacing: 12) {
-                Button("Open Reflection") {
-                    NSWorkspace.shared.open(URL(fileURLWithPath: store.reflectionPath))
+            // Content sections
+            VStack(spacing: .momentumSectionSpacing) {
+                // Status message
+                VStack(spacing: .momentumSpacingLarge) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 48))
+                        .foregroundStyle(Color.accentGold)
+                        .symbolRenderingMode(.hierarchical)
+                    
+                    Text("Your reflection has been saved.\nReview it before seeking deeper insights.")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Color.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(4)
                 }
-                .buttonStyle(.bordered)
-                .keyboardShortcut("o", modifiers: .command)
                 
-                Button("Analyze with AI") {
-                    store.send(.analyzeButtonTapped)
+                // Action buttons
+                VStack(spacing: .momentumSpacingLarge) {
+                    Button("Analyze with AI") {
+                        store.send(.analyzeButtonTapped)
+                    }
+                    .buttonStyle(.sanctuary)
+                    .frame(maxWidth: .infinity)
+                    .keyboardShortcut(.return, modifiers: .command)
+                    
+                    HStack(spacing: .momentumSpacingMedium) {
+                        Button("Open Reflection") {
+                            NSWorkspace.shared.open(URL(fileURLWithPath: store.reflectionPath))
+                        }
+                        .buttonStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .keyboardShortcut("o", modifiers: .command)
+                        
+                        Button("New Session") {
+                            store.send(.cancelButtonTapped)
+                        }
+                        .buttonStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .keyboardShortcut("n", modifiers: .command)
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                .keyboardShortcut(.return, modifiers: .command)
             }
-            
-            Button("Start New Session") {
-                store.send(.cancelButtonTapped)
-            }
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .keyboardShortcut("n", modifiers: .command)
         }
-        .padding(.vertical)
+        .frame(width: .momentumContainerWidth)
+        .padding(.top, .momentumContainerPaddingTop)
+        .padding(.horizontal, .momentumContainerPaddingHorizontal)
+        .padding(.bottom, .momentumContainerPaddingBottom)
+        .background(Color.canvasBackground)
     }
 }

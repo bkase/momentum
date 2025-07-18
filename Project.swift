@@ -52,18 +52,37 @@ let project = Project(
             scripts: [
                 .pre(
                     script: """
-                    # Build Rust CLI
+                    #!/bin/zsh
+                    set -e
+                    
+                    # Source user's zsh configuration to get mise/cargo in PATH
+                    if [ -f "$HOME/.zshrc" ]; then
+                        source "$HOME/.zshrc"
+                    fi
+                    
                     echo "Building Rust CLI..."
-                    cd "$SRCROOT/momentum"
-                    cargo build --release
+                    cd "$SRCROOT"
                     
-                    # Ensure Resources directory exists
-                    mkdir -p "$SRCROOT/MomentumApp/Resources"
+                    # Build Rust and copy binary
+                    make rust-build || { echo "Error: make rust-build failed"; exit 1; }
+                    make copy-rust-binary || { echo "Error: make copy-rust-binary failed"; exit 1; }
                     
-                    # Copy binary to resources
-                    cp "target/release/momentum" "$SRCROOT/MomentumApp/Resources/"
+                    # Verify the binary was copied
+                    if [ ! -f "$SRCROOT/MomentumApp/Resources/momentum" ]; then
+                        echo "Error: Failed to copy momentum binary"
+                        exit 1
+                    fi
+                    
+                    echo "✓ Rust CLI build complete"
                     """,
                     name: "Build Rust CLI",
+                    inputPaths: [
+                        "$(SRCROOT)/momentum/Cargo.toml",
+                        "$(SRCROOT)/momentum/src"
+                    ],
+                    outputPaths: [
+                        "$(SRCROOT)/MomentumApp/Resources/momentum"
+                    ],
                     basedOnDependencyAnalysis: false
                 )
             ],
