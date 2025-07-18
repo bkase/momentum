@@ -41,7 +41,7 @@ Refactor AppFeature from a centralized orchestrator into a pure coordinator by i
 - [x] User test: Complete a reflection and analyze it to see results
 
 **Phase 4: Project restructuring and cleanup**
-- [ ] Create Features/ directory structure and move files: Preparation/, ActiveSession/, Reflection/, Analysis/ (MomentumApp/Sources/Features/)
+- [x] Create Features/ directory structure and move files: Preparation/, ActiveSession/, Reflection/, Analysis/ (MomentumApp/Sources/Features/)
 - [ ] Run tuist generate to update Xcode project with new file structure
 - [ ] Review and minimize AppFeature+Effects.swift - should only contain app launch session check
 - [ ] Clean up AppFeature.swift to be a simple state machine responding to delegate actions
