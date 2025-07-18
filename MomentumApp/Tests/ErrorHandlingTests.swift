@@ -34,25 +34,6 @@ struct ErrorHandlingTests {
         }
     }
     
-    @Test("Start Session When Already Active")
-    func startSessionWhenAlreadyActive() async {
-        // This scenario is now handled by PreparationFeature
-        // The test would need to be in PreparationFeatureTests
-        // AppFeature no longer manages session start validation
-    }
-    
-    @Test("Stop Session When Not Active")
-    func stopSessionWhenNotActive() async {
-        // This test is no longer applicable as stop session validation
-        // is now handled within ActiveSessionFeature which can only exist
-        // when there's an active session
-    }
-    
-    @Test("Analyze Without Reflection")
-    func analyzeWithoutReflection() async {
-        // This test is now handled by ReflectionFeatureTests
-        // Analysis errors are tested in ReflectionFeature which owns the analyze logic
-    }
     
     @Test("Dismiss Alert")
     func dismissAlert() async {
@@ -71,17 +52,6 @@ struct ErrorHandlingTests {
         }
     }
     
-    @Test("Invalid Time Input")
-    func invalidTimeInput() async {
-        // This is now handled by the UI not allowing invalid inputs
-        // and the preparation state validation
-    }
-    
-    @Test("Checklist Loading Error")
-    func checklistLoadingError() async {
-        // This test is no longer relevant since checklist items are created directly
-        // in the reducer rather than loaded from a dependency
-    }
     
     @Test("Cancel Current Operation")
     func cancelCurrentOperation() async {
