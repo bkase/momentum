@@ -184,4 +184,65 @@ struct ChecklistTests {
             // checklistSlots remain unchanged from init
         }
     }
+    
+    @Test("Goal Validation - Invalid Characters")
+    func goalValidationInvalidCharacters() async {
+        var state = PreparationFeature.State()
+        state.checklistSlots = PreparationFeature.State.createInitialSlots()
+        state.totalItemsCompleted = 10
+        state.timeInput = "30"
+        
+        // Test various invalid characters
+        let invalidGoals = [
+            "Test/Goal",
+            "Test:Goal",
+            "Test*Goal",
+            "Test?Goal",
+            "Test\"Goal",
+            "Test<Goal>",
+            "Test|Goal"
+        ]
+        
+        for invalidGoal in invalidGoals {
+            state.goal = invalidGoal
+            #expect(state.goalValidationError != nil)
+            #expect(state.isStartButtonEnabled == false)
+        }
+    }
+    
+    @Test("Goal Validation - Valid Goals")
+    func goalValidationValidGoals() async {
+        var state = PreparationFeature.State()
+        state.checklistSlots = PreparationFeature.State.createInitialSlots()
+        state.totalItemsCompleted = 10
+        state.timeInput = "30"
+        
+        // Test valid goals
+        let validGoals = [
+            "Test Goal",
+            "Implement new feature",
+            "Fix bug 123",
+            "test_goal-123",
+            "UPPERCASE GOAL",
+            "Goal with numbers 456"
+        ]
+        
+        for validGoal in validGoals {
+            state.goal = validGoal
+            #expect(state.goalValidationError == nil)
+            #expect(state.isStartButtonEnabled == true)
+        }
+    }
+    
+    @Test("Goal Validation - Start Button Disabled With Invalid Goal")
+    func startButtonDisabledWithInvalidGoal() async {
+        var state = PreparationFeature.State()
+        state.checklistSlots = PreparationFeature.State.createInitialSlots()
+        state.totalItemsCompleted = 10
+        state.timeInput = "30"
+        state.goal = "Invalid/Goal"
+        
+        #expect(state.isStartButtonEnabled == false)
+        #expect(state.goalValidationError == "Goal contains invalid characters. Please avoid: / : * ? \" < > |")
+    }
 }

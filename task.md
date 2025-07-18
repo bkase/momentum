@@ -14,10 +14,10 @@ We need to modify the reflection file naming to include the session goal in addi
 - [x] Add goal validation to PreparationFeature that checks for invalid filename characters (momentum/src/effects.rs)
 - [x] Create goal sanitization function in Rust that converts to lowercase and replaces spaces with hyphens (momentum/src/effects.rs:35-40)
 - [x] Update filename generation to include sanitized goal after timestamp (momentum/src/effects.rs:37)
-- [ ] Update Swift tests that expect the old filename format in SessionManagementTests (MomentumApp/Tests/SessionManagementTests.swift)
-- [ ] Update Rust tests that verify reflection file creation in stop_tests (momentum/src/tests/stop_tests.rs)
-- [ ] Add test cases for goal validation in PreparationFeature (MomentumApp/Tests/PreparationFeatureTests.swift)
-- [ ] Add test cases for filename generation with various goal texts (momentum/src/tests/stop_tests.rs)
+- [x] Update Swift tests that expect the old filename format in SessionManagementTests (MomentumApp/Tests/SessionManagementTests.swift)
+- [x] Update Rust tests that verify reflection file creation in stop_tests (momentum/src/tests/stop_tests.rs)
+- [x] Add test cases for goal validation in PreparationFeature (MomentumApp/Tests/PreparationFeatureTests.swift)
+- [x] Add test cases for filename generation with various goal texts (momentum/src/tests/stop_tests.rs)
 - [ ] Manual test: Start session with normal goal, verify reflection file has goal in name
 - [ ] Manual test: Try to start session with invalid characters in goal, verify error appears
 

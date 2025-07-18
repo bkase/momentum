@@ -5,6 +5,15 @@ use chrono::Local;
 use std::path::PathBuf;
 
 /// Sanitize a goal string for use in a filename
+#[cfg(test)]
+pub fn sanitize_goal_for_filename(goal: &str) -> String {
+    goal.to_lowercase()
+        .chars()
+        .map(|c| if c == ' ' { '-' } else { c })
+        .collect()
+}
+
+#[cfg(not(test))]
 fn sanitize_goal_for_filename(goal: &str) -> String {
     goal.to_lowercase()
         .chars()
