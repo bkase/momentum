@@ -80,7 +80,7 @@ struct SecondaryButtonStyle: ButtonStyle {
             .onHover { hovering in
                 isHovered = hovering
             }
-            .animation(.easeOut(duration: .momentumAnimationDurationQuick), value: isHovered)
+            .animation(.easeOut(duration: CGFloat.momentumAnimationDurationQuick), value: isHovered)
     }
 }
 
