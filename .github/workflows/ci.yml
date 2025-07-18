@@ -24,6 +24,7 @@ jobs:
         mise install rust
         eval "$(mise activate bash)"
         rustc --version
+        rustup component add rustfmt clippy
         
     - name: Cache Cargo dependencies
       uses: actions/cache@v4
