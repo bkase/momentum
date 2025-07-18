@@ -28,15 +28,19 @@ rust-dev:
 	@echo "Building Rust debug binary..."
 	@eval "$$(mise activate bash)" && cd momentum && cargo build
 
+# Binary management
+copy-rust-binary:
+	@echo "Copying Rust binary to Resources..."
+	@mkdir -p MomentumApp/Resources
+	@cp momentum/target/release/momentum MomentumApp/Resources/
+	@chmod +x MomentumApp/Resources/momentum
+
 # Swift targets
 swift-generate:
 	@echo "Generating Xcode project..."
 	@eval "$$(mise activate bash)" && tuist generate
 
-swift-build: rust-build
-	@echo "Copying Rust binary to Resources..."
-	@mkdir -p MomentumApp/Resources
-	@cp momentum/target/release/momentum MomentumApp/Resources/
+swift-build-only:
 	@echo "Building Swift app..."
 	@xcodebuild -workspace Momentum.xcworkspace \
 		-scheme MomentumApp \
@@ -45,10 +49,7 @@ swift-build: rust-build
 		-skipMacroValidation \
 		-quiet
 
-swift-test: rust-build
-	@echo "Copying Rust binary to Resources..."
-	@mkdir -p MomentumApp/Resources
-	@cp momentum/target/release/momentum MomentumApp/Resources/
+swift-test-only:
 	@echo "Running Swift tests..."
 	@xcodebuild -workspace Momentum.xcworkspace \
 		-scheme MomentumApp \
@@ -56,6 +57,11 @@ swift-test: rust-build
 		test \
 		-skipMacroValidation \
 		-quiet
+
+# Convenience targets that build everything
+swift-build: rust-build copy-rust-binary swift-build-only
+
+swift-test: rust-build copy-rust-binary swift-test-only
 
 # Combined targets
 build: rust-build swift-generate swift-build

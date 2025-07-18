@@ -82,28 +82,14 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: momentum-binary
-        path: MomentumApp/Resources/
+        path: momentum/target/release/
         
-    - name: Make binary executable
-      run: chmod +x MomentumApp/Resources/momentum
+    - name: Copy Rust binary to Resources
+      run: make copy-rust-binary
         
     - name: Build Swift app  
-      run: |
-        # Don't run rust-build since we're using the artifact
-        mkdir -p MomentumApp/Resources
-        chmod +x MomentumApp/Resources/momentum
-        xcodebuild -workspace Momentum.xcworkspace \
-          -scheme MomentumApp \
-          -configuration Debug \
-          build \
-          -skipMacroValidation
+      run: make swift-build-only
           
     - name: Run Swift tests
-      run: |
-        # Don't run rust-build since we're using the artifact
-        xcodebuild -workspace Momentum.xcworkspace \
-          -scheme MomentumApp \
-          -configuration Debug \
-          test \
-          -skipMacroValidation
+      run: make swift-test-only
 
