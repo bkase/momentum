@@ -9,7 +9,7 @@ on:
 jobs:
   rust:
     name: Rust Build and Test
-    runs-on: macos-latest
+    runs-on: macos-14
     
     steps:
     - uses: actions/checkout@v4
@@ -74,7 +74,7 @@ jobs:
   swift:
     name: Swift Build and Test
     needs: rust
-    runs-on: macos-latest
+    runs-on: macos-14
     
     steps:
     - uses: actions/checkout@v4
