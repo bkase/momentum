@@ -9,7 +9,7 @@ Alert modals are lazy design. All errors should be presented inline, and we don'
 Replace all alert modals and confirmation dialogs with inline error messages and direct actions. This includes removing error alerts, the "stop session" confirmation, and the "reset app" confirmation. All errors will be displayed inline within the relevant views, and confirmation actions will execute immediately without dialogs.
 
 ## Implementation Plan
-- [ ] Remove alert state and confirmation dialog state from AppFeature+State.swift
+- [x] Remove alert state and confirmation dialog state from AppFeature+State.swift
 - [ ] Remove alert presentation modifier from ContentView.swift
 - [ ] Add error state properties to each feature (Preparation, ActiveSession, Reflection, Analysis)
 - [ ] Remove all alert-related actions and cases from AppFeature.swift

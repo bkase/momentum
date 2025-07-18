@@ -12,24 +12,9 @@ extension AppFeature {
         @Shared(.analysisHistory) var analysisHistory: [AnalysisResult] = []
         
         @Presents var destination: Destination.State?
-        @Presents var alert: AlertState<Alert>?
-        @Presents var confirmationDialog: ConfirmationDialogState<ConfirmationDialog>?
         
         var isLoading = false
         var reflectionPath: String?
-        
-        enum Alert: Equatable {
-            case dismiss
-            case retry
-            case openSettings
-            case contactSupport
-        }
-        
-        enum ConfirmationDialog: Equatable {
-            case confirmStopSession
-            case confirmReset
-            case cancel
-        }
         
         init() {
             // Initialize destination based on shared state
@@ -53,8 +38,6 @@ extension AppFeature {
     @CasePathable
     enum Action: Equatable {
         case destination(PresentationAction<Destination.Action>)
-        case alert(PresentationAction<State.Alert>)
-        case confirmationDialog(PresentationAction<State.ConfirmationDialog>)
         case onAppear
         case resetToIdle
         case cancelCurrentOperation
