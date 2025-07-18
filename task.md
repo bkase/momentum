@@ -32,12 +32,12 @@ Refactor AppFeature from a centralized orchestrator into a pure coordinator by i
 - [x] User test: Stop an active session and verify reflection file is created
 
 **Phase 3: Refactor `analyze` logic into ReflectionFeature**
-- [ ] Add delegate action enum to ReflectionFeature with .analysisRequested(analysisResult: AnalysisResult) and .analysisFailedToStart(AppError) cases (MomentumApp/Sources/ReflectionFeature.swift)
-- [ ] Add @Dependency(\.rustCoreClient) to ReflectionFeature and move analyze effect logic from AppFeature (MomentumApp/Sources/ReflectionFeature.swift)
-- [ ] Update AppFeature to handle .destination(.presented(.reflection(.delegate(...)))) actions (MomentumApp/Sources/AppFeature.swift)
-- [ ] Remove obsolete analyze-related actions from AppFeature.Action (MomentumApp/Sources/AppFeature+State.swift)
-- [ ] Create ReflectionFeatureTests.swift to test analyze flow
-- [ ] Update relevant AppFeature tests
+- [x] Add delegate action enum to ReflectionFeature with .analysisRequested(analysisResult: AnalysisResult) and .analysisFailedToStart(AppError) cases (MomentumApp/Sources/ReflectionFeature.swift)
+- [x] Add @Dependency(\.rustCoreClient) to ReflectionFeature and move analyze effect logic from AppFeature (MomentumApp/Sources/ReflectionFeature.swift)
+- [x] Update AppFeature to handle .destination(.presented(.reflection(.delegate(...)))) actions (MomentumApp/Sources/AppFeature.swift)
+- [x] Remove obsolete analyze-related actions from AppFeature.Action (MomentumApp/Sources/AppFeature+State.swift)
+- [x] Create ReflectionFeatureTests.swift to test analyze flow
+- [x] Update relevant AppFeature tests
 - [ ] User test: Complete a reflection and analyze it to see results
 
 **Phase 4: Project restructuring and cleanup**

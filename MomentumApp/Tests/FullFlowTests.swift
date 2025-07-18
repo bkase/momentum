@@ -117,18 +117,15 @@ struct FullFlowTests {
         }
         
         // 3. Analyze reflection
-        await store.send(.destination(.presented(.reflection(.analyzeButtonTapped))))
-        
-        await store.receive(.analyzeReflection(path: "/tmp/test-reflection.md")) {
+        await store.send(.destination(.presented(.reflection(.analyzeButtonTapped)))) {
             $0.isLoading = true
-            $0.alert = nil
         }
         
-        await store.receive(.rustCoreResponse(.success(.analysisComplete(AnalysisResult(
+        await store.receive(.destination(.presented(.reflection(.delegate(.analysisRequested(analysisResult: AnalysisResult(
             summary: "Test analysis summary",
             suggestion: "Test suggestion",
             reasoning: "Test reasoning"
-        ))))) {
+        ))))))) {
             $0.isLoading = false
             $0.reflectionPath = nil
             // The reducer automatically appends to analysisHistory, so we don't do it here

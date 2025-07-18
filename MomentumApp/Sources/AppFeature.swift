@@ -82,9 +82,22 @@ struct AppFeature {
                 return .none
                 
             case .destination(.presented(.reflection(.analyzeButtonTapped))):
-                if let path = state.reflectionPath {
-                    return .send(.analyzeReflection(path: path))
-                }
+                // ReflectionFeature will handle the analysis
+                state.isLoading = true
+                return .none
+                
+            case let .destination(.presented(.reflection(.delegate(.analysisRequested(analysisResult))))):
+                // Handle successful analysis from ReflectionFeature
+                state.isLoading = false
+                state.reflectionPath = nil
+                state.$analysisHistory.withLock { $0.append(analysisResult) }
+                state.destination = .analysis(AnalysisFeature.State(analysis: analysisResult))
+                return .none
+                
+            case let .destination(.presented(.reflection(.delegate(.analysisFailedToStart(error))))):
+                // Handle failed analysis from ReflectionFeature
+                state.isLoading = false
+                state.alert = .error(error)
                 return .none
                 
             case .destination(.presented(.reflection(.cancelButtonTapped))):
@@ -112,21 +125,7 @@ struct AppFeature {
                 
 
 
-            case let .analyzeReflection(path):
-                return Self.analyzeReflectionEffect(
-                    state: &state,
-                    path: path,
-                    rustCoreClient: rustCoreClient
-                )
 
-            case let .rustCoreResponse(.success(response)):
-                Self.handleRustCoreSuccess(state: &state, response: response)
-                return .none
-
-            case let .rustCoreResponse(.failure(error)):
-                state.isLoading = false
-                state.alert = .error(error)
-                return .none
 
             case .resetToIdle:
                 state.$sessionData.withLock { $0 = nil }

@@ -36,11 +36,15 @@ struct SessionManagementTests {
         store.exhaustivity = .off
         
         // Analyze reflection
-        await store.send(.destination(.presented(.reflection(.analyzeButtonTapped))))
-        
-        await store.receive(.analyzeReflection(path: "/tmp/test-reflection.md")) {
+        await store.send(.destination(.presented(.reflection(.analyzeButtonTapped)))) {
             $0.isLoading = true
-            $0.alert = nil
+        }
+        
+        // Receive delegate response from ReflectionFeature
+        await store.receive(.destination(.presented(.reflection(.delegate(.analysisRequested(analysisResult: AnalysisResult.mock)))))) {
+            $0.isLoading = false
+            $0.reflectionPath = nil
+            $0.destination = .analysis(AnalysisFeature.State(analysis: AnalysisResult.mock))
         }
     }
     
