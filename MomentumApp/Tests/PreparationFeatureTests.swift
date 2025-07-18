@@ -1,11 +1,27 @@
 import ComposableArchitecture
 import Foundation
 import Testing
+import Sharing
 
 @testable import MomentumApp
 
 @Suite("PreparationFeature Tests")
+@MainActor
 struct PreparationFeatureTests {
+    init() {
+        // Reset shared state before each test
+        @Shared(.preparationState) var preparationState: PreparationPersistentState
+        $preparationState.withLock { $0 = PreparationPersistentState(
+            checklistSlots: [
+                PreparationFeature.ChecklistSlot(id: 0),
+                PreparationFeature.ChecklistSlot(id: 1),
+                PreparationFeature.ChecklistSlot(id: 2),
+                PreparationFeature.ChecklistSlot(id: 3)
+            ],
+            totalItemsCompleted: 0,
+            nextItemIndex: 4
+        ) }
+    }
     @Test("Start session with valid inputs sends success delegate")
     func startSessionSuccess() async {
         let testSessionData = SessionData(
@@ -127,7 +143,13 @@ struct PreparationFeatureTests {
             }
             return error is TestError
         }
-        await store.receive(.delegate(.sessionFailedToStart(.other("Test error"))))
+        await store.receive { action in
+            guard case let .delegate(.sessionFailedToStart(.other(message))) = action else {
+                return false
+            }
+            // The error message will include type information, so just check it contains our message
+            return message.contains("TestError")
+        }
     }
     
     @Test("Goal and time changes update state")

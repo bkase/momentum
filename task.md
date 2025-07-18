@@ -46,8 +46,8 @@ Refactor AppFeature from a centralized orchestrator into a pure coordinator by i
 - [x] Review and minimize AppFeature+Effects.swift - should only contain app launch session check [No Effects file exists, AppFeature is already clean]
 - [x] Clean up AppFeature.swift to be a simple state machine responding to delegate actions [Already clean]
 - [x] Delete all obsolete action cases from AppFeature.Action [No obsolete actions found]
-- [ ] Run all tests to ensure nothing broke: `xcodebuild -workspace Momentum.xcworkspace -scheme MomentumApp test -skipMacroValidation`
-- [ ] Build the app: `xcodebuild -workspace Momentum.xcworkspace -scheme MomentumApp build -skipMacroValidation`
+- [x] Run all tests to ensure nothing broke: `xcodebuild -workspace Momentum.xcworkspace -scheme MomentumApp test -skipMacroValidation`
+- [x] Build the app: `xcodebuild -workspace Momentum.xcworkspace -scheme MomentumApp build -skipMacroValidation`
 
 ## Notes
 [Implementation notes]
