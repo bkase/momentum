@@ -106,6 +106,7 @@ The system uses `session.json` as the single source of truth for active sessions
 - **Maximum file length**: 200 lines per file
 - **Refactoring requirement**: When any code file exceeds 200 lines, it must be refactored into multiple smaller files
 - **Benefits**: Improves readability, maintainability, and makes code reviews easier
+- **Always keep files to 200 lines max**
 
 ### Testing Strategy
 - **Swift Tests**: Use TCA's `TestStore` with mocked `RustCoreClient` dependency
@@ -212,4 +213,3 @@ When moving types between files/extensions in Swift:
 - Move shared types (ProcessResult, SessionData, etc.) to top level
 - Avoid nested types in extensions when used across files
 - Use explicit module imports if needed
-```

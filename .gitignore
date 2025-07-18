@@ -38,3 +38,4 @@ Cargo.lock
 
 # Environment
 .env
+/todos/worktrees/
