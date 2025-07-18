@@ -19,9 +19,9 @@ jobs:
         curl https://mise.run | sh
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         
-    - name: Install Rust toolchain via mise
+    - name: Install tools via mise
       run: |
-        mise install rust
+        mise install
         eval "$(mise activate bash)"
         rustc --version
         rustup component add rustfmt clippy
@@ -38,28 +38,13 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         
     - name: Run Rust tests
-      run: |
-        eval "$(mise activate bash)"
-        cd momentum
-        cargo test
+      run: make ci-rust-test
         
-    - name: Check Rust formatting
-      run: |
-        eval "$(mise activate bash)"
-        cd momentum
-        cargo fmt -- --check
-        
-    - name: Run Clippy
-      run: |
-        eval "$(mise activate bash)"
-        cd momentum
-        cargo clippy -- -D warnings
+    - name: Run Rust linting
+      run: make ci-rust-lint
         
     - name: Build Rust release binary
-      run: |
-        eval "$(mise activate bash)"
-        cd momentum
-        cargo build --release
+      run: make ci-rust-build
         
     - name: Verify binary exists
       run: |
@@ -84,16 +69,14 @@ jobs:
         curl https://mise.run | sh
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         
-    - name: Install Tuist via mise
+    - name: Install tools via mise
       run: |
-        mise install tuist
+        mise install
         eval "$(mise activate bash)"
         tuist version
         
     - name: Generate Xcode project
-      run: |
-        eval "$(mise activate bash)"
-        tuist generate
+      run: make ci-swift-generate
         
     - name: Download Rust binary
       uses: actions/download-artifact@v4
@@ -105,18 +88,8 @@ jobs:
       run: chmod +x MomentumApp/Resources/momentum
         
     - name: Build Swift app
-      run: |
-        xcodebuild -workspace Momentum.xcworkspace \
-          -scheme MomentumApp \
-          -configuration Debug \
-          build \
-          -skipMacroValidation
+      run: make ci-swift-build
           
     - name: Run Swift tests
-      run: |
-        xcodebuild -workspace Momentum.xcworkspace \
-          -scheme MomentumApp \
-          -configuration Debug \
-          test \
-          -skipMacroValidation
+      run: make ci-swift-test
 
