@@ -115,14 +115,14 @@ Respond in JSON format with these exact fields:
 
         // Use zsh -c to ensure user's shell configuration is loaded
         // Set a timeout of 90 seconds for the claude CLI
-        // Escape the prompt for shell - replace ' with '\'' 
+        // Escape the prompt for shell - replace ' with '\''
         let escaped_prompt = prompt.replace("'", "'\"'\"'");
         let output = tokio::time::timeout(
             std::time::Duration::from_secs(90),
             tokio::process::Command::new("zsh")
                 .arg("-c")
                 .arg(format!("claude -p '{escaped_prompt}'"))
-                .output()
+                .output(),
         )
         .await
         .map_err(|_| anyhow::anyhow!("claude CLI timed out after 90 seconds"))?
@@ -145,12 +145,12 @@ Respond in JSON format with these exact fields:
         }
 
         let stdout = String::from_utf8_lossy(&output.stdout);
-        
+
         // The claude CLI output might contain extra text before/after the JSON
         // Try to extract JSON object from the output
         let json_start = stdout.find('{');
         let json_end = stdout.rfind('}');
-        
+
         match (json_start, json_end) {
             (Some(start), Some(end)) if start <= end => {
                 let json_str = &stdout[start..=end];
