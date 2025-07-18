@@ -4,29 +4,6 @@ import Foundation
 extension AppFeature {
     // MARK: - Effect Helpers
     
-    static func stopSessionEffect(
-        state: inout State,
-        rustCoreClient: RustCoreClient
-    ) -> Effect<Action> {
-        guard state.sessionData != nil else {
-            state.alert = .noActiveSession()
-            return .none
-        }
-
-        state.isLoading = true
-        state.alert = nil
-
-        return .run { send in
-            await send(
-                .rustCoreResponse(
-                    await TaskResult {
-                        try await .sessionStopped(reflectionPath: rustCoreClient.stop())
-                    }
-                )
-            )
-        }
-        .cancellable(id: CancelID.rustOperation)
-    }
     
     static func analyzeReflectionEffect(
         state: inout State,
@@ -55,11 +32,6 @@ extension AppFeature {
         state.isLoading = false
 
         switch response {
-        case let .sessionStopped(reflectionPath):
-            state.$sessionData.withLock { $0 = nil }
-            state.reflectionPath = reflectionPath
-            state.destination = .reflection(ReflectionFeature.State(reflectionPath: reflectionPath))
-
         case let .analysisComplete(analysis):
             state.reflectionPath = nil
             state.$analysisHistory.withLock { $0.append(analysis) }

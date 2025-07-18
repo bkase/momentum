@@ -23,12 +23,12 @@ Refactor AppFeature from a centralized orchestrator into a pure coordinator by i
 - [x] User test: Start a new session and verify it works as before
 
 **Phase 2: Refactor `stop` logic into ActiveSessionFeature**
-- [ ] Add delegate action enum to ActiveSessionFeature with .sessionStopped(reflectionPath: String) and .sessionFailedToStop(AppError) cases (MomentumApp/Sources/ActiveSessionFeature.swift)
-- [ ] Add @Dependency(\.rustCoreClient) to ActiveSessionFeature and move stop session effect logic from AppFeature (MomentumApp/Sources/ActiveSessionFeature.swift)
-- [ ] Update AppFeature to handle .destination(.presented(.activeSession(.delegate(...)))) actions (MomentumApp/Sources/AppFeature.swift)
-- [ ] Remove obsolete stop-related actions from AppFeature.Action (MomentumApp/Sources/AppFeature+State.swift)
-- [ ] Create ActiveSessionFeatureTests.swift to test stop session flow
-- [ ] Update SessionManagementTests for stop functionality
+- [x] Add delegate action enum to ActiveSessionFeature with .sessionStopped(reflectionPath: String) and .sessionFailedToStop(AppError) cases (MomentumApp/Sources/ActiveSessionFeature.swift)
+- [x] Add @Dependency(\.rustCoreClient) to ActiveSessionFeature and move stop session effect logic from AppFeature (MomentumApp/Sources/ActiveSessionFeature.swift)
+- [x] Update AppFeature to handle .destination(.presented(.activeSession(.delegate(...)))) actions (MomentumApp/Sources/AppFeature.swift)
+- [x] Remove obsolete stop-related actions from AppFeature.Action (MomentumApp/Sources/AppFeature+State.swift)
+- [x] Create ActiveSessionFeatureTests.swift to test stop session flow
+- [x] Update SessionManagementTests for stop functionality
 - [ ] User test: Stop an active session and verify reflection file is created
 
 **Phase 3: Refactor `analyze` logic into ReflectionFeature**

@@ -67,6 +67,20 @@ struct AppFeature {
                 state.confirmationDialog = .stopSession()
                 return .none
                 
+            case let .destination(.presented(.activeSession(.delegate(.sessionStopped(reflectionPath))))):
+                // Handle successful session stop from ActiveSessionFeature
+                state.isLoading = false
+                state.$sessionData.withLock { $0 = nil }
+                state.reflectionPath = reflectionPath
+                state.destination = .reflection(ReflectionFeature.State(reflectionPath: reflectionPath))
+                return .none
+                
+            case let .destination(.presented(.activeSession(.delegate(.sessionFailedToStop(error))))):
+                // Handle failed session stop from ActiveSessionFeature
+                state.isLoading = false
+                state.alert = .error(error)
+                return .none
+                
             case .destination(.presented(.reflection(.analyzeButtonTapped))):
                 if let path = state.reflectionPath {
                     return .send(.analyzeReflection(path: path))
@@ -97,11 +111,6 @@ struct AppFeature {
                 return .none
                 
 
-            case .stopSession:
-                return Self.stopSessionEffect(
-                    state: &state,
-                    rustCoreClient: rustCoreClient
-                )
 
             case let .analyzeReflection(path):
                 return Self.analyzeReflectionEffect(
@@ -160,7 +169,11 @@ struct AppFeature {
                 
             case .confirmationDialog(.presented(.confirmStopSession)):
                 state.confirmationDialog = nil
-                return .send(.stopSession)
+                if case .activeSession = state.destination {
+                    state.isLoading = true
+                    return .send(.destination(.presented(.activeSession(.stopButtonTapped))))
+                }
+                return .none
                 
             case .confirmationDialog(.presented(.confirmReset)):
                 state.confirmationDialog = nil

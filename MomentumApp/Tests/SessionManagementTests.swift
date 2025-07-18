@@ -44,6 +44,53 @@ struct SessionManagementTests {
         }
     }
     
+    @Test("Stop Active Session")
+    func stopActiveSession() async {
+        let sessionData = SessionData.mock()
+        
+        // Set up shared state before creating the store
+        @Shared(.sessionData) var sharedSessionData: SessionData?
+        $sharedSessionData.withLock { $0 = sessionData }
+        
+        let store = TestStore(
+            initialState: AppFeature.State(
+                destination: .activeSession(ActiveSessionFeature.State(
+                    goal: sessionData.goal,
+                    startTime: sessionData.startDate,
+                    expectedMinutes: sessionData.expectedMinutes
+                ))
+            )
+        ) {
+            AppFeature()
+        } withDependencies: {
+            $0.rustCoreClient.stop = {
+                "/tmp/test-reflection.md"
+            }
+        }
+        store.exhaustivity = .off
+        
+        // Request to stop session
+        await store.send(.destination(.presented(.activeSession(.stopButtonTapped)))) {
+            $0.confirmationDialog = .stopSession()
+        }
+        
+        // Confirm stop
+        await store.send(.confirmationDialog(.presented(.confirmStopSession))) {
+            $0.confirmationDialog = nil
+            $0.isLoading = true
+        }
+        
+        // Forward the stop action to ActiveSessionFeature
+        await store.receive(.destination(.presented(.activeSession(.stopButtonTapped))))
+        
+        // Receive delegate response from ActiveSessionFeature
+        await store.receive(.destination(.presented(.activeSession(.delegate(.sessionStopped(reflectionPath: "/tmp/test-reflection.md")))))) {
+            $0.isLoading = false
+            $0.reflectionPath = "/tmp/test-reflection.md"
+            $0.destination = .reflection(ReflectionFeature.State(reflectionPath: "/tmp/test-reflection.md"))
+        }
+    }
+    
     @Test("Reset to Idle")
     func resetToIdle() async {
         let sessionData = SessionData.mock()
