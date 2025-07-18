@@ -52,18 +52,50 @@ let project = Project(
             scripts: [
                 .pre(
                     script: """
-                    # Build Rust CLI
+                    #!/bin/bash
+                    set -e
+                    
                     echo "Building Rust CLI..."
                     cd "$SRCROOT/momentum"
+                    
+                    # Setup mise environment if available
+                    if command -v mise &> /dev/null; then
+                        eval "$(mise activate bash)"
+                    fi
+                    
+                    # Check if cargo is available
+                    if ! command -v cargo &> /dev/null; then
+                        echo "Error: cargo not found. Please install Rust."
+                        exit 1
+                    fi
+                    
+                    # Build the Rust binary
                     cargo build --release
                     
                     # Ensure Resources directory exists
                     mkdir -p "$SRCROOT/MomentumApp/Resources"
                     
                     # Copy binary to resources
-                    cp "target/release/momentum" "$SRCROOT/MomentumApp/Resources/"
+                    echo "Copying momentum binary to Resources..."
+                    cp -f "target/release/momentum" "$SRCROOT/MomentumApp/Resources/momentum"
+                    chmod +x "$SRCROOT/MomentumApp/Resources/momentum"
+                    
+                    # Verify the binary was copied
+                    if [ ! -f "$SRCROOT/MomentumApp/Resources/momentum" ]; then
+                        echo "Error: Failed to copy momentum binary"
+                        exit 1
+                    fi
+                    
+                    echo "Rust CLI build complete"
                     """,
                     name: "Build Rust CLI",
+                    inputPaths: [
+                        "$(SRCROOT)/momentum/Cargo.toml",
+                        "$(SRCROOT)/momentum/src"
+                    ],
+                    outputPaths: [
+                        "$(SRCROOT)/MomentumApp/Resources/momentum"
+                    ],
                     basedOnDependencyAnalysis: false
                 )
             ],
