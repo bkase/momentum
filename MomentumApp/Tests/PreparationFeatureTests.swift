@@ -101,6 +101,7 @@ struct PreparationFeatureTests {
     
     @Test("Start session with RustCoreError shows error")
     func startSessionRustCoreError() async {
+        let clock = TestClock()
         let store = await TestStore(
             initialState: PreparationFeature.State(
                 goal: "Test goal",
@@ -112,23 +113,28 @@ struct PreparationFeatureTests {
             $0.rustCoreClient.start = { _, _ in
                 throw RustCoreError.binaryNotFound
             }
+            $0.continuousClock = clock
         }
         
-        await store.send(.startButtonTapped) {
-            $0.operationError = nil
-        }
+        await store.send(.startButtonTapped)
         await store.receive(.startSessionResponse(.failure(RustCoreError.binaryNotFound))) {
             $0.operationError = "Momentum CLI binary not found in app bundle"
+        }
+        
+        // Advance clock to trigger error dismissal
+        await clock.advance(by: .seconds(5))
+        await store.receive(.clearOperationError) {
+            $0.operationError = nil
         }
     }
     
     @Test("Start session with generic error shows error")
     func startSessionGenericError() async {
-        struct TestError: Error {
-            let message = "Test error"
-            var localizedDescription: String { message }
+        struct TestError: Error, LocalizedError, Equatable {
+            var errorDescription: String? { "Test error" }
         }
         
+        let clock = TestClock()
         let store = await TestStore(
             initialState: PreparationFeature.State(
                 goal: "Test goal",
@@ -140,18 +146,18 @@ struct PreparationFeatureTests {
             $0.rustCoreClient.start = { _, _ in
                 throw TestError()
             }
+            $0.continuousClock = clock
         }
         
-        await store.send(.startButtonTapped) {
-            $0.operationError = nil
-        }
-        await store.receive { action in
-            guard case let .startSessionResponse(.failure(error)) = action else {
-                return false
-            }
-            return error is TestError
-        } assert: {
+        await store.send(.startButtonTapped)
+        await store.receive(.startSessionResponse(.failure(TestError()))) {
             $0.operationError = "Test error"
+        }
+        
+        // Advance clock to trigger error dismissal
+        await clock.advance(by: .seconds(5))
+        await store.receive(.clearOperationError) {
+            $0.operationError = nil
         }
     }
     

@@ -1,6 +1,6 @@
 # Remove the alerts
 **Status:** AwaitingCommit
-**Agent PID:** 82468
+**Agent PID:** 7871
 
 ## Original Todo
 Alert modals are lazy design. All errors should be presented inline, and we don't need "are you sure" dialogs, just do it.
@@ -20,6 +20,7 @@ Replace all alert modals and confirmation dialogs with inline error messages and
 - [x] Remove AppFeature+Navigation.swift alert factory methods
 - [x] Add smart error dismissal: validation errors persist until fixed, operation errors auto-dismiss after 5 seconds
 - [x] Style errors consistently using red text below relevant UI elements
+- [x] Fix failing tests to match new inline error behavior with auto-dismissal
 
 ## Notes
 [Implementation notes]
