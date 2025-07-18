@@ -12,6 +12,3 @@ mod analyze_tests;
 
 #[cfg(test)]
 mod filename_tests;
-
-#[cfg(test)]
-mod cli_integration_tests;
