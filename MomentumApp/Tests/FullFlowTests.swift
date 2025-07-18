@@ -74,19 +74,16 @@ struct FullFlowTests {
         }
         
         // Since we can't complete all 10 items easily in the test, 
-        // let's test the flow by calling startSession directly
-        // 1. Start session
-        await store.send(.startSession(goal: "Full Flow Test", minutes: 20)) {
-            $0.isLoading = true
-            $0.alert = nil
-        }
-        
-        await store.receive(.rustCoreResponse(.success(.sessionStarted(SessionData(
+        // let's test the flow by simulating the delegate from PreparationFeature
+        // 1. Start session via delegate
+        let sessionData = SessionData(
             goal: "Full Flow Test",
             startTime: fixedTime,
             timeExpected: 20,  // 20 minutes
             reflectionFilePath: nil
-        ))))) {
+        )
+        
+        await store.send(.destination(.presented(.preparation(.delegate(.sessionStarted(sessionData)))))) {
             $0.isLoading = false
             // Don't manually update shared state - the reducer handles it
             $0.reflectionPath = nil

@@ -62,11 +62,12 @@ extension AlertState where Action == AppFeature.State.Alert {
     
     static func rustCoreError(_ error: RustCoreError) -> Self {
         let appError = AppError.rustCore(error)
-        return AlertState {
+        return AlertState<AppFeature.State.Alert> {
             TextState(appError.errorDescription ?? "Error")
         } actions: {
             // Check if error is related to API key
-            if case let .commandFailed(_, stderr) = error,
+            if case let .commandFailed(_, _, stderr) = error,
+               let stderr = stderr,
                stderr.contains("ANTHROPIC_API_KEY") {
                 ButtonState(action: .openSettings) {
                     TextState("Open Settings")

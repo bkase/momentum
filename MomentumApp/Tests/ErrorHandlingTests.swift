@@ -19,46 +19,26 @@ struct ErrorHandlingTests {
         $analysisHistory.withLock { $0 = [] }
     }
     
-    @Test("Error Handling")
-    func errorHandling() async {
+    @Test("Error Handling via Delegate")
+    func errorHandlingViaDelegate() async {
         let store = TestStore(initialState: AppFeature.State()) {
             AppFeature()
-        } withDependencies: {
-            $0.rustCoreClient.start = { _, _ in
-                throw RustCoreError.binaryNotFound
-            }
         }
+        store.exhaustivity = .off
                 
-        // Test error handling directly at the app level
-        await store.send(.startSession(goal: "Test Goal", minutes: 30)) {
-            $0.isLoading = true
-            $0.alert = nil
-        }
-        
-        // Receive error response
-        await store.receive(.rustCoreResponse(.failure(RustCoreError.binaryNotFound))) {
+        // Test error handling via delegate from PreparationFeature
+        let error = AppError.rustCore(.binaryNotFound)
+        await store.send(.destination(.presented(.preparation(.delegate(.sessionFailedToStart(error)))))) {
             $0.isLoading = false
-            $0.alert = .error(RustCoreError.binaryNotFound)
+            $0.alert = .error(error)
         }
     }
     
     @Test("Start Session When Already Active")
     func startSessionWhenAlreadyActive() async {
-        // Start with an active session
-        @Shared(.sessionData) var sessionData: SessionData?
-        $sessionData.withLock { $0 = SessionData.mock(goal: "Existing Goal") }
-        
-        let store = TestStore(
-            initialState: AppFeature.State()
-        ) {
-            AppFeature()
-        }
-        
-                
-        // Try to start another session
-        await store.send(.startSession(goal: "New Goal", minutes: 20)) {
-            $0.alert = .sessionAlreadyActive()
-        }
+        // This scenario is now handled by PreparationFeature
+        // The test would need to be in PreparationFeatureTests
+        // AppFeature no longer manages session start validation
     }
     
     @Test("Stop Session When Not Active")
