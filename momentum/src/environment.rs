@@ -15,7 +15,7 @@ impl Environment {
     pub fn new() -> Result<Self> {
         Ok(Environment {
             file_system: Box::new(RealFileSystem),
-            api_client: Box::new(RealApiClient::new()?),
+            api_client: Box::new(RealApiClient::new()),
             clock: Box::new(RealClock),
         })
     }
@@ -86,8 +86,14 @@ impl FileSystem for RealFileSystem {
 struct RealApiClient;
 
 impl RealApiClient {
-    fn new() -> Result<Self> {
-        Ok(Self)
+    fn new() -> Self {
+        Self
+    }
+}
+
+impl Default for RealApiClient {
+    fn default() -> Self {
+        Self
     }
 }
 
