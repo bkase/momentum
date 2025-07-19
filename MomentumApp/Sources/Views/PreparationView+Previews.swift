@@ -1,35 +1,16 @@
 import SwiftUI
 import ComposableArchitecture
-import Sharing
 
 // Helper to create states with specific checklist configurations for previews
 extension PreparationFeature.State {
     static func preview(
         goal: String = "",
         timeInput: String = "",
-        checklistItems: [(text: String, isCompleted: Bool)] = [],
-        totalItemsCompleted: Int? = nil,
-        nextItemIndex: Int? = nil
+        checklistItems: [(id: String, text: String, on: Bool)] = []
     ) -> Self {
-        @Shared(.preparationState) var sharedState = PreparationPersistentState.initial
-        
-        // Reset and configure the shared state for preview
-        $sharedState.withLock { state in
-            state.checklistSlots = (0..<4).map { PreparationFeature.ChecklistSlot(id: $0) }
-            
-            for (index, item) in checklistItems.prefix(4).enumerated() {
-                state.checklistSlots[index].item = ChecklistItem(
-                    id: "\(index)",
-                    text: item.text,
-                    isCompleted: item.isCompleted
-                )
-            }
-            
-            state.totalItemsCompleted = totalItemsCompleted ?? checklistItems.filter { $0.isCompleted }.count
-            state.nextItemIndex = nextItemIndex ?? max(4, checklistItems.count)
-        }
-        
-        return Self(goal: goal, timeInput: timeInput)
+        var state = Self(goal: goal, timeInput: timeInput)
+        state.checklistItems = checklistItems.map { ChecklistItem(id: $0.id, text: $0.text, on: $0.on) }
+        return state
     }
 }
 
@@ -77,10 +58,10 @@ extension PreparationFeature.State {
                 goal: "Write a comprehensive report on Q4 performance",
                 timeInput: "45",
                 checklistItems: [
-                    ("Rested", false),
-                    ("Not hungry", false),
-                    ("Bathroom break", false),
-                    ("Phone on silent", false)
+                    ("check-rested", "Rested", false),
+                    ("check-hungry", "Not hungry", false),
+                    ("check-bathroom", "Bathroom break", false),
+                    ("check-phone", "Phone on silent", false)
                 ]
             )
         ) {
@@ -97,10 +78,10 @@ extension PreparationFeature.State {
                 goal: "Write a comprehensive report on Q4 performance",
                 timeInput: "45",
                 checklistItems: [
-                    ("Rested", true),
-                    ("Not hungry", true),
-                    ("Bathroom break", false),
-                    ("Phone on silent", false)
+                    ("check-rested", "Rested", true),
+                    ("check-hungry", "Not hungry", true),
+                    ("check-bathroom", "Bathroom break", false),
+                    ("check-phone", "Phone on silent", false)
                 ]
             )
         ) {
@@ -117,13 +98,16 @@ extension PreparationFeature.State {
                 goal: "Write a comprehensive report on Q4 performance",
                 timeInput: "45",
                 checklistItems: [
-                    ("Rested", true),
-                    ("Not hungry", true),
-                    ("Distractions closed", true),
-                    ("Mind centered", true)
-                ],
-                totalItemsCompleted: 10,
-                nextItemIndex: 10
+                    ("check-rested", "Rested", true),
+                    ("check-hungry", "Not hungry", true),
+                    ("check-distractions", "Distractions closed", true),
+                    ("check-mind", "Mind centered", true),
+                    ("check-water", "Water bottle filled", true),
+                    ("check-playlist", "Choose a good playlist", true),
+                    ("check-disturb", "Tell anyone not to disturb", true),
+                    ("check-materials", "Materials in place", true),
+                    ("check-time", "Enough time set aside", true)
+                ]
             )
         ) {
             PreparationFeature()
@@ -139,13 +123,16 @@ extension PreparationFeature.State {
                 goal: "Write a comprehensive report on Q4 performance",
                 timeInput: "0",
                 checklistItems: [
-                    ("Rested", true),
-                    ("Not hungry", true),
-                    ("Bathroom break", true),
-                    ("Phone on silent", true)
-                ],
-                totalItemsCompleted: 10,
-                nextItemIndex: 10
+                    ("check-rested", "Rested", true),
+                    ("check-hungry", "Not hungry", true),
+                    ("check-bathroom", "Bathroom break", true),
+                    ("check-phone", "Phone on silent", true),
+                    ("check-water", "Water bottle filled", true),
+                    ("check-playlist", "Choose a good playlist", true),
+                    ("check-disturb", "Tell anyone not to disturb", true),
+                    ("check-materials", "Materials in place", true),
+                    ("check-time", "Enough time set aside", true)
+                ]
             )
         ) {
             PreparationFeature()

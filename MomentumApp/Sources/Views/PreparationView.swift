@@ -88,7 +88,9 @@ struct PreparationView: View {
                 .tracking(2)
             
             if store.isLoadingChecklist {
-                ProgressIndicatorView()
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle())
+                    .scaleEffect(0.8)
                     .frame(height: 36)
             } else if !store.checklistItems.isEmpty {
                 VStack(spacing: 4) {
