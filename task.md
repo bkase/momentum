@@ -30,7 +30,7 @@ I'll fix the UI sizing glitches by addressing the root causes: inconsistent cont
 - [x] Automated test: Verify views render without clipping by checking view hierarchy
 - [x] Fix header clipping by adjusting top padding (discovered during testing)
 - [x] Implement dynamic height sizing based on content (discovered during testing)
-- [ ] User test: Open each view in the menu bar app and verify no background color bleeding or header clipping
+- [x] User test: Open each view in the menu bar app and verify no background color bleeding or header clipping
 
 ## Notes
 
