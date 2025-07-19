@@ -1,6 +1,6 @@
 # Better handling of application state
 
-**Status:** InProgress
+**Status:** AwaitingCommit
 **Agent PID:** 46030
 
 ## Original Todo
