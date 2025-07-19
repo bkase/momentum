@@ -119,7 +119,7 @@ struct PreparationView: View {
     }
     
     private var buttonAndProgress: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             Button("Enter Sanctuary") {
                 startSession()
             }

@@ -6,6 +6,11 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: 0) {
+            // Fixed spacer to prevent header clipping
+            Color.clear
+                .frame(height: 16)
+                .background(Color.canvasBackground)
+            
             headerView
                 .background(Color.canvasBackground)
             
@@ -59,8 +64,8 @@ struct ContentView: View {
             .help("Quit Momentum")
         }
         .padding(.horizontal, .momentumContainerPaddingHorizontal)
-        .padding(.top, 20)
-        .padding(.bottom, 16)
+        .padding(.top, 12)
+        .padding(.bottom, 12)
     }
     
     @ViewBuilder

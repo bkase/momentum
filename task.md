@@ -35,3 +35,4 @@ I'll fix the UI sizing glitches by addressing the root causes: inconsistent cont
 
 - Removed fixed height (156px) from checklist container to allow natural sizing
 - User noted we may need to add this back depending on how it looks
+- Added 8px spacer above header to prevent clipping by window chrome
