@@ -246,9 +246,10 @@ NEVER mark a task as done if tests are failing!
 
 The project uses automatic code formatting to maintain consistent style:
 - **Rust**: Uses `cargo fmt` with default Rust formatting rules
-- **Swift**: Uses `swiftformat` with custom rules in `.swiftformat`
+- **Swift**: Uses Apple's `swift-format` with configuration in `.swift-format`
 - Run `make format` before committing to format all code
 - CI will fail if code is not properly formatted
+- swift-format is managed via Swift Package Manager in the BuildTools directory
 
 ## Environment Setup
 
