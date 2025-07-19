@@ -4,6 +4,23 @@ use anyhow::Result;
 use chrono::Local;
 use std::path::PathBuf;
 
+/// Initialize a fresh checklist from the template
+fn create_checklist_from_template() -> Result<ChecklistState> {
+    let template_json = Environment::get_checklist_template();
+    let templates: Vec<ChecklistTemplate> = serde_json::from_str(template_json)?;
+
+    let items: Vec<ChecklistItem> = templates
+        .into_iter()
+        .map(|t| ChecklistItem {
+            id: t.id,
+            text: t.text,
+            on: false,
+        })
+        .collect();
+
+    Ok(ChecklistState { items })
+}
+
 /// Sanitize a goal string for use in a filename
 #[cfg(test)]
 pub fn sanitize_goal_for_filename(goal: &str) -> String {
@@ -147,19 +164,7 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
                 Ok(content) => serde_json::from_str(&content)?,
                 Err(_) => {
                     // Initialize from template
-                    let template_json = Environment::get_checklist_template();
-                    let templates: Vec<ChecklistTemplate> = serde_json::from_str(template_json)?;
-
-                    let items: Vec<ChecklistItem> = templates
-                        .into_iter()
-                        .map(|t| ChecklistItem {
-                            id: t.id,
-                            text: t.text,
-                            on: false,
-                        })
-                        .collect();
-
-                    let checklist = ChecklistState { items };
+                    let checklist = create_checklist_from_template()?;
 
                     // Save initial state
                     let json = serde_json::to_string_pretty(&checklist)?;
@@ -184,19 +189,7 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
                 Ok(content) => serde_json::from_str(&content)?,
                 Err(_) => {
                     // Initialize from template if not exists
-                    let template_json = Environment::get_checklist_template();
-                    let templates: Vec<ChecklistTemplate> = serde_json::from_str(template_json)?;
-
-                    let items: Vec<ChecklistItem> = templates
-                        .into_iter()
-                        .map(|t| ChecklistItem {
-                            id: t.id,
-                            text: t.text,
-                            on: false,
-                        })
-                        .collect();
-
-                    ChecklistState { items }
+                    create_checklist_from_template()?
                 }
             };
 
@@ -265,19 +258,7 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
             println!("{}", session_path.to_string_lossy());
 
             // Reset checklist for next session
-            let template_json = Environment::get_checklist_template();
-            let templates: Vec<ChecklistTemplate> = serde_json::from_str(template_json)?;
-
-            let items: Vec<ChecklistItem> = templates
-                .into_iter()
-                .map(|t| ChecklistItem {
-                    id: t.id,
-                    text: t.text,
-                    on: false,
-                })
-                .collect();
-
-            let new_checklist = ChecklistState { items };
+            let new_checklist = create_checklist_from_template()?;
             let json = serde_json::to_string_pretty(&new_checklist)?;
             env.file_system.write(&checklist_path, &json)?;
 

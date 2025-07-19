@@ -43,4 +43,3 @@ extension SharedKey where Self == InMemoryKey<[AnalysisResult]>.Default {
         Self[.inMemory("analysisHistory"), default: []]
     }
 }
-

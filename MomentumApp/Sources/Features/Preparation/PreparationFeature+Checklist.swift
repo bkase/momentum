@@ -144,18 +144,3 @@ extension PreparationFeature {
         }
     }
 }
-
-// Pool of checklist items that matches our checklist.json
-struct ChecklistItemPool {
-    static let allItems = [
-        "Rested, if not take 10min to lie down",
-        "Not hungry, if so, get a snack first",
-        "Enough time set aside to not be rushed",
-        "Bathroom Break",
-        "Choose a good playlist and be ready to start it",
-        "Tell anyone around me to not disturb me for expected time",
-        "Materials for the task in place. Physical and Virtual",
-        "Water or tea nearby",
-        "Ready to start the timer"
-    ]
-}

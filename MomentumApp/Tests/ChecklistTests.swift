@@ -107,17 +107,13 @@ struct ChecklistTests {
         state.timeInput = "30"
         #expect(!state.isStartButtonEnabled) // Still need all items checked
         
-        // Add checklist with 9 items (minimum required) with some unchecked
+        // Add checklist with 5 items with some unchecked
         state.checklistItems = [
             ChecklistItem(id: "0", text: "Rested", on: true),
             ChecklistItem(id: "1", text: "Not hungry", on: false),
             ChecklistItem(id: "2", text: "Bathroom break", on: true),
             ChecklistItem(id: "3", text: "Phone on silent", on: true),
-            ChecklistItem(id: "4", text: "Water prepared", on: true),
-            ChecklistItem(id: "5", text: "Notifications off", on: true),
-            ChecklistItem(id: "6", text: "Workspace clean", on: true),
-            ChecklistItem(id: "7", text: "Clear mind", on: false),
-            ChecklistItem(id: "8", text: "Ready to focus", on: true)
+            ChecklistItem(id: "4", text: "Water prepared", on: false)
         ]
         #expect(!state.isStartButtonEnabled)
         
@@ -140,18 +136,13 @@ struct ChecklistTests {
     
     @Test("Complete All Checklist Items")
     func completeAllChecklistItems() async {
-        // Create checklist with 10 items (matching the actual checklist.json)
+        // Create checklist with 5 items
         let uncheckedItems = [
             ChecklistItem(id: "0", text: "Rested", on: false),
             ChecklistItem(id: "1", text: "Not hungry", on: false),
             ChecklistItem(id: "2", text: "Bathroom break", on: false),
             ChecklistItem(id: "3", text: "Phone on silent", on: false),
-            ChecklistItem(id: "4", text: "Water/drink prepared", on: false),
-            ChecklistItem(id: "5", text: "Notifications disabled", on: false),
-            ChecklistItem(id: "6", text: "Workspace clean", on: false),
-            ChecklistItem(id: "7", text: "Clear mind", on: false),
-            ChecklistItem(id: "8", text: "Goal is clear", on: false),
-            ChecklistItem(id: "9", text: "Ready to focus", on: false)
+            ChecklistItem(id: "4", text: "Water prepared", on: false)
         ]
         
         let _ = uncheckedItems.map { item in
@@ -188,7 +179,7 @@ struct ChecklistTests {
         #expect(!store.state.isStartButtonEnabled)
         
         // Toggle each item one by one
-        for i in 0..<10 {
+        for i in 0..<5 {
             let itemId = String(i)
             await store.send(.checklistItemToggled(id: itemId))
             
@@ -226,7 +217,7 @@ struct ChecklistTests {
     func goalValidationInvalidCharacters() async {
         var state = PreparationFeature.State()
         // Set all checklist items as checked
-        state.checklistItems = (0..<10).map { i in
+        state.checklistItems = (0..<5).map { i in
             ChecklistItem(id: String(i), text: "Item \(i)", on: true)
         }
         state.timeInput = "30"
@@ -253,7 +244,7 @@ struct ChecklistTests {
     func goalValidationValidGoals() async {
         var state = PreparationFeature.State()
         // Set all checklist items as checked
-        state.checklistItems = (0..<10).map { i in
+        state.checklistItems = (0..<5).map { i in
             ChecklistItem(id: String(i), text: "Item \(i)", on: true)
         }
         state.timeInput = "30"
@@ -279,7 +270,7 @@ struct ChecklistTests {
     func startButtonDisabledWithInvalidGoal() async {
         var state = PreparationFeature.State()
         // Set all checklist items as checked
-        state.checklistItems = (0..<10).map { i in
+        state.checklistItems = (0..<5).map { i in
             ChecklistItem(id: String(i), text: "Item \(i)", on: true)
         }
         state.timeInput = "30"

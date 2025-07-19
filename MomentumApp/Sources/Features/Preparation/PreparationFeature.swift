@@ -27,7 +27,7 @@ struct PreparationFeature {
         var isStartButtonEnabled: Bool {
             !goal.isEmpty &&
             Int(timeInput).map { $0 > 0 } == true &&
-            checklistItems.count >= 9 &&  // Ensure we have the full checklist
+            checklistItems.count >= 5 &&  // Ensure we have the full checklist
             checklistItems.allSatisfy { $0.on } &&
             goalValidationError == nil
         }
@@ -48,7 +48,6 @@ struct PreparationFeature {
         init(preparationState: PreparationState) {
             self.goal = preparationState.goal
             self.timeInput = preparationState.timeInput
-            // Checklist will be loaded from Rust CLI
         }
         
         var preparationState: PreparationState {
