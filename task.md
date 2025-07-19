@@ -27,9 +27,11 @@ I'll fix the UI sizing glitches by addressing the root causes: inconsistent cont
 - [x] Apply `momentumTitleStyle()` modifier to all headers for consistency
 - [x] Fix PreparationView to use `.momentumTitleBottomPadding` constant instead of hardcoded value (MomentumApp/Sources/Views/PreparationView.swift:36)
 - [x] Remove fixed height constraints where content might overflow (PreparationView.swift:104)
-- [ ] Automated test: Verify views render without clipping by checking view hierarchy
+- [x] Automated test: Verify views render without clipping by checking view hierarchy
+- [x] Fix header clipping by adjusting top padding (discovered during testing)
 - [ ] User test: Open each view in the menu bar app and verify no background color bleeding or header clipping
 
 ## Notes
 
-[Implementation notes]
+- Removed fixed height (156px) from checklist container to allow natural sizing
+- User noted we may need to add this back depending on how it looks

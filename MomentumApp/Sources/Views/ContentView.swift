@@ -24,6 +24,7 @@ struct ContentView: View {
         }
         .frame(width: 360, height: 500)
         .background(Color.canvasBackground)
+        .clipped()
         .onKeyPress(.escape) {
             if store.isLoading {
                 store.send(.cancelCurrentOperation)
@@ -58,7 +59,8 @@ struct ContentView: View {
             .help("Quit Momentum")
         }
         .padding(.horizontal, .momentumContainerPaddingHorizontal)
-        .padding(.vertical, 16)
+        .padding(.top, 20)
+        .padding(.bottom, 16)
     }
     
     @ViewBuilder
