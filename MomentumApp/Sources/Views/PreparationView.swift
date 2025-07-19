@@ -138,7 +138,7 @@ struct PreparationView: View {
             // Operation error
             OperationErrorView(error: store.operationError)
         }
-        .padding(.top, 24)
+        .padding(.top, .momentumButtonSectionTopPadding)
     }
     
     private func startSession() {
