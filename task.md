@@ -1,6 +1,6 @@
 # Better handling of application state
 
-**Status:** Refining
+**Status:** InProgress
 **Agent PID:** 36627
 
 ## Original Todo
@@ -18,15 +18,39 @@ Additionally:
 
 ## Description
 
-[what we're building]
+Implement a system where the Rust CLI manages all checklist state, making the app fully controllable headlessly. The Swift UI will become a pure view layer that queries the CLI for state.
+
+**Key changes:**
+- Add `check list` and `check toggle <id>` commands to the Rust CLI
+- Store checklist state in a `checklist.json` file managed by Rust
+- Return checklist data as JSON with `{id, text, on}` format
+- Enforce checklist completion before allowing session start
+- Remove checklist state storage from Swift, making it purely display-driven
 
 ## Implementation Plan
 
-[how we are building it]
+**Rust CLI Changes:**
+- [ ] Add checklist data models and storage (momentum/src/models.rs)
+- [ ] Implement `check list` command to return JSON checklist state (momentum/src/main.rs, action.rs, update.rs, effects.rs)
+- [ ] Implement `check toggle <id>` command to toggle item and return updated state (momentum/src/main.rs, action.rs, update.rs, effects.rs)
+- [ ] Add checklist validation to `start` command - require all items checked (momentum/src/update.rs)
+- [ ] Create checklist state file management (momentum/src/environment.rs, effects.rs)
 
-- [ ] Code change with location(s) if applicable (src/file.ts:45-93)
-- [ ] Automated test: ...
-- [ ] User test: ...
+**Swift UI Changes:**
+- [ ] Replace ChecklistClient with calls to RustCoreClient (MomentumApp/Sources/Dependencies/RustCoreClient.swift)
+- [ ] Remove PreparationPersistentState and checklist state storage (MomentumApp/Sources/Features/Preparation/PreparationFeature.swift)
+- [ ] Update PreparationFeature to fetch checklist from CLI (MomentumApp/Sources/Features/Preparation/PreparationFeature.swift)
+- [ ] Modify checklist toggle action to call CLI command (MomentumApp/Sources/Features/Preparation/PreparationFeature.swift)
+- [ ] Update tests to mock new CLI commands (MomentumApp/Tests/)
+
+**Integration:**
+- [ ] Ensure proper JSON parsing between Swift and Rust
+- [ ] Handle edge cases (missing checklist file, invalid IDs)
+
+**Testing:**
+- [ ] Automated test: Add Rust tests for new checklist commands
+- [ ] Automated test: Update Swift tests with mocked checklist responses
+- [ ] User test: Complete full flow - toggle all checklist items via CLI, start session, verify UI updates
 
 ## Notes
 
