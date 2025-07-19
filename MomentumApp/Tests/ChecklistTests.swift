@@ -154,7 +154,7 @@ struct ChecklistTests {
             ChecklistItem(id: "9", text: "Ready to focus", on: false)
         ]
         
-        let allCheckedItems = uncheckedItems.map { item in
+        let _ = uncheckedItems.map { item in
             ChecklistItem(id: item.id, text: item.text, on: true)
         }
         

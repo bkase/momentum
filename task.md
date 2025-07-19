@@ -52,7 +52,8 @@ Implement a system where the Rust CLI manages all checklist state, making the ap
 - [x] Automated test: Update Swift tests with mocked checklist responses
 - [x] User test: Complete full flow - toggle all checklist items via CLI, start session, verify UI updates
 - [x] Fix Swift test compilation errors in ChecklistTests.swift - Update to use slotId parameter
-- [ ] Fix Swift test compilation errors in PreparationFeatureTests.swift - Update for concurrent execution issues
+- [x] Fix Swift test compilation errors in PreparationFeatureTests.swift - Update for concurrent execution issues
+- [ ] Fix remaining Swift test failures in ChecklistTests - Update test expectations for slot-based UI
 
 ## Notes
 
