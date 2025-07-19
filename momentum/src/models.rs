@@ -17,3 +17,31 @@ pub struct AnalysisResult {
     pub suggestion: String,
     pub reasoning: String,
 }
+
+/// Represents a single checklist item
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ChecklistItem {
+    pub id: String,
+    pub text: String,
+    pub on: bool,
+}
+
+/// Represents the full checklist state
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ChecklistState {
+    pub items: Vec<ChecklistItem>,
+}
+
+impl ChecklistState {
+    /// Check if all items are completed
+    pub fn all_completed(&self) -> bool {
+        self.items.iter().all(|item| item.on)
+    }
+}
+
+/// Template item from checklist.json
+#[derive(Debug, Clone, Deserialize)]
+pub struct ChecklistTemplate {
+    pub id: String,
+    pub text: String,
+}

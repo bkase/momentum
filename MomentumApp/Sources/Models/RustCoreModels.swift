@@ -32,6 +32,18 @@ struct AnalysisResult: Equatable, Codable {
     let reasoning: String
 }
 
+// MARK: - Checklist Models
+
+struct ChecklistItem: Equatable, Codable, Identifiable {
+    let id: String
+    let text: String
+    let on: Bool
+}
+
+struct ChecklistState: Equatable, Codable {
+    let items: [ChecklistItem]
+}
+
 // MARK: - Rust Core Errors
 
 enum RustCoreError: LocalizedError, Equatable {

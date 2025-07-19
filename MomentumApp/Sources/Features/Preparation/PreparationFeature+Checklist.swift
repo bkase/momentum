@@ -16,7 +16,7 @@ extension PreparationFeature {
     
     struct ItemTransition: Equatable {
         let slotId: Int
-        let replacementText: String?
+        let replacementItemId: String?
         let startTime: Date
     }
     
@@ -28,41 +28,52 @@ extension PreparationFeature {
         guard slotId < state.checklistSlots.count,
               let item = state.checklistSlots[slotId].item else { return .none }
         
-        if !item.isCompleted {
-            // Mark item as completed
+        // Toggle the item via Rust CLI
+        return .run { send in
+            await send(.checklistItemToggled(id: item.id))
+        }
+    }
+    
+    static func handleChecklistToggleSuccess(
+        state: inout State,
+        slotId: Int,
+        updatedItems: [ChecklistItem],
+        clock: any Clock<Duration>
+    ) -> Effect<Action> {
+        // Update our local items with the new state
+        state.checklistItems = updatedItems
+        
+        // Update the slot's item to reflect the new state
+        if let slotItem = state.checklistSlots[slotId].item,
+           let updatedItem = updatedItems.first(where: { $0.id == slotItem.id }) {
             var slots = state.checklistSlots
-            slots[slotId].item?.isCompleted = true
+            slots[slotId].item = updatedItem
             state.checklistSlots = slots
-            state.totalItemsCompleted += 1
+        }
+        
+        // If the item was just checked, start the transition
+        if let slotItem = state.checklistSlots[slotId].item,
+           slotItem.on {
             
-            // Check if we have more items to show
-            let replacementText: String?
-            if state.nextItemIndex < ChecklistItemPool.allItems.count {
-                replacementText = ChecklistItemPool.allItems[state.nextItemIndex]
-                state.nextItemIndex += 1
-            } else {
-                replacementText = nil
-            }
+            // Find next unchecked item
+            let uncheckedItems = updatedItems.filter { !$0.on }
+            let currentSlotIds = state.checklistSlots.compactMap { $0.item?.id }
+            let nextItem = uncheckedItems.first { !currentSlotIds.contains($0.id) }
             
-            // Start fade-out transition after 600ms delay
+            // Start fade-out transition after delay
             return .run { send in
                 try await clock.sleep(for: .milliseconds(600))
-                await send(.beginSlotTransition(slotId: slotId, replacementText: replacementText))
+                await send(.beginSlotTransition(slotId: slotId, replacementItemId: nextItem?.id))
             }
-        } else {
-            // Unchecking an item (not in spec, but handling for completeness)
-            var slots = state.checklistSlots
-            slots[slotId].item?.isCompleted = false
-            state.checklistSlots = slots
-            state.totalItemsCompleted -= 1
         }
+        
         return .none
     }
     
     static func handleBeginSlotTransition(
         state: inout State,
         slotId: Int,
-        replacementText: String?,
+        replacementItemId: String?,
         clock: any Clock<Duration>
     ) -> Effect<Action> {
         // Mark slot as transitioning
@@ -71,7 +82,7 @@ extension PreparationFeature {
         state.checklistSlots = slots
         state.activeTransitions[slotId] = ItemTransition(
             slotId: slotId,
-            replacementText: replacementText,
+            replacementItemId: replacementItemId,
             startTime: Date()
         )
         
@@ -89,7 +100,7 @@ extension PreparationFeature {
     ) -> Effect<Action> {
         guard let transition = state.activeTransitions[slotId] else { return .none }
         
-        // First, clear the slot completely to prevent overlap
+        // Clear the slot
         var slots = state.checklistSlots
         slots[slotId].item = nil
         slots[slotId].isTransitioning = false
@@ -98,34 +109,37 @@ extension PreparationFeature {
         
         state.activeTransitions.removeValue(forKey: slotId)
         
-        // If there's a replacement, add it after a small gap
-        if let replacementText = transition.replacementText {
+        // If we have a replacement item, wait a bit then fade it in
+        if let replacementId = transition.replacementItemId {
             return .run { send in
-                // Small delay to ensure clean visual gap
                 try await clock.sleep(for: .milliseconds(100))
-                await send(.fadeInNewItem(slotId: slotId, text: replacementText))
+                await send(.fadeInNewItem(slotId: slotId, itemId: replacementId))
             }
         }
+        
         return .none
     }
     
     static func handleFadeInNewItem(
         state: inout State,
         slotId: Int,
-        text: String,
+        itemId: String,
         clock: any Clock<Duration>
     ) -> Effect<Action> {
-        // Add the new item to the slot with fade-in animation
-        let newId = UUID().uuidString
-        let newItem = ChecklistItem(id: newId, text: text, isCompleted: false)
+        // Find the item with this ID
+        guard let item = state.checklistItems.first(where: { $0.id == itemId }) else {
+            return .none
+        }
+        
+        // Place the new item in the slot with fade-in flag
         var slots = state.checklistSlots
-        slots[slotId].item = newItem
+        slots[slotId].item = item
         slots[slotId].isFadingIn = true
         state.checklistSlots = slots
         
-        // Reset the fade-in flag after animation duration
+        // Reset fade-in after animation completes
         return .run { send in
-            try await clock.sleep(for: .milliseconds(350)) // Slightly longer than animation
+            try await clock.sleep(for: .milliseconds(350))
             await send(.resetFadeInFlag(slotId: slotId))
         }
     }

@@ -13,72 +13,87 @@ struct ChecklistTests {
         @Shared(.lastGoal) var lastGoal: String
         @Shared(.lastTimeMinutes) var lastTimeMinutes: String
         @Shared(.analysisHistory) var analysisHistory: [AnalysisResult]
-        @Shared(.preparationState) var preparationState: PreparationPersistentState
         
         $sessionData.withLock { $0 = nil }
         $lastGoal.withLock { $0 = "" }
         $lastTimeMinutes.withLock { $0 = "30" }
         $analysisHistory.withLock { $0 = [] }
-        $preparationState.withLock { $0 = .initial }
     }
     
-    @Test("Checklist Loading - Loads First 4 Items")
+    @Test("Checklist Loading - Loads From Rust CLI")
     func checklistLoading() async {
+        let mockChecklist = ChecklistState(items: [
+            ChecklistItem(id: "0", text: "Rested", on: false),
+            ChecklistItem(id: "1", text: "Not hungry", on: false),
+            ChecklistItem(id: "2", text: "Bathroom break", on: false),
+            ChecklistItem(id: "3", text: "Phone on silent", on: false)
+        ])
+        
         let store = TestStore(initialState: PreparationFeature.State()) {
             PreparationFeature()
+        } withDependencies: {
+            $0.rustCoreClient.checkList = {
+                mockChecklist
+            }
         }
         
-        // Load checklist on appear - should load first 4 items
-        await store.send(.onAppear) {
-            $0.checklistSlots = [
-                PreparationFeature.ChecklistSlot(id: 0, item: ChecklistItem(id: "0", text: "Rested", isCompleted: false)),
-                PreparationFeature.ChecklistSlot(id: 1, item: ChecklistItem(id: "1", text: "Not hungry", isCompleted: false)),
-                PreparationFeature.ChecklistSlot(id: 2, item: ChecklistItem(id: "2", text: "Bathroom break", isCompleted: false)),
-                PreparationFeature.ChecklistSlot(id: 3, item: ChecklistItem(id: "3", text: "Phone on silent", isCompleted: false))
-            ]
-            $0.nextItemIndex = 4
+        // Load checklist on appear - onAppear triggers loadChecklist
+        await store.send(.onAppear)
+        await store.receive(.loadChecklist) {
+            $0.isLoadingChecklist = true
+        }
+        await store.receive(.checklistResponse(.success(mockChecklist))) {
+            $0.isLoadingChecklist = false
+            $0.checklistItems = mockChecklist.items
+            // Fill slots with first 4 unchecked items
+            let uncheckedItems = mockChecklist.items.filter { !$0.on }
+            for (index, item) in uncheckedItems.prefix(4).enumerated() {
+                $0.checklistSlots[index].item = item
+            }
         }
     }
     
-    @Test("Checklist Item Toggle - With Replacement")
-    func checklistItemToggleWithReplacement() async {
-        let clock = TestClock()
+    @Test("Checklist Item Toggle")
+    func checklistItemToggle() async {
+        let initialChecklist = ChecklistState(items: [
+            ChecklistItem(id: "0", text: "Rested", on: false),
+            ChecklistItem(id: "1", text: "Not hungry", on: false),
+            ChecklistItem(id: "2", text: "Bathroom break", on: false),
+            ChecklistItem(id: "3", text: "Phone on silent", on: false)
+        ])
         
-        // Simply verify that toggling works and items get replaced
+        let toggledChecklist = ChecklistState(items: [
+            ChecklistItem(id: "0", text: "Rested", on: true),  // toggled
+            ChecklistItem(id: "1", text: "Not hungry", on: false),
+            ChecklistItem(id: "2", text: "Bathroom break", on: false),
+            ChecklistItem(id: "3", text: "Phone on silent", on: false)
+        ])
+        
+        var initialState = PreparationFeature.State(
+            goal: "Test Goal",
+            timeInput: "30"
+        )
+        initialState.checklistItems = initialChecklist.items
+        
         let store = TestStore(
-            initialState: PreparationFeature.State(
-                goal: "Test Goal",
-                timeInput: "30"
-            )
+            initialState: initialState
         ) {
             PreparationFeature()
         } withDependencies: {
-            $0.continuousClock = clock
+            $0.rustCoreClient.checkToggle = { id in
+                #expect(id == "0")
+                return toggledChecklist
+            }
         }
         
-        // Use non-exhaustive testing since we have animations and UUIDs
-        store.exhaustivity = .off
-        
-        // Load initial checklist
-        await store.send(.onAppear)
-        
-        let initialCount = store.state.checklistSlots.count
-        #expect(initialCount == 4)
-        
-        // Toggle first slot's item
-        await store.send(.checklistSlotToggled(slotId: 0))
-        
-        // Wait for transitions to complete (600ms + 300ms + 100ms + 350ms)
-        await clock.advance(by: .milliseconds(1350))
-        
-        // Verify item was marked completed
-        #expect(store.state.totalItemsCompleted == 1)
-        
-        // Since we're using non-exhaustive testing, we can't test the exact replacement behavior
-        // but we can verify that the feature handles toggling correctly
+        // Toggle first item
+        await store.send(.checklistItemToggled(id: "0"))
+        await store.receive(.checklistToggleResponse(slotId: -1, .success(toggledChecklist))) {
+            $0.checklistItems = toggledChecklist.items
+        }
     }
     
-    @Test("Start Button Enabled Logic - Requires All 10 Items")
+    @Test("Start Button Enabled Logic - Requires All Items Checked")
     func startButtonEnabledLogic() async {
         // Test with empty state
         var state = PreparationFeature.State()
@@ -90,14 +105,22 @@ struct ChecklistTests {
         
         // Add valid time
         state.timeInput = "30"
-        #expect(!state.isStartButtonEnabled) // Still need all 10 items completed
+        #expect(!state.isStartButtonEnabled) // Still need all items checked
         
-        // Complete 9 items
-        state.totalItemsCompleted = 9
+        // Add checklist with 5 items with some unchecked
+        state.checklistItems = [
+            ChecklistItem(id: "0", text: "Rested", on: true),
+            ChecklistItem(id: "1", text: "Not hungry", on: false),
+            ChecklistItem(id: "2", text: "Bathroom break", on: true),
+            ChecklistItem(id: "3", text: "Phone on silent", on: true),
+            ChecklistItem(id: "4", text: "Water prepared", on: false)
+        ]
         #expect(!state.isStartButtonEnabled)
         
-        // Complete all 10 items
-        state.totalItemsCompleted = 10
+        // Check all items
+        state.checklistItems = state.checklistItems.map { item in
+            ChecklistItem(id: item.id, text: item.text, on: true)
+        }
         #expect(state.isStartButtonEnabled)
         
         // Test invalid time inputs
@@ -111,85 +134,92 @@ struct ChecklistTests {
         #expect(!state.isStartButtonEnabled)
     }
     
-    @Test("Complete All 10 Items")
-    func completeAllTenItems() async {
-        let clock = TestClock()
+    @Test("Complete All Checklist Items")
+    func completeAllChecklistItems() async {
+        // Create checklist with 5 items
+        let uncheckedItems = [
+            ChecklistItem(id: "0", text: "Rested", on: false),
+            ChecklistItem(id: "1", text: "Not hungry", on: false),
+            ChecklistItem(id: "2", text: "Bathroom break", on: false),
+            ChecklistItem(id: "3", text: "Phone on silent", on: false),
+            ChecklistItem(id: "4", text: "Water prepared", on: false)
+        ]
+        
+        let _ = uncheckedItems.map { item in
+            ChecklistItem(id: item.id, text: item.text, on: true)
+        }
+        
+        var initialState = PreparationFeature.State(
+            goal: "Test Goal",
+            timeInput: "30"
+        )
+        initialState.checklistItems = uncheckedItems
         
         let store = TestStore(
-            initialState: PreparationFeature.State(
-                goal: "Test Goal",
-                timeInput: "30"
-            )
+            initialState: initialState
         ) {
             PreparationFeature()
         } withDependencies: {
-            $0.continuousClock = clock
-        }
-        
-        // Set exhaustivity to off since we have non-deterministic UUIDs
-        store.exhaustivity = .off
-        
-        // Load initial items
-        await store.send(.onAppear) {
-            $0.checklistSlots = [
-                PreparationFeature.ChecklistSlot(id: 0, item: ChecklistItem(id: "0", text: "Rested", isCompleted: false)),
-                PreparationFeature.ChecklistSlot(id: 1, item: ChecklistItem(id: "1", text: "Not hungry", isCompleted: false)),
-                PreparationFeature.ChecklistSlot(id: 2, item: ChecklistItem(id: "2", text: "Bathroom break", isCompleted: false)),
-                PreparationFeature.ChecklistSlot(id: 3, item: ChecklistItem(id: "3", text: "Phone on silent", isCompleted: false))
-            ]
-            $0.nextItemIndex = 4
-        }
-        
-        // Complete all 10 items by toggling slots
-        for i in 0..<10 {
-            // Find first slot with incomplete item
-            if let slotIndex = store.state.checklistSlots.firstIndex(where: { slot in
-                slot.item != nil && !slot.item!.isCompleted
-            }) {
-                await store.send(.checklistSlotToggled(slotId: slotIndex)) {
-                    $0.checklistSlots[slotIndex].item?.isCompleted = true
-                    $0.totalItemsCompleted = i + 1
+            let currentItems = LockIsolated(uncheckedItems)
+            $0.rustCoreClient.checkToggle = { id in
+                // Toggle the specific item
+                currentItems.withValue { items in
+                    items = items.map { item in
+                        if item.id == id {
+                            return ChecklistItem(id: item.id, text: item.text, on: true)
+                        }
+                        return item
+                    }
                 }
-                
-                // If we still have items to show, handle the transition
-                if i < 6 { // First 6 toggles will trigger replacements
-                    // 600ms delay + 300ms fade-out + 100ms gap + 350ms for fade-in reset
-                    await clock.advance(by: .milliseconds(1350))
-                }
+                return ChecklistState(items: currentItems.value)
             }
         }
         
-        // Verify all 10 items are completed
-        #expect(store.state.totalItemsCompleted == 10)
+        // Initially, start button should be disabled
+        #expect(!store.state.isStartButtonEnabled)
+        
+        // Toggle each item one by one
+        for i in 0..<5 {
+            let itemId = String(i)
+            await store.send(.checklistItemToggled(id: itemId))
+            
+            // Receive the updated checklist
+            let expectedItems = uncheckedItems.enumerated().map { index, item in
+                ChecklistItem(id: item.id, text: item.text, on: index <= i)
+            }
+            await store.receive(.checklistToggleResponse(slotId: -1, .success(ChecklistState(items: expectedItems)))) {
+                $0.checklistItems = expectedItems
+            }
+        }
+        
+        // After all items are checked, start button should be enabled
         #expect(store.state.isStartButtonEnabled)
     }
     
     @Test("Goal and Time Input Updates")
     func goalAndTimeInputUpdates() async {
-        // Create initial state and capture what the slots look like after init
-        let initialState = PreparationFeature.State()
-        let store = TestStore(initialState: initialState) {
+        let store = TestStore(initialState: PreparationFeature.State()) {
             PreparationFeature()
         }
         
         // Test goal update
         await store.send(.goalChanged("New Goal")) {
             $0.goal = "New Goal"
-            // checklistSlots remain unchanged from init
         }
         
         // Test time input update
         await store.send(.timeInputChanged("45")) {
             $0.timeInput = "45"
-            // checklistSlots remain unchanged from init
         }
     }
     
     @Test("Goal Validation - Invalid Characters")
     func goalValidationInvalidCharacters() async {
         var state = PreparationFeature.State()
-        state.checklistSlots = PreparationFeature.State.createInitialSlots()
-        state.totalItemsCompleted = 10
+        // Set all checklist items as checked
+        state.checklistItems = (0..<5).map { i in
+            ChecklistItem(id: String(i), text: "Item \(i)", on: true)
+        }
         state.timeInput = "30"
         
         // Test various invalid characters
@@ -213,8 +243,10 @@ struct ChecklistTests {
     @Test("Goal Validation - Valid Goals")
     func goalValidationValidGoals() async {
         var state = PreparationFeature.State()
-        state.checklistSlots = PreparationFeature.State.createInitialSlots()
-        state.totalItemsCompleted = 10
+        // Set all checklist items as checked
+        state.checklistItems = (0..<5).map { i in
+            ChecklistItem(id: String(i), text: "Item \(i)", on: true)
+        }
         state.timeInput = "30"
         
         // Test valid goals
@@ -237,8 +269,10 @@ struct ChecklistTests {
     @Test("Goal Validation - Start Button Disabled With Invalid Goal")
     func startButtonDisabledWithInvalidGoal() async {
         var state = PreparationFeature.State()
-        state.checklistSlots = PreparationFeature.State.createInitialSlots()
-        state.totalItemsCompleted = 10
+        // Set all checklist items as checked
+        state.checklistItems = (0..<5).map { i in
+            ChecklistItem(id: String(i), text: "Item \(i)", on: true)
+        }
         state.timeInput = "30"
         state.goal = "Invalid/Goal"
         

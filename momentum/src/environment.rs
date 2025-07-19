@@ -45,6 +45,24 @@ impl Environment {
 
         Ok(path)
     }
+
+    /// Get the path to checklist.json state file
+    pub fn get_checklist_path(&self) -> Result<PathBuf> {
+        let mut path =
+            dirs::data_dir().ok_or_else(|| anyhow::anyhow!("Could not find data directory"))?;
+        path.push("Momentum");
+
+        // Ensure directory exists
+        std::fs::create_dir_all(&path)?;
+
+        path.push("checklist.json");
+        Ok(path)
+    }
+
+    /// Get the checklist template embedded in the binary
+    pub fn get_checklist_template() -> &'static str {
+        include_str!("../../MomentumApp/Resources/checklist.json")
+    }
 }
 
 /// File system operations trait

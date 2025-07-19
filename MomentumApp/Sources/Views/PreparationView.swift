@@ -81,39 +81,36 @@ struct PreparationView: View {
     
     @ViewBuilder
     private var checklistSection: some View {
-        if !store.checklistSlots.isEmpty {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("GROUNDING RITUAL")
-                    .font(.sectionLabel)
-                    .foregroundStyle(Color.textSecondary)
-                    .tracking(2)
-                
+        VStack(alignment: .leading, spacing: 12) {
+            Text("GROUNDING RITUAL")
+                .font(.sectionLabel)
+                .foregroundStyle(Color.textSecondary)
+                .tracking(2)
+            
+            if store.isLoadingChecklist {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle())
+                    .scaleEffect(0.8)
+                    .frame(height: 36)
+            } else {
                 VStack(spacing: 4) {
                     ForEach(store.checklistSlots) { slot in
-                        checklistSlotView(for: slot)
+                        if let item = slot.item {
+                            ChecklistRowView(
+                                item: item,
+                                isTransitioning: slot.isTransitioning,
+                                isFadingIn: slot.isFadingIn,
+                                onToggle: {
+                                    store.send(.checklistSlotToggled(slotId: slot.id))
+                                }
+                            )
+                        } else {
+                            // Empty slot
+                            Color.clear
+                                .frame(height: 36)
+                        }
                     }
                 }
-            }
-        }
-    }
-    
-    @ViewBuilder
-    private func checklistSlotView(for slot: PreparationFeature.ChecklistSlot) -> some View {
-        Group {
-            if let item = slot.item {
-                ChecklistRowView(
-                    item: item,
-                    isTransitioning: slot.isTransitioning,
-                    isFadingIn: slot.isFadingIn,
-                    onToggle: {
-                        store.send(.checklistSlotToggled(slotId: slot.id))
-                    }
-                )
-                .id(item.id) // Force view recreation when item changes
-            } else {
-                // Empty slot maintains the space
-                Color.clear
-                    .frame(height: 36) // Height of a checklist row
             }
         }
     }
@@ -128,10 +125,10 @@ struct PreparationView: View {
             .keyboardShortcut(.return, modifiers: .command)
             
             // Progress indicator
-            Text("\(store.totalItemsCompleted) of 10 completed")
+            Text("\(store.checklistItems.filter { $0.on }.count) of \(store.checklistItems.count) completed")
                 .font(.system(size: 12))
                 .foregroundStyle(Color.textSecondary)
-                .opacity(store.totalItemsCompleted > 0 ? 1 : 0)
+                .opacity(store.checklistItems.filter { $0.on }.count > 0 ? 1 : 0)
             
             // Operation error
             OperationErrorView(error: store.operationError)

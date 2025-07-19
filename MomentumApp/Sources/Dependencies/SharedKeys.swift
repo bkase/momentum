@@ -1,20 +1,6 @@
 import ComposableArchitecture
 import Foundation
 
-// MARK: - Persistent Preparation State
-
-struct PreparationPersistentState: Codable, Equatable {
-    var checklistSlots: [PreparationFeature.ChecklistSlot]
-    var totalItemsCompleted: Int
-    var nextItemIndex: Int
-    
-    static let initial = PreparationPersistentState(
-        checklistSlots: [],
-        totalItemsCompleted: 0,
-        nextItemIndex: 4
-    )
-}
-
 // MARK: - Shared Keys for Persistence
 
 // Helper to get app support directory
@@ -55,15 +41,5 @@ extension SharedKey where Self == AppStorageKey<String>.Default {
 extension SharedKey where Self == InMemoryKey<[AnalysisResult]>.Default {
     static var analysisHistory: Self {
         Self[.inMemory("analysisHistory"), default: []]
-    }
-}
-
-extension SharedKey where Self == FileStorageKey<PreparationPersistentState>.Default {
-    static var preparationState: Self {
-        Self[.fileStorage(preparationFileURL), default: .initial]
-    }
-    
-    private static var preparationFileURL: URL {
-        URL.appSupportDirectory.appendingPathComponent("preparation.json")
     }
 }

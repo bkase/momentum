@@ -40,6 +40,24 @@ enum Commands {
         #[arg(long)]
         file: PathBuf,
     },
+
+    /// Manage checklist items
+    Check {
+        #[command(subcommand)]
+        subcommand: CheckCommands,
+    },
+}
+
+#[derive(Subcommand)]
+enum CheckCommands {
+    /// List all checklist items with their current state
+    List,
+
+    /// Toggle a checklist item by ID
+    Toggle {
+        /// ID of the checklist item to toggle
+        id: String,
+    },
 }
 
 #[tokio::main]
@@ -57,6 +75,10 @@ async fn main() -> Result<()> {
         Commands::Start { goal, time } => action::Action::Start { goal, time },
         Commands::Stop => action::Action::Stop,
         Commands::Analyze { file } => action::Action::Analyze { path: file },
+        Commands::Check { subcommand } => match subcommand {
+            CheckCommands::List => action::Action::CheckList,
+            CheckCommands::Toggle { id } => action::Action::CheckToggle { id },
+        },
     };
 
     // Run update function

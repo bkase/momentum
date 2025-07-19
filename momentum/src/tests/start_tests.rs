@@ -17,19 +17,14 @@ fn test_start_session_when_idle() {
 
     let (new_state, effect) = update(state, action, &env);
 
-    match new_state {
-        State::SessionActive { session } => {
-            assert_eq!(session.goal, "Test goal");
-            assert_eq!(session.start_time, 1000);
-            assert_eq!(session.time_expected, 30);
-            assert_eq!(session.reflection_file_path, None);
-        }
-        _ => panic!("Expected SessionActive state"),
-    }
+    // State should remain Idle until checklist validation passes
+    assert!(matches!(new_state, State::Idle));
 
+    // Should produce ValidateChecklistAndStart effect
     assert!(matches!(
         effect,
-        Some(crate::effects::Effect::CreateSession { .. })
+        Some(crate::effects::Effect::ValidateChecklistAndStart { goal, time })
+            if goal == "Test goal" && time == 30
     ));
 }
 

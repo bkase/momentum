@@ -12,6 +12,6 @@ struct PreparationState: Equatable {
     var isStartButtonEnabled: Bool {
         !goal.isEmpty &&
         Int(timeInput).map { $0 > 0 } == true &&
-        checklist.allSatisfy { $0.isCompleted }
+        checklist.allSatisfy { $0.on }
     }
 }

@@ -6,4 +6,6 @@ pub enum Action {
     Start { goal: String, time: u64 },
     Stop,
     Analyze { path: PathBuf },
+    CheckList,
+    CheckToggle { id: String },
 }
