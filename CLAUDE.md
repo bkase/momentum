@@ -83,6 +83,22 @@ make rust-lint
 make clean
 ```
 
+### Test Server (DEBUG builds only)
+The app includes a built-in HTTP test server on port 8765 for debugging:
+```bash
+# Execute momentum commands
+curl -X POST http://localhost:8765/momentum \
+  -d '{"command": "analyze", "args": ["--file", "/path/to/reflection.md"]}'
+
+# Show menu popover
+curl -X POST http://localhost:8765/show
+
+# Get current state
+curl http://localhost:8765/state
+
+# See docs/test-server.md for full documentation
+```
+
 ### Manual Commands
 
 #### Swift/macOS Development
@@ -166,6 +182,10 @@ The system uses `session.json` as the single source of truth for active sessions
   - Location: `momentum/src/tests/`
   - Pattern: Use `#[test]` attribute
   - Test state transitions and side effects
+- **Test Server**: HTTP endpoints for debugging the running app (DEBUG builds only)
+  - Automatically starts on port 8765
+  - Execute momentum commands, inspect state, view logs
+  - See `docs/test-server.md` for full documentation
 - Both test suites run in complete isolation without external dependencies
 
 ### Testing Commands
