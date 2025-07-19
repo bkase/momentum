@@ -38,13 +38,13 @@ Implement a system where the Rust CLI manages all checklist state, making the ap
 
 **Swift UI Changes:**
 - [x] Replace ChecklistClient with calls to RustCoreClient (MomentumApp/Sources/Dependencies/RustCoreClient.swift)
-- [ ] Remove PreparationPersistentState and checklist state storage (MomentumApp/Sources/Features/Preparation/PreparationFeature.swift)
-- [ ] Update PreparationFeature to fetch checklist from CLI (MomentumApp/Sources/Features/Preparation/PreparationFeature.swift)
-- [ ] Modify checklist toggle action to call CLI command (MomentumApp/Sources/Features/Preparation/PreparationFeature.swift)
+- [x] Remove PreparationPersistentState and checklist state storage (MomentumApp/Sources/Features/Preparation/PreparationFeature.swift)
+- [x] Update PreparationFeature to fetch checklist from CLI (MomentumApp/Sources/Features/Preparation/PreparationFeature.swift)
+- [x] Modify checklist toggle action to call CLI command (MomentumApp/Sources/Features/Preparation/PreparationFeature.swift)
 - [ ] Update tests to mock new CLI commands (MomentumApp/Tests/)
 
 **Integration:**
-- [ ] Ensure proper JSON parsing between Swift and Rust
+- [x] Ensure proper JSON parsing between Swift and Rust
 - [ ] Handle edge cases (missing checklist file, invalid IDs)
 
 **Testing:**

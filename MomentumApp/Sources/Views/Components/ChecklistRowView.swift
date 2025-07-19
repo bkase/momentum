@@ -19,7 +19,7 @@ struct ChecklistRowView: View {
         Toggle(
             item.text,
             isOn: .init(
-                get: { item.isCompleted },
+                get: { item.on },
                 set: { _ in onToggle() }
             )
         )
@@ -61,7 +61,7 @@ struct ChecklistRowView: View {
     
     private var backgroundGradient: some View {
         Group {
-            if item.isCompleted {
+            if item.on {
                 LinearGradient(
                     colors: [Color(hex: "FDF9F1"), Color(hex: "F9F7F4")],
                     startPoint: .top,
@@ -74,7 +74,7 @@ struct ChecklistRowView: View {
     }
     
     private var borderColor: Color {
-        item.isCompleted ? Color.accentGold : Color.borderNeutral
+        item.on ? Color.accentGold : Color.borderNeutral
     }
     
     private var opacity: Double {
