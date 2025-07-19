@@ -3,11 +3,11 @@ import Foundation
 
 struct ProcessRunner: DependencyKey {
     var run: @Sendable (String, [String]) async throws -> ProcessResult
-    
+
     static let liveValue = Self { command, arguments in
         try await executeCommand(command, arguments: arguments)
     }
-    
+
     static let testValue = Self { command, arguments in
         // Return mock responses based on command
         switch command {
@@ -27,12 +27,12 @@ struct ProcessRunner: DependencyKey {
             )
         case "analyze":
             let analysisJson = """
-            {
-                "summary": "Test analysis summary",
-                "suggestion": "Test suggestion",
-                "reasoning": "Test reasoning"
-            }
-            """
+                {
+                    "summary": "Test analysis summary",
+                    "suggestion": "Test suggestion",
+                    "reasoning": "Test reasoning"
+                }
+                """
             return ProcessResult(
                 output: analysisJson,
                 error: nil,

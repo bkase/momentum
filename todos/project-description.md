@@ -37,9 +37,15 @@ Momentum is a macOS menu bar productivity application that helps users track and
 ### Using Makefile (Recommended)
 - Build all: `make build`
 - Test all: `make test`
+- Format all: `make format`
+- Lint all: `make lint`
 - Rust test: `make rust-test`
 - Rust lint: `make rust-lint`
+- Rust format: `make rust-format`
 - Swift test: `make swift-test`
+- Swift lint: `make swift-lint`
+- Swift format: `make swift-format` (uses Apple's swift-format)
+- Swift generate: `make swift-generate` (generates Xcode project)
 - Clean: `make clean`
 
 ### Manual Commands

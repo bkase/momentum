@@ -3,7 +3,7 @@ import SwiftUI
 struct ChecklistToggleStyle: ToggleStyle {
     @State private var isHovered = false
     @State private var isPressed = false
-    
+
     func makeBody(configuration: Configuration) -> some View {
         HStack(spacing: 12) {
             RoundedRectangle(cornerRadius: 2)
@@ -23,19 +23,19 @@ struct ChecklistToggleStyle: ToggleStyle {
                 .scaleEffect(isPressed ? 0.9 : 1.0)
                 .animation(.easeOut(duration: 0.1), value: isPressed)
                 .animation(.easeOut(duration: 0.2), value: configuration.isOn)
-            
+
             configuration.label
                 .font(.system(size: 14))
                 .foregroundStyle(configuration.isOn ? Color.textSecondary : Color.textPrimary)
                 .animation(.easeOut(duration: 0.2), value: configuration.isOn)
-            
+
             Spacer()
         }
         .contentShape(Rectangle())
         .onTapGesture {
             isPressed = true
             configuration.isOn.toggle()
-            
+
             // Reset pressed state after a short delay
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 isPressed = false
@@ -45,18 +45,18 @@ struct ChecklistToggleStyle: ToggleStyle {
             isHovered = hovering
         }
     }
-    
+
     private func checkboxFill(isOn: Bool) -> Color {
         isOn ? Color.accentGold : Color.clear
     }
-    
+
     private func checkboxBorder(isOn: Bool, isHovered: Bool) -> Color {
         if isOn {
-            return Color.accentGold
+            Color.accentGold
         } else if isHovered {
-            return Color.accentGold
+            Color.accentGold
         } else {
-            return Color.borderNeutral
+            Color.borderNeutral
         }
     }
 }

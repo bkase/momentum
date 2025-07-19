@@ -1,5 +1,5 @@
-import SwiftUI
 import ComposableArchitecture
+import SwiftUI
 
 // Helper to create states with specific checklist configurations for previews
 extension PreparationFeature.State {
@@ -61,7 +61,7 @@ extension PreparationFeature.State {
                     ("check-rested", "Rested", false),
                     ("check-hungry", "Not hungry", false),
                     ("check-bathroom", "Bathroom break", false),
-                    ("check-phone", "Phone on silent", false)
+                    ("check-phone", "Phone on silent", false),
                 ]
             )
         ) {
@@ -81,7 +81,7 @@ extension PreparationFeature.State {
                     ("check-rested", "Rested", true),
                     ("check-hungry", "Not hungry", true),
                     ("check-bathroom", "Bathroom break", false),
-                    ("check-phone", "Phone on silent", false)
+                    ("check-phone", "Phone on silent", false),
                 ]
             )
         ) {
@@ -106,7 +106,7 @@ extension PreparationFeature.State {
                     ("check-playlist", "Choose a good playlist", true),
                     ("check-disturb", "Tell anyone not to disturb", true),
                     ("check-materials", "Materials in place", true),
-                    ("check-time", "Enough time set aside", true)
+                    ("check-time", "Enough time set aside", true),
                 ]
             )
         ) {
@@ -131,7 +131,7 @@ extension PreparationFeature.State {
                     ("check-playlist", "Choose a good playlist", true),
                     ("check-disturb", "Tell anyone not to disturb", true),
                     ("check-materials", "Materials in place", true),
-                    ("check-time", "Enough time set aside", true)
+                    ("check-time", "Enough time set aside", true),
                 ]
             )
         ) {

@@ -25,6 +25,11 @@ When building with xcodebuild, you'll encounter macro trust issues with TCA and 
 xcodebuild -workspace Momentum.xcworkspace -scheme MomentumApp -configuration Debug build -skipMacroValidation
 ```
 
+### Tuist Generation
+The `swift-generate` target automatically fixes formatting issues in generated files:
+- Adds trailing newlines to TuistBundle+MomentumApp.swift
+- This prevents SwiftFormat lint failures on CI
+
 ### Known Issues and Solutions
 
 1. **"claude CLI not found" error**: 
@@ -69,6 +74,12 @@ make build
 
 # Run all tests
 make test
+
+# Format all code (Swift and Rust)
+make format
+
+# Run all lint checks
+make lint
 
 # Run Rust tests only
 make rust-test
@@ -220,14 +231,25 @@ cd momentum && cargo clippy
 
 When completing any task (especially from todos/):
 1. ALWAYS read `docs/swift-composable-architecture.md` BEFORE starting work on any Swift tasks to understand TCA patterns
-2. Build the app: `make build` or `xcodebuild -workspace Momentum.xcworkspace -scheme MomentumApp build -skipMacroValidation`
-3. Run ALL tests: `make test` or individual test commands
-4. Ensure ALL tests pass with no failures
-5. Only then commit the changes (when explicitly asked)
-6. Move the todo file to `todos/done/` with analysis
-7. Update `todos/todos.md` main list
+2. Format the code: `make format` to ensure consistent code style
+3. Build the app: `make build` or `xcodebuild -workspace Momentum.xcworkspace -scheme MomentumApp build -skipMacroValidation`
+4. Run ALL tests: `make test` or individual test commands
+5. Run lint checks: `make lint` to ensure code quality
+6. Ensure ALL tests pass with no failures
+7. Only then commit the changes (when explicitly asked)
+8. Move the todo file to `todos/done/` with analysis
+9. Update `todos/todos.md` main list
 
 NEVER mark a task as done if tests are failing!
+
+## Code Formatting
+
+The project uses automatic code formatting to maintain consistent style:
+- **Rust**: Uses `cargo fmt` with default Rust formatting rules
+- **Swift**: Uses Apple's `swift-format` with configuration in `.swift-format`
+- Run `make format` before committing to format all code
+- CI will fail if code is not properly formatted
+- swift-format is managed via Swift Package Manager in the BuildTools directory
 
 ## Environment Setup
 

@@ -1,6 +1,7 @@
 import ComposableArchitecture
-import Foundation
 import Dependencies
+import Foundation
+
 @testable import MomentumApp
 
 // MARK: - Test Helpers for Shared State
@@ -21,24 +22,24 @@ extension AppFeature.State {
         @Shared(.lastGoal) var sharedLastGoal: String
         @Shared(.lastTimeMinutes) var sharedLastTimeMinutes: String
         @Shared(.analysisHistory) var sharedAnalysisHistory: [AnalysisResult]
-        
+
         $sharedSessionData.withLock { $0 = sessionData }
         $sharedLastGoal.withLock { $0 = lastGoal }
         $sharedLastTimeMinutes.withLock { $0 = lastTimeMinutes }
         $sharedAnalysisHistory.withLock { $0 = analysisHistory }
-        
+
         // Now create state - the init() will use these shared values
         var state = AppFeature.State()
-        
+
         // Override with specific destination if provided
         if let destination = destination {
             state.destination = destination
         }
-        
+
         // Set regular values
         state.reflectionPath = reflectionPath
         state.isLoading = isLoading
-        
+
         return state
     }
 }
@@ -73,7 +74,6 @@ extension ChecklistItem {
     static let mockItems = [
         ChecklistItem(id: "test-1", text: "Close distractions", on: false),
         ChecklistItem(id: "test-2", text: "Set timer", on: false),
-        ChecklistItem(id: "test-3", text: "Review goals", on: false)
+        ChecklistItem(id: "test-3", text: "Review goals", on: false),
     ]
 }
-

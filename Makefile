@@ -1,4 +1,4 @@
-.PHONY: all test build clean rust-test rust-build rust-lint swift-test swift-build install-tools tail-logs
+.PHONY: all test build clean rust-test rust-build rust-lint rust-format swift-test swift-build swift-format swift-lint format lint install-tools tail-logs
 
 # Default target
 all: build test
@@ -8,11 +8,17 @@ install-tools:
 	@echo "Installing required tools via mise..."
 	@mise install
 	@eval "$$(mise activate bash)" && rustup component add rustfmt clippy
+	@echo "Building swift-format..."
+	@cd BuildTools && swift build
 
 # Rust targets
 rust-test:
 	@echo "Running Rust tests..."
 	@eval "$$(mise activate bash)" && cd momentum && cargo test
+
+rust-format:
+	@echo "Formatting Rust code..."
+	@eval "$$(mise activate bash)" && cd momentum && cargo fmt
 
 rust-lint:
 	@echo "Checking Rust formatting..."
@@ -36,6 +42,10 @@ copy-rust-binary:
 	@chmod +x MomentumApp/Resources/momentum
 
 # Swift targets
+swift-format:
+	@echo "Formatting Swift code..."
+	@./scripts/run-swift-format.sh format --recursive --in-place --configuration $(PWD)/.swift-format $(PWD)
+
 swift-generate:
 	@echo "Generating Xcode project..."
 	@eval "$$(mise activate bash)" && tuist generate
@@ -48,6 +58,10 @@ swift-build-only:
 		build \
 		-skipMacroValidation \
 		-quiet
+
+swift-lint:
+	@echo "Checking Swift formatting..."
+	@./scripts/run-swift-format.sh lint --recursive --configuration $(PWD)/.swift-format $(PWD)
 
 swift-test-only:
 	@echo "Running Swift tests..."
@@ -64,9 +78,13 @@ swift-build: rust-build copy-rust-binary swift-build-only
 swift-test: rust-build copy-rust-binary swift-test-only
 
 # Combined targets
+format: rust-format swift-format
+
+lint: rust-lint swift-lint
+
 build: rust-build swift-generate swift-build
 
-test: rust-test rust-lint swift-test
+test: rust-test lint swift-test
 
 # Clean build artifacts
 clean:

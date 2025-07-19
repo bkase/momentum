@@ -1,6 +1,7 @@
-import Testing
-import Foundation
 import ComposableArchitecture
+import Foundation
+import Testing
+
 @testable import MomentumApp
 
 @Suite("Error Handling Tests")
@@ -12,20 +13,20 @@ struct ErrorHandlingTests {
         @Shared(.lastGoal) var lastGoal: String
         @Shared(.lastTimeMinutes) var lastTimeMinutes: String
         @Shared(.analysisHistory) var analysisHistory: [AnalysisResult]
-        
+
         $sessionData.withLock { $0 = nil }
         $lastGoal.withLock { $0 = "" }
         $lastTimeMinutes.withLock { $0 = "30" }
         $analysisHistory.withLock { $0 = [] }
     }
-    
+
     @Test("Error Handling")
     func errorHandling() async {
         let store = TestStore(initialState: AppFeature.State()) {
             AppFeature()
         }
         store.exhaustivity = .off
-                
+
         // Test that delegate error is handled
         let error = AppError.rustCore(.binaryNotFound)
         await store.send(.destination(.presented(.preparation(.delegate(.sessionFailedToStart(error)))))) {
@@ -33,32 +34,31 @@ struct ErrorHandlingTests {
             // Error handled in PreparationFeature
         }
     }
-    
-    
+
     @Test("Direct Session Stop")
     func directSessionStop() async {
         var state = AppFeature.State()
-        state.destination = .activeSession(ActiveSessionFeature.State(
-            goal: "Test Goal",
-            startTime: Date(timeIntervalSince1970: 1700000000),
-            expectedMinutes: 30
-        ))
-        
+        state.destination = .activeSession(
+            ActiveSessionFeature.State(
+                goal: "Test Goal",
+                startTime: Date(timeIntervalSince1970: 1_700_000_000),
+                expectedMinutes: 30
+            ))
+
         let store = TestStore(
             initialState: state
         ) {
             AppFeature()
         }
         store.exhaustivity = .off
-        
+
         // Stop button triggers stop action
         await store.send(.destination(.presented(.activeSession(.stopButtonTapped)))) {
             $0.isLoading = true
         }
         await store.receive(.destination(.presented(.activeSession(.performStop))))
     }
-    
-    
+
     @Test("Cancel Current Operation")
     func cancelCurrentOperation() async {
         let store = TestStore(
@@ -68,8 +68,7 @@ struct ErrorHandlingTests {
         ) {
             AppFeature()
         }
-        
-                
+
         await store.send(.cancelCurrentOperation) {
             $0.isLoading = false
         }

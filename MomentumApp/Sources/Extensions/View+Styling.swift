@@ -12,7 +12,7 @@ extension View {
             .padding(.bottom, .momentumContainerPaddingBottom)
             .background(Color.canvasBackground)
     }
-    
+
     /// Applies the standard title styling
     func momentumTitleStyle() -> some View {
         self
@@ -21,14 +21,14 @@ extension View {
             .frame(maxWidth: .infinity)
             .padding(.bottom, .momentumTitleBottomPadding)
     }
-    
+
     /// Applies section label styling
     func momentumSectionLabel() -> some View {
         self
             .font(.sectionLabel)
             .foregroundStyle(Color.textSecondary)
     }
-    
+
     /// Applies standard body text styling
     func momentumBodyText() -> some View {
         self
@@ -36,14 +36,14 @@ extension View {
             .foregroundStyle(Color.textPrimary)
             .lineSpacing(4)
     }
-    
+
     /// Applies secondary text styling
     func momentumSecondaryText() -> some View {
         self
             .font(.system(size: 14))
             .foregroundStyle(Color.textSecondary)
     }
-    
+
     /// Standard content card styling with border
     func momentumCard() -> some View {
         self
@@ -62,7 +62,7 @@ extension View {
 /// Secondary button style for less prominent actions
 struct SecondaryButtonStyle: ButtonStyle {
     @State private var isHovered = false
-    
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 14))
@@ -99,9 +99,9 @@ extension View {
             self
         }
     }
-    
+
     /// Main content sections wrapper with standard spacing
-    func momentumContentSections<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+    func momentumContentSections(@ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: .momentumSectionSpacing) {
             self
             content()

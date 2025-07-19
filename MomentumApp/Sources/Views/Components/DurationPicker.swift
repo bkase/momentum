@@ -3,15 +3,15 @@ import SwiftUI
 struct DurationPicker: View {
     @Binding var timeInput: String
     let onChange: (String) -> Void
-    
+
     var body: some View {
         HStack(spacing: 8) {
             Text("Estimated duration")
                 .font(.durationLabel)
                 .foregroundStyle(Color.textPrimary)
-            
+
             Spacer()
-            
+
             HStack(spacing: 4) {
                 TextField("30", text: $timeInput)
                     .textFieldStyle(.plain)
@@ -32,7 +32,7 @@ struct DurationPicker: View {
                         }
                         onChange(filtered)
                     }
-                
+
                 Text("min")
                     .font(.durationLabel)
                     .foregroundStyle(Color.textSecondary)

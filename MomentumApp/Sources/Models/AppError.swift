@@ -8,42 +8,42 @@ enum AppError: LocalizedError, Equatable {
     case invalidInput(reason: String)
     case other(String)
     case unexpected(String)
-    
+
     var errorDescription: String? {
         switch self {
         case .sessionAlreadyActive:
-            return "A session is already active"
+            "A session is already active"
         case .noActiveSession:
-            return "No active session to stop"
+            "No active session to stop"
         case .noReflectionToAnalyze:
-            return "No reflection file to analyze"
-        case .rustCore(let error):
-            return error.errorDescription
-        case .invalidInput(let reason):
-            return reason
-        case .other(let message):
-            return message
-        case .unexpected(let message):
-            return "Unexpected error: \(message)"
+            "No reflection file to analyze"
+        case let .rustCore(error):
+            error.errorDescription
+        case let .invalidInput(reason):
+            reason
+        case let .other(message):
+            message
+        case let .unexpected(message):
+            "Unexpected error: \(message)"
         }
     }
-    
+
     var recoverySuggestion: String? {
         switch self {
         case .sessionAlreadyActive:
-            return "Please stop the current session before starting a new one"
+            "Please stop the current session before starting a new one"
         case .noActiveSession:
-            return "Start a new session first"
+            "Start a new session first"
         case .noReflectionToAnalyze:
-            return "Complete a session to create a reflection file"
+            "Complete a session to create a reflection file"
         case .rustCore:
-            return "Check your API key and network connection"
+            "Check your API key and network connection"
         case .invalidInput:
-            return "Please check your input and try again"
+            "Please check your input and try again"
         case .other:
-            return "Please try again"
+            "Please try again"
         case .unexpected:
-            return "Please try again or restart the app"
+            "Please try again or restart the app"
         }
     }
 }

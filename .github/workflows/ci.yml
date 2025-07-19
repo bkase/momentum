@@ -90,6 +90,10 @@ jobs:
         eval "$(mise activate bash)"
         tuist version
         
+    - name: Build swift-format
+      run: |
+        cd BuildTools && swift build
+        
     - name: Generate Xcode project
       run: make swift-generate
         
@@ -102,6 +106,9 @@ jobs:
     - name: Copy Rust binary to Resources
       run: make copy-rust-binary
         
+    - name: Run Swift linting
+      run: make swift-lint
+      
     - name: Build Swift app  
       run: make swift-build-only
           

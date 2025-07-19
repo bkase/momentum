@@ -4,14 +4,14 @@ import Foundation
 // MARK: - Shared Keys for Persistence
 
 // Helper to get app support directory
-private extension URL {
-    static var appSupportDirectory: URL {
+extension URL {
+    fileprivate static var appSupportDirectory: URL {
         let urls = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
         let appSupportURL = urls[0].appendingPathComponent("com.momentum.app")
-        
+
         // Create directory if it doesn't exist
         try? FileManager.default.createDirectory(at: appSupportURL, withIntermediateDirectories: true)
-        
+
         return appSupportURL
     }
 }
@@ -20,7 +20,7 @@ extension SharedKey where Self == FileStorageKey<SessionData?>.Default {
     static var sessionData: Self {
         Self[.fileStorage(sessionFileURL), default: nil]
     }
-    
+
     private static var sessionFileURL: URL {
         URL.appSupportDirectory.appendingPathComponent("session.json")
     }
