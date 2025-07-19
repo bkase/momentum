@@ -6,6 +6,8 @@ struct RustCoreClient {
     var start: @Sendable (String, Int) async throws -> SessionData
     var stop: @Sendable () async throws -> String
     var analyze: @Sendable (String) async throws -> AnalysisResult
+    var checkList: @Sendable () async throws -> ChecklistState
+    var checkToggle: @Sendable (String) async throws -> ChecklistState
 }
 
 extension RustCoreClient: DependencyKey {
@@ -48,6 +50,36 @@ extension RustCoreClient: DependencyKey {
             } catch {
                 throw RustCoreError.decodingFailed(error)
             }
+        },
+        checkList: {
+            let result = try await executeCommand("check", arguments: ["list"])
+            
+            guard let checklistJson = result.output,
+                  !checklistJson.isEmpty,
+                  let data = checklistJson.data(using: .utf8) else {
+                throw RustCoreError.invalidOutput("check list command returned no JSON")
+            }
+            
+            do {
+                return try JSONDecoder().decode(ChecklistState.self, from: data)
+            } catch {
+                throw RustCoreError.decodingFailed(error)
+            }
+        },
+        checkToggle: { id in
+            let result = try await executeCommand("check", arguments: ["toggle", id])
+            
+            guard let checklistJson = result.output,
+                  !checklistJson.isEmpty,
+                  let data = checklistJson.data(using: .utf8) else {
+                throw RustCoreError.invalidOutput("check toggle command returned no JSON")
+            }
+            
+            do {
+                return try JSONDecoder().decode(ChecklistState.self, from: data)
+            } catch {
+                throw RustCoreError.decodingFailed(error)
+            }
         }
     )
     
@@ -69,6 +101,20 @@ extension RustCoreClient: DependencyKey {
                 suggestion: "Test suggestion",
                 reasoning: "Test reasoning"
             )
+        },
+        checkList: {
+            // Return minimal checklist for tests
+            ChecklistState(items: [
+                ChecklistItem(id: "test-1", text: "Test item 1", on: false),
+                ChecklistItem(id: "test-2", text: "Test item 2", on: false)
+            ])
+        },
+        checkToggle: { id in
+            // Return checklist with toggled item
+            ChecklistState(items: [
+                ChecklistItem(id: "test-1", text: "Test item 1", on: id == "test-1"),
+                ChecklistItem(id: "test-2", text: "Test item 2", on: id == "test-2")
+            ])
         }
     )
 }
