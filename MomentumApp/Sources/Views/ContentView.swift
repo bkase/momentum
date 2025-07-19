@@ -6,18 +6,12 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Fixed spacer to prevent header clipping
-            Color.clear
-                .frame(height: 16)
-                .background(Color.canvasBackground)
-            
             headerView
                 .background(Color.canvasBackground)
             
             Divider()
             
             sessionContentView
-                .frame(maxHeight: .infinity)
                 .overlay(alignment: .bottom) {
                     if store.isLoading {
                         ProgressView()
@@ -27,9 +21,9 @@ struct ContentView: View {
                     }
                 }
         }
-        .frame(width: 360, height: 500)
+        .frame(minWidth: 360, idealWidth: 360, maxWidth: 360, minHeight: 400, maxHeight: 700)
+        .fixedSize(horizontal: false, vertical: true)
         .background(Color.canvasBackground)
-        .clipped()
         .onKeyPress(.escape) {
             if store.isLoading {
                 store.send(.cancelCurrentOperation)
@@ -64,8 +58,8 @@ struct ContentView: View {
             .help("Quit Momentum")
         }
         .padding(.horizontal, .momentumContainerPaddingHorizontal)
-        .padding(.top, 12)
-        .padding(.bottom, 12)
+        .padding(.top, 20)
+        .padding(.bottom, 20)
     }
     
     @ViewBuilder
