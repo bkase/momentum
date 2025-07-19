@@ -47,6 +47,10 @@ swift-format:
 swift-generate:
 	@echo "Generating Xcode project..."
 	@eval "$$(mise activate bash)" && tuist generate
+	@# Fix generated file formatting issue
+	@if [ -f "Derived/Sources/TuistBundle+MomentumApp.swift" ]; then \
+		echo "" >> "Derived/Sources/TuistBundle+MomentumApp.swift"; \
+	fi
 
 swift-build-only:
 	@echo "Building Swift app..."
