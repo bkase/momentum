@@ -13,7 +13,7 @@ let project = Project(
         .remote(
             url: "https://github.com/pointfreeco/swift-composable-architecture",
             requirement: .upToNextMajor(from: "1.15.0")
-        )
+        ),
     ],
     settings: .settings(
         base: [
@@ -22,13 +22,13 @@ let project = Project(
             "PRODUCT_BUNDLE_IDENTIFIER": "com.momentum.Momentum",
             "DEVELOPMENT_TEAM": "$(DEVELOPMENT_TEAM)",
             "CODE_SIGN_STYLE": "Automatic",
-            "ENABLE_USER_SCRIPT_SANDBOXING": "NO"
+            "ENABLE_USER_SCRIPT_SANDBOXING": "NO",
         ],
         configurations: [
             .debug(name: .debug, settings: [
-                "OTHER_SWIFT_FLAGS": "$(inherited) -D DEBUG -enable-experimental-feature StrictConcurrency"
+                "OTHER_SWIFT_FLAGS": "$(inherited) -D DEBUG -enable-experimental-feature StrictConcurrency",
             ]),
-            .release(name: .release)
+            .release(name: .release),
         ]
     ),
     targets: [
@@ -42,13 +42,13 @@ let project = Project(
                 "LSUIElement": true, // Hide from dock by default (menu bar app)
                 "NSHumanReadableCopyright": "Copyright © 2025 Momentum. All rights reserved.",
                 "CFBundleVersion": "1",
-                "CFBundleShortVersionString": "1.0.0"
+                "CFBundleShortVersionString": "1.0.0",
             ]),
             sources: ["MomentumApp/Sources/**"],
             resources: [
                 "MomentumApp/Resources/checklist.json",
                 "MomentumApp/Resources/reflection-template.md",
-                "MomentumApp/Resources/momentum"
+                "MomentumApp/Resources/momentum",
             ],
             entitlements: .file(path: "MomentumApp/Resources/Momentum.entitlements"),
             scripts: [
@@ -56,40 +56,40 @@ let project = Project(
                     script: """
                     #!/bin/zsh
                     set -e
-                    
+
                     # Source user's zsh configuration to get mise/cargo in PATH
                     if [ -f "$HOME/.zshrc" ]; then
                         source "$HOME/.zshrc"
                     fi
-                    
+
                     echo "Building Rust CLI..."
                     cd "$SRCROOT"
-                    
+
                     # Build Rust and copy binary
                     make rust-build || { echo "Error: make rust-build failed"; exit 1; }
                     make copy-rust-binary || { echo "Error: make copy-rust-binary failed"; exit 1; }
-                    
+
                     # Verify the binary was copied
                     if [ ! -f "$SRCROOT/MomentumApp/Resources/momentum" ]; then
                         echo "Error: Failed to copy momentum binary"
                         exit 1
                     fi
-                    
+
                     echo "✓ Rust CLI build complete"
                     """,
                     name: "Build Rust CLI",
                     inputPaths: [
                         "$(SRCROOT)/momentum/Cargo.toml",
-                        "$(SRCROOT)/momentum/src"
+                        "$(SRCROOT)/momentum/src",
                     ],
                     outputPaths: [
-                        "$(SRCROOT)/MomentumApp/Resources/momentum"
+                        "$(SRCROOT)/MomentumApp/Resources/momentum",
                     ],
                     basedOnDependencyAnalysis: false
-                )
+                ),
             ],
             dependencies: [
-                .package(product: "ComposableArchitecture")
+                .package(product: "ComposableArchitecture"),
             ]
         ),
         .target(
@@ -99,9 +99,9 @@ let project = Project(
             bundleId: "com.momentum.MomentumTests",
             sources: ["MomentumApp/Tests/**"],
             dependencies: [
-                .target(name: "MomentumApp")
+                .target(name: "MomentumApp"),
             ]
-        )
+        ),
     ],
     schemes: [
         .scheme(
@@ -116,6 +116,6 @@ let project = Project(
                 configuration: .debug,
                 executable: "MomentumApp"
             )
-        )
+        ),
     ]
 )

@@ -8,19 +8,19 @@ struct AnalysisFeature {
         let analysis: AnalysisResult
         var operationError: String?
     }
-    
+
     enum Action: Equatable {
         case resetButtonTapped
         case dismissButtonTapped
     }
-    
+
     var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
             case .resetButtonTapped:
-                return .none
+                .none
             case .dismissButtonTapped:
-                return .none
+                .none
             }
         }
     }

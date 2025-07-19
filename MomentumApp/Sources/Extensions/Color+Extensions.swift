@@ -9,12 +9,12 @@ extension Color {
     static let textPrimary = Color(red: 0.067, green: 0.067, blue: 0.067) // #111111
     static let textSecondary = Color(red: 0.427, green: 0.310, blue: 0.110) // #6D4F1C
     static let textTertiary = Color(red: 0.600, green: 0.600, blue: 0.600) // #999999
-    
+
     // Disabled states
     static let disabledText = Color.textSecondary
     static let disabledBackground = Color.canvasBackground
     static let disabledBorder = Color.borderNeutral
-    
+
     // Component-specific
     static let checkboxFill = Color.accentGold
     static let completedRowBackground = Color.hoverFill

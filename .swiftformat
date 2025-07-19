@@ -12,7 +12,7 @@
 
 # Basic spacing that matches current style
 --trimwhitespace always
---linebreakAtEndOfFile enabled
+--insertlines enabled
 
 # Import grouping (Foundation first, external deps, then internal)
 --importgrouping testable-bottom

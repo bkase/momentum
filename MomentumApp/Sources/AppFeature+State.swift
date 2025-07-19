@@ -10,12 +10,12 @@ extension AppFeature {
         @Shared(.lastGoal) var lastGoal = ""
         @Shared(.lastTimeMinutes) var lastTimeMinutes = "30"
         @Shared(.analysisHistory) var analysisHistory: [AnalysisResult] = []
-        
+
         @Presents var destination: Destination.State?
-        
+
         var isLoading = false
         var reflectionPath: String?
-        
+
         init() {
             // Initialize destination based on shared state
             if let analysis = analysisHistory.last {
@@ -34,7 +34,7 @@ extension AppFeature {
             }
         }
     }
-    
+
     @CasePathable
     enum Action: Equatable {
         case destination(PresentationAction<Destination.Action>)
@@ -42,10 +42,9 @@ extension AppFeature {
         case resetToIdle
         case cancelCurrentOperation
         #if DEBUG
-        case testServerShowMenu
-        case testServerRefreshState
-        case startTestServer
+            case testServerShowMenu
+            case testServerRefreshState
+            case startTestServer
         #endif
     }
-    
 }

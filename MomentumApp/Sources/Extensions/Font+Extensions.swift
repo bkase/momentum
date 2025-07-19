@@ -5,13 +5,13 @@ extension Font {
     static let momentumTitle = Font.custom("New York", size: 28)
         .weight(.regular)
     static let momentumTitleFallback = Font.system(size: 28, weight: .regular, design: .serif)
-    
+
     static let sanctuaryButtonFont = Font.custom("New York", size: 18)
         .italic()
         .weight(.regular)
     static let sanctuaryButtonFallback = Font.system(size: 18, weight: .regular, design: .serif)
         .italic()
-    
+
     // System fonts for other elements
     static let sectionLabel = Font.system(size: 11, weight: .semibold)
     static let intentionField = Font.system(size: 16, weight: .regular)

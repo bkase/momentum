@@ -5,7 +5,7 @@ import ComposableArchitecture
 struct MomentumApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self)
     var appDelegate
-    
+
     var body: some Scene {
         // Hidden window is necessary for menu bar apps to properly display
         // Settings windows and other UI elements. Without this, the app

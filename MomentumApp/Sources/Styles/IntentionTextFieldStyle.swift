@@ -2,7 +2,7 @@ import SwiftUI
 
 struct IntentionTextFieldStyle: TextFieldStyle {
     @FocusState private var isFocused: Bool
-    
+
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration
             .textFieldStyle(.plain)

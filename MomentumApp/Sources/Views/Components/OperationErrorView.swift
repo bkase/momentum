@@ -2,7 +2,7 @@ import SwiftUI
 
 struct OperationErrorView: View {
     let error: String?
-    
+
     var body: some View {
         if let error = error {
             Text(error)

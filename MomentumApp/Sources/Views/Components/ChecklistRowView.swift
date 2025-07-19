@@ -5,16 +5,16 @@ struct ChecklistRowView: View {
     let isTransitioning: Bool
     let isFadingIn: Bool
     let onToggle: () -> Void
-    
+
     @State private var hasAppeared = false
-    
+
     init(item: ChecklistItem, isTransitioning: Bool = false, isFadingIn: Bool = false, onToggle: @escaping () -> Void) {
         self.item = item
         self.isTransitioning = isTransitioning
         self.isFadingIn = isFadingIn
         self.onToggle = onToggle
     }
-    
+
     var body: some View {
         Toggle(
             item.text,
@@ -59,7 +59,7 @@ struct ChecklistRowView: View {
             }
         }
     }
-    
+
     private var backgroundGradient: some View {
         Group {
             if item.on {
@@ -73,28 +73,28 @@ struct ChecklistRowView: View {
             }
         }
     }
-    
+
     private var borderColor: Color {
         item.on ? Color.accentGold : Color.borderNeutral
     }
-    
+
     private var opacity: Double {
         if isTransitioning {
-            return 0
+            0
         } else if isFadingIn && !hasAppeared {
-            return 0
+            0
         } else {
-            return 1
+            1
         }
     }
-    
+
     private var offsetX: CGFloat {
         if isTransitioning {
-            return -10
+            -10
         } else if isFadingIn && !hasAppeared {
-            return 10
+            10
         } else {
-            return 0
+            0
         }
     }
 }
@@ -116,7 +116,7 @@ extension Color {
         default:
             (a, r, g, b) = (255, 0, 0, 0)
         }
-        
+
         self.init(
             .sRGB,
             red: Double(r) / 255,

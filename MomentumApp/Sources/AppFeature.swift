@@ -5,11 +5,11 @@ import Foundation
 struct AppFeature {
     @Dependency(\.rustCoreClient) var rustCoreClient
     #if DEBUG
-    @Dependency(\.testServer) var testServer
+        @Dependency(\.testServer) var testServer
     #endif
 
     enum CancelID { case rustOperation }
-    
+
     @Reducer(state: .equatable, action: .equatable)
     enum Destination {
         case preparation(PreparationFeature)
@@ -40,21 +40,21 @@ struct AppFeature {
                     ))
                 }
                 return .none
-                
-            case .destination(.presented(.preparation(.goalChanged(let goal)))):
+
+            case let .destination(.presented(.preparation(.goalChanged(goal)))):
                 // Save goal to shared state
                 state.$lastGoal.withLock { $0 = goal }
                 return .none
-                
-            case .destination(.presented(.preparation(.timeInputChanged(let time)))):
+
+            case let .destination(.presented(.preparation(.timeInputChanged(time)))):
                 // Save time to shared state
                 state.$lastTimeMinutes.withLock { $0 = time }
                 return .none
-                
+
             case .destination(.presented(.preparation(.startButtonTapped))):
                 // PreparationFeature now handles this internally
                 return .none
-                
+
             case let .destination(.presented(.preparation(.delegate(.sessionStarted(sessionData))))):
                 // Handle successful session start from PreparationFeature
                 state.isLoading = false
@@ -67,18 +67,18 @@ struct AppFeature {
                     expectedMinutes: sessionData.expectedMinutes
                 ))
                 return .none
-                
+
             case let .destination(.presented(.preparation(.delegate(.sessionFailedToStart(error))))):
                 // Handle failed session start from PreparationFeature
                 state.isLoading = false
                 // Error handled in PreparationView
                 return .none
-                
+
             case .destination(.presented(.activeSession(.stopButtonTapped))):
                 // Stop session immediately
                 state.isLoading = true
                 return .send(.destination(.presented(.activeSession(.performStop))))
-                
+
             case let .destination(.presented(.activeSession(.delegate(.sessionStopped(reflectionPath))))):
                 // Handle successful session stop from ActiveSessionFeature
                 state.isLoading = false
@@ -86,18 +86,18 @@ struct AppFeature {
                 state.reflectionPath = reflectionPath
                 state.destination = .reflection(ReflectionFeature.State(reflectionPath: reflectionPath))
                 return .none
-                
+
             case let .destination(.presented(.activeSession(.delegate(.sessionFailedToStop(error))))):
                 // Handle failed session stop from ActiveSessionFeature
                 state.isLoading = false
                 // Error handled in ActiveSessionView
                 return .none
-                
+
             case .destination(.presented(.reflection(.analyzeButtonTapped))):
                 // ReflectionFeature will handle the analysis
                 state.isLoading = true
                 return .none
-                
+
             case let .destination(.presented(.reflection(.delegate(.analysisRequested(analysisResult))))):
                 // Handle successful analysis from ReflectionFeature
                 state.isLoading = false
@@ -105,13 +105,13 @@ struct AppFeature {
                 state.$analysisHistory.withLock { $0.append(analysisResult) }
                 state.destination = .analysis(AnalysisFeature.State(analysis: analysisResult))
                 return .none
-                
+
             case let .destination(.presented(.reflection(.delegate(.analysisFailedToStart(error))))):
                 // Handle failed analysis from ReflectionFeature
                 state.isLoading = false
                 // Error handled in AwaitingAnalysisView
                 return .none
-                
+
             case .destination(.presented(.reflection(.cancelButtonTapped))):
                 state.destination = nil
                 state.reflectionPath = nil
@@ -121,11 +121,11 @@ struct AppFeature {
                     timeInput: state.lastTimeMinutes
                 ))
                 return .none
-                
+
             case .destination(.presented(.analysis(.resetButtonTapped))):
                 // Reset immediately
                 return .send(.resetToIdle)
-                
+
             case .destination(.presented(.analysis(.dismissButtonTapped))):
                 state.destination = nil
                 // Keep analysis in history but go to preparation
@@ -134,10 +134,6 @@ struct AppFeature {
                     timeInput: state.lastTimeMinutes
                 ))
                 return .none
-                
-
-
-
 
             case .resetToIdle:
                 state.$sessionData.withLock { $0 = nil }
@@ -153,25 +149,25 @@ struct AppFeature {
             case .cancelCurrentOperation:
                 state.isLoading = false
                 return .cancel(id: CancelID.rustOperation)
-                
+
             #if DEBUG
-            case .testServerShowMenu:
-                // Force the menu to be visible - this would be handled by the view
-                TestLogger.log("Test server requested menu show")
-                return .none
-                
-            case .testServerRefreshState:
-                // Force reload state from disk
-                TestLogger.log("Test server requested state refresh")
-                return .send(.onAppear)
-                
-            case .startTestServer:
-                return .run { _ in
-                    try await testServer.start(8765)
-                    TestLogger.log("Test server started on port 8765")
-                }
+                case .testServerShowMenu:
+                    // Force the menu to be visible - this would be handled by the view
+                    TestLogger.log("Test server requested menu show")
+                    return .none
+
+                case .testServerRefreshState:
+                    // Force reload state from disk
+                    TestLogger.log("Test server requested state refresh")
+                    return .send(.onAppear)
+
+                case .startTestServer:
+                    return .run { _ in
+                        try await testServer.start(8765)
+                        TestLogger.log("Test server started on port 8765")
+                    }
             #endif
-                
+
             case .destination:
                 return .none
             }

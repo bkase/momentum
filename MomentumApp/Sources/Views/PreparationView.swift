@@ -4,17 +4,17 @@ import ComposableArchitecture
 struct PreparationView: View {
     @Bindable var store: StoreOf<PreparationFeature>
     @FocusState private var isGoalFieldFocused: Bool
-    
+
     var body: some View {
         VStack(spacing: 0) {
             titleSection
-            
+
             VStack(alignment: .leading, spacing: 24) {
                 intentionInput
                 durationPicker
                 checklistSection
             }
-            
+
             buttonAndProgress
         }
         .momentumContainer()
@@ -23,12 +23,12 @@ struct PreparationView: View {
             store.send(.onAppear)
         }
     }
-    
+
     private var titleSection: some View {
         Text("Compose Your Intention")
             .momentumTitleStyle()
     }
-    
+
     private var intentionInput: some View {
         VStack(alignment: .leading, spacing: 8) {
             TextField("What will you accomplish?", text: Binding(
@@ -42,7 +42,7 @@ struct PreparationView: View {
                     startSession()
                 }
             }
-            
+
             if let error = store.goalValidationError {
                 Text(error)
                     .font(.system(size: 12))
@@ -52,13 +52,13 @@ struct PreparationView: View {
             }
         }
     }
-    
+
     private var durationPicker: some View {
         HStack(spacing: 8) {
             Text("Estimated duration")
                 .font(.system(size: 14))
                 .foregroundStyle(Color.textPrimary)
-            
+
             TextField("30", text: Binding(
                 get: { store.timeInput },
                 set: { store.send(.timeInputChanged($0)) }
@@ -72,13 +72,13 @@ struct PreparationView: View {
                     startSession()
                 }
             }
-            
+
             Text("min")
                 .font(.system(size: 14))
                 .foregroundStyle(Color.textPrimary)
         }
     }
-    
+
     @ViewBuilder
     private var checklistSection: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -86,7 +86,7 @@ struct PreparationView: View {
                 .font(.sectionLabel)
                 .foregroundStyle(Color.textSecondary)
                 .tracking(2)
-            
+
             if store.isLoadingChecklist {
                 ProgressView()
                     .progressViewStyle(CircularProgressViewStyle())
@@ -114,7 +114,7 @@ struct PreparationView: View {
             }
         }
     }
-    
+
     private var buttonAndProgress: some View {
         VStack(spacing: 6) {
             Button("Enter Sanctuary") {
@@ -123,19 +123,19 @@ struct PreparationView: View {
             .buttonStyle(SanctuaryButtonStyle())
             .disabled(!store.isStartButtonEnabled)
             .keyboardShortcut(.return, modifiers: .command)
-            
+
             // Progress indicator
             Text("\(store.checklistItems.filter { $0.on }.count) of \(store.checklistItems.count) completed")
                 .font(.system(size: 12))
                 .foregroundStyle(Color.textSecondary)
                 .opacity(store.checklistItems.filter { $0.on }.count > 0 ? 1 : 0)
-            
+
             // Operation error
             OperationErrorView(error: store.operationError)
         }
         .padding(.top, .momentumButtonSectionTopPadding)
     }
-    
+
     private func startSession() {
         store.send(.startButtonTapped)
     }
