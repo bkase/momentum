@@ -40,6 +40,10 @@ copy-rust-binary:
 	@chmod +x MomentumApp/Resources/momentum
 
 # Swift targets
+swift-format:
+	@echo "Formatting Swift code..."
+	@eval "$$(mise activate bash)" && swiftformat .
+
 swift-generate:
 	@echo "Generating Xcode project..."
 	@eval "$$(mise activate bash)" && tuist generate
