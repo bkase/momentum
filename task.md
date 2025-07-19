@@ -30,7 +30,7 @@ Implement a system where the Rust CLI manages all checklist state, making the ap
 ## Implementation Plan
 
 **Rust CLI Changes:**
-- [ ] Add checklist data models and storage (momentum/src/models.rs)
+- [x] Add checklist data models and storage (momentum/src/models.rs)
 - [ ] Implement `check list` command to return JSON checklist state (momentum/src/main.rs, action.rs, update.rs, effects.rs)
 - [ ] Implement `check toggle <id>` command to toggle item and return updated state (momentum/src/main.rs, action.rs, update.rs, effects.rs)
 - [ ] Add checklist validation to `start` command - require all items checked (momentum/src/update.rs)
