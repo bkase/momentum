@@ -72,6 +72,8 @@ swift-build: rust-build copy-rust-binary swift-build-only
 swift-test: rust-build copy-rust-binary swift-test-only
 
 # Combined targets
+format: rust-format swift-format
+
 build: rust-build swift-generate swift-build
 
 test: rust-test rust-lint swift-test
