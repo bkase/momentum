@@ -59,10 +59,6 @@ struct AwaitingAnalysisView: View {
                 OperationErrorView(error: store.operationError)
             }
         }
-        .frame(width: .momentumContainerWidth)
-        .padding(.top, .momentumContainerPaddingTop)
-        .padding(.horizontal, .momentumContainerPaddingHorizontal)
-        .padding(.bottom, .momentumContainerPaddingBottom)
-        .background(Color.canvasBackground)
+        .momentumContainer()
     }
 }

@@ -137,10 +137,6 @@ struct ActiveSessionView: View {
             }
             .padding(.top, .momentumButtonSectionTopPadding)
         }
-        .frame(width: .momentumContainerWidth)
-        .padding(.top, .momentumContainerPaddingTop)
-        .padding(.horizontal, .momentumContainerPaddingHorizontal)
-        .padding(.bottom, .momentumContainerPaddingBottom)
-        .background(Color.canvasBackground)
+        .momentumContainer()
     }
 }

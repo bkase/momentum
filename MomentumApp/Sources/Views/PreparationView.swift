@@ -17,11 +17,7 @@ struct PreparationView: View {
             
             buttonAndProgress
         }
-        .frame(width: 320)
-        .padding(.top, 24)
-        .padding(.horizontal, 20)
-        .padding(.bottom, 24)
-        .background(Color.canvasBackground)
+        .momentumContainer()
         .onAppear {
             isGoalFieldFocused = true
             store.send(.onAppear)
