@@ -1,5 +1,5 @@
 use crate::environment::Environment;
-use crate::models::Session;
+use crate::models::{ChecklistItem, ChecklistState, ChecklistTemplate, Session};
 use anyhow::Result;
 use chrono::Local;
 use std::path::PathBuf;
@@ -42,6 +42,10 @@ pub enum Effect {
     },
     ClearState,
     Composite(Vec<Effect>),
+    LoadAndPrintChecklist,
+    ToggleChecklistItem {
+        id: String,
+    },
 }
 
 /// Execute side effects
@@ -142,6 +146,93 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
             for effect in effects {
                 Box::pin(execute(effect, env)).await?;
             }
+            Ok(())
+        }
+        
+        Effect::LoadAndPrintChecklist => {
+            let checklist_path = env.get_checklist_path()?;
+            
+            // Load or create checklist
+            let checklist = match env.file_system.read(&checklist_path) {
+                Ok(content) => serde_json::from_str(&content)?,
+                Err(_) => {
+                    // Initialize from template
+                    let template_json = Environment::get_checklist_template();
+                    let templates: Vec<ChecklistTemplate> = serde_json::from_str(template_json)?;
+                    
+                    let items: Vec<ChecklistItem> = templates
+                        .into_iter()
+                        .map(|t| ChecklistItem {
+                            id: t.id,
+                            text: t.text,
+                            on: false,
+                        })
+                        .collect();
+                    
+                    let checklist = ChecklistState { items };
+                    
+                    // Save initial state
+                    let json = serde_json::to_string_pretty(&checklist)?;
+                    env.file_system.write(&checklist_path, &json)?;
+                    
+                    checklist
+                }
+            };
+            
+            // Print as JSON to stdout
+            let json = serde_json::to_string(&checklist)?;
+            println!("{}", json);
+            
+            Ok(())
+        }
+        
+        Effect::ToggleChecklistItem { id } => {
+            let checklist_path = env.get_checklist_path()?;
+            
+            // Load checklist
+            let mut checklist: ChecklistState = match env.file_system.read(&checklist_path) {
+                Ok(content) => serde_json::from_str(&content)?,
+                Err(_) => {
+                    // Initialize from template if not exists
+                    let template_json = Environment::get_checklist_template();
+                    let templates: Vec<ChecklistTemplate> = serde_json::from_str(template_json)?;
+                    
+                    let items: Vec<ChecklistItem> = templates
+                        .into_iter()
+                        .map(|t| ChecklistItem {
+                            id: t.id,
+                            text: t.text,
+                            on: false,
+                        })
+                        .collect();
+                    
+                    ChecklistState { items }
+                }
+            };
+            
+            // Toggle the item
+            let found = checklist.items.iter_mut().find(|item| item.id == id);
+            
+            match found {
+                Some(item) => {
+                    item.on = !item.on;
+                    
+                    // Save updated state
+                    let json = serde_json::to_string_pretty(&checklist)?;
+                    env.file_system.write(&checklist_path, &json)?;
+                    
+                    // Print updated list as JSON
+                    let json = serde_json::to_string(&checklist)?;
+                    println!("{}", json);
+                }
+                None => {
+                    eprintln!("Error: Checklist item with id '{}' not found", id);
+                    // Still print current state
+                    let json = serde_json::to_string(&checklist)?;
+                    println!("{}", json);
+                }
+            }
+            
             Ok(())
         }
     }

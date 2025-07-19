@@ -55,5 +55,17 @@ pub fn update(state: State, action: Action, env: &Environment) -> (State, Option
             let effect = Effect::AnalyzeReflection { path };
             (state, Some(effect))
         }
+        
+        // List checklist items (works in any state)
+        (state, Action::CheckList) => {
+            let effect = Effect::LoadAndPrintChecklist;
+            (state, Some(effect))
+        }
+        
+        // Toggle checklist item (works in any state)
+        (state, Action::CheckToggle { id }) => {
+            let effect = Effect::ToggleChecklistItem { id };
+            (state, Some(effect))
+        }
     }
 }
