@@ -9,6 +9,7 @@ struct AwaitingAnalysisView: View {
             // Title section
             Text("Reflection Complete")
                 .momentumTitleStyle()
+                .padding(CGFloat.momentumSpacingLarge)
             
             // Content sections
             VStack(spacing: .momentumSectionSpacing) {
