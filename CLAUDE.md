@@ -25,6 +25,11 @@ When building with xcodebuild, you'll encounter macro trust issues with TCA and 
 xcodebuild -workspace Momentum.xcworkspace -scheme MomentumApp -configuration Debug build -skipMacroValidation
 ```
 
+### Tuist Generation
+The `swift-generate` target automatically fixes formatting issues in generated files:
+- Adds trailing newlines to TuistBundle+MomentumApp.swift
+- This prevents SwiftFormat lint failures on CI
+
 ### Known Issues and Solutions
 
 1. **"claude CLI not found" error**: 
