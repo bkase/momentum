@@ -1,6 +1,7 @@
 [tools]
 rust = "1.88.0"
 tuist = "4.55.6"
+swiftformat = "0.57.2"
 
 [env]
 RUST_BACKTRACE = "1"
