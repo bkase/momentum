@@ -37,9 +37,9 @@ struct ChecklistTests {
             }
         }
         
-        // Load checklist on appear
+        // Load checklist on appear - onAppear triggers loadChecklist
         await store.send(.onAppear)
-        await store.send(.loadChecklist) {
+        await store.receive(.loadChecklist) {
             $0.isLoadingChecklist = true
         }
         await store.receive(.checklistResponse(.success(mockChecklist))) {
