@@ -1,6 +1,6 @@
 # Fix finding claude CLI properly
 
-**Status:** InProgress
+**Status:** AwaitingCommit
 **Agent PID:** 31118
 
 ## Original Todo
