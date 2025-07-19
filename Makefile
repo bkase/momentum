@@ -57,6 +57,10 @@ swift-build-only:
 		-skipMacroValidation \
 		-quiet
 
+swift-lint:
+	@echo "Checking Swift formatting..."
+	@eval "$$(mise activate bash)" && swiftformat --lint .
+
 swift-test-only:
 	@echo "Running Swift tests..."
 	@xcodebuild -workspace Momentum.xcworkspace \
