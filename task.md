@@ -24,6 +24,7 @@ Fixed the issue where the claude CLI tool could not be found when running in the
 - [x] User test: Verified claude CLI works via hardcoded path (~/.local/share/mise/shims/claude)
 - [x] Fix macOS sandboxing issue by using shell execution to bypass permission restrictions
 - [x] Use full shell environment loading to execute claude through mise activation
+- [x] Disable app sandboxing following Vibetunnel approach
 
 ## Notes
 

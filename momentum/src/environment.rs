@@ -113,11 +113,11 @@ Respond in JSON format with these exact fields:
 }}"#
         );
 
-        // Load the shell environment to access mise-managed claude
-        // Include .zshrc contents directly since we can't source external files from sandbox
+        // Load shell environment to access mise-managed claude
+        // Now that sandboxing is disabled, we can use the simpler approach
         let escaped_prompt = prompt.replace("'", "'\"'\"'");
         let command = format!(
-            "export PATH=\"/etc/profiles/per-user/bkase/bin:$PATH\" && eval $(mise activate) && claude -p '{}'",
+            "source ~/.zshrc && eval $(mise activate) && claude -p '{}'",
             escaped_prompt
         );
 
