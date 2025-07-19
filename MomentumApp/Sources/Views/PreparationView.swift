@@ -88,13 +88,11 @@ struct PreparationView: View {
                     .foregroundStyle(Color.textSecondary)
                     .tracking(2)
                 
-                // Fixed height container for 4 items
                 VStack(spacing: 4) {
                     ForEach(store.checklistSlots) { slot in
                         checklistSlotView(for: slot)
                     }
                 }
-                .frame(height: 156) // Fixed height for 4 items
             }
         }
     }
