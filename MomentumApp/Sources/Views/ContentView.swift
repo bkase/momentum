@@ -1,5 +1,5 @@
-import SwiftUI
 import ComposableArchitecture
+import SwiftUI
 
 struct ContentView: View {
     @Bindable var store: StoreOf<AppFeature>

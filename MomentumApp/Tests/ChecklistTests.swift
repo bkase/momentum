@@ -1,7 +1,8 @@
-import Testing
-import Foundation
 import ComposableArchitecture
+import Foundation
 import Sharing
+import Testing
+
 @testable import MomentumApp
 
 @Suite("Checklist Tests")
@@ -63,7 +64,7 @@ struct ChecklistTests {
         ])
 
         let toggledChecklist = ChecklistState(items: [
-            ChecklistItem(id: "0", text: "Rested", on: true), // toggled
+            ChecklistItem(id: "0", text: "Rested", on: true),  // toggled
             ChecklistItem(id: "1", text: "Not hungry", on: false),
             ChecklistItem(id: "2", text: "Bathroom break", on: false),
             ChecklistItem(id: "3", text: "Phone on silent", on: false),
@@ -105,7 +106,7 @@ struct ChecklistTests {
 
         // Add valid time
         state.timeInput = "30"
-        #expect(!state.isStartButtonEnabled) // Still need all items checked
+        #expect(!state.isStartButtonEnabled)  // Still need all items checked
 
         // Add checklist with 5 items with some unchecked
         state.checklistItems = [
@@ -179,7 +180,7 @@ struct ChecklistTests {
         #expect(!store.state.isStartButtonEnabled)
 
         // Toggle each item one by one
-        for i in 0 ..< 5 {
+        for i in 0..<5 {
             let itemId = String(i)
             await store.send(.checklistItemToggled(id: itemId))
 
@@ -217,7 +218,7 @@ struct ChecklistTests {
     func goalValidationInvalidCharacters() async {
         var state = PreparationFeature.State()
         // Set all checklist items as checked
-        state.checklistItems = (0 ..< 5).map { i in
+        state.checklistItems = (0..<5).map { i in
             ChecklistItem(id: String(i), text: "Item \(i)", on: true)
         }
         state.timeInput = "30"
@@ -244,7 +245,7 @@ struct ChecklistTests {
     func goalValidationValidGoals() async {
         var state = PreparationFeature.State()
         // Set all checklist items as checked
-        state.checklistItems = (0 ..< 5).map { i in
+        state.checklistItems = (0..<5).map { i in
             ChecklistItem(id: String(i), text: "Item \(i)", on: true)
         }
         state.timeInput = "30"
@@ -270,7 +271,7 @@ struct ChecklistTests {
     func startButtonDisabledWithInvalidGoal() async {
         var state = PreparationFeature.State()
         // Set all checklist items as checked
-        state.checklistItems = (0 ..< 5).map { i in
+        state.checklistItems = (0..<5).map { i in
             ChecklistItem(id: String(i), text: "Item \(i)", on: true)
         }
         state.timeInput = "30"

@@ -56,17 +56,19 @@ func executeCommand(_ command: String, arguments: [String]) async throws -> Proc
 
                 if process.terminationStatus != 0 {
                     let stderr = error?.trimmingCharacters(in: .whitespacesAndNewlines)
-                    continuation.resume(throwing: RustCoreError.commandFailed(
-                        command: command,
-                        exitCode: process.terminationStatus,
-                        stderr: stderr
-                    ))
+                    continuation.resume(
+                        throwing: RustCoreError.commandFailed(
+                            command: command,
+                            exitCode: process.terminationStatus,
+                            stderr: stderr
+                        ))
                 } else {
-                    continuation.resume(returning: ProcessResult(
-                        output: output,
-                        error: error,
-                        exitCode: process.terminationStatus
-                    ))
+                    continuation.resume(
+                        returning: ProcessResult(
+                            output: output,
+                            error: error,
+                            exitCode: process.terminationStatus
+                        ))
                 }
             }
 

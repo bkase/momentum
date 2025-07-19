@@ -1,5 +1,5 @@
-import SwiftUI
 import ComposableArchitecture
+import SwiftUI
 
 // Helper to create states with specific checklist configurations for previews
 extension PreparationFeature.State {

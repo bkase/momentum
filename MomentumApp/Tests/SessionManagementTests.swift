@@ -1,6 +1,7 @@
-import Testing
-import Foundation
 import ComposableArchitecture
+import Foundation
+import Testing
+
 @testable import MomentumApp
 
 @Suite("Session Management Tests")
@@ -42,9 +43,16 @@ struct SessionManagementTests {
 
         // Receive delegate response from ReflectionFeature
         await store
-            .receive(.destination(.presented(.reflection(.delegate(.analysisRequested(analysisResult: AnalysisResult
-                    .mock
-            )))))) {
+            .receive(
+                .destination(
+                    .presented(
+                        .reflection(
+                            .delegate(
+                                .analysisRequested(
+                                    analysisResult: AnalysisResult
+                                        .mock
+                                )))))
+            ) {
                 $0.isLoading = false
                 $0.reflectionPath = nil
                 $0.destination = .analysis(AnalysisFeature.State(analysis: AnalysisResult.mock))
@@ -62,11 +70,12 @@ struct SessionManagementTests {
         let store = TestStore(
             initialState: AppFeature.State.test(
                 sessionData: sessionData,
-                destination: .activeSession(ActiveSessionFeature.State(
-                    goal: sessionData.goal,
-                    startTime: sessionData.startDate,
-                    expectedMinutes: sessionData.expectedMinutes
-                ))
+                destination: .activeSession(
+                    ActiveSessionFeature.State(
+                        goal: sessionData.goal,
+                        startTime: sessionData.startDate,
+                        expectedMinutes: sessionData.expectedMinutes
+                    ))
             )
         ) {
             AppFeature()
@@ -88,9 +97,10 @@ struct SessionManagementTests {
         // Receive delegate response from ActiveSessionFeature
         await store
             .receive(
-                .destination(.presented(
-                    .activeSession(.delegate(.sessionStopped(reflectionPath: "/tmp/test-reflection.md")))
-                ))
+                .destination(
+                    .presented(
+                        .activeSession(.delegate(.sessionStopped(reflectionPath: "/tmp/test-reflection.md")))
+                    ))
             ) {
                 $0.isLoading = false
                 $0.reflectionPath = "/tmp/test-reflection.md"
@@ -126,10 +136,11 @@ struct SessionManagementTests {
             $0.reflectionPath = nil
             // Clear state
             $0.isLoading = false
-            $0.destination = .preparation(PreparationFeature.State(
-                goal: "",
-                timeInput: "30"
-            ))
+            $0.destination = .preparation(
+                PreparationFeature.State(
+                    goal: "",
+                    timeInput: "30"
+                ))
         }
     }
 }

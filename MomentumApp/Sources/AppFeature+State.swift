@@ -21,16 +21,18 @@ extension AppFeature {
             if let analysis = analysisHistory.last {
                 self.destination = .analysis(AnalysisFeature.State(analysis: analysis))
             } else if let sessionData = sessionData {
-                self.destination = .activeSession(ActiveSessionFeature.State(
-                    goal: sessionData.goal,
-                    startTime: sessionData.startDate,
-                    expectedMinutes: sessionData.expectedMinutes
-                ))
+                self.destination = .activeSession(
+                    ActiveSessionFeature.State(
+                        goal: sessionData.goal,
+                        startTime: sessionData.startDate,
+                        expectedMinutes: sessionData.expectedMinutes
+                    ))
             } else {
-                self.destination = .preparation(PreparationFeature.State(
-                    goal: lastGoal,
-                    timeInput: lastTimeMinutes
-                ))
+                self.destination = .preparation(
+                    PreparationFeature.State(
+                        goal: lastGoal,
+                        timeInput: lastTimeMinutes
+                    ))
             }
         }
     }

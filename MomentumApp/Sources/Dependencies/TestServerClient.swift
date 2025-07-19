@@ -106,20 +106,21 @@ import Network
 
         private func handleMomentumCommand(_ request: HTTPRequest) async -> HTTPResponse {
             guard let body = request.body,
-                  let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
-                  let command = json["command"] as? String,
-                  let args = json["args"] as? [String]
+                let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
+                let command = json["command"] as? String,
+                let args = json["args"] as? [String]
             else {
                 return HTTPResponse(status: 400, body: "Invalid request body")
             }
 
             do {
                 let result = try await executeCommand(command, arguments: args)
-                let response = [
-                    "output": result.output ?? "",
-                    "error": result.error ?? "",
-                    "exitCode": result.exitCode,
-                ] as [String: Any]
+                let response =
+                    [
+                        "output": result.output ?? "",
+                        "error": result.error ?? "",
+                        "exitCode": result.exitCode,
+                    ] as [String: Any]
 
                 let responseData = try JSONSerialization.data(withJSONObject: response)
                 return HTTPResponse(status: 200, body: String(data: responseData, encoding: .utf8) ?? "{}")
@@ -172,13 +173,13 @@ import Network
         var data: Data {
             let statusText = status == 200 ? "OK" : "Error"
             let response = """
-            HTTP/1.1 \(status) \(statusText)\r
-            Content-Type: text/plain; charset=utf-8\r
-            Content-Length: \(body.utf8.count)\r
-            Connection: close\r
-            \r
-            \(body)
-            """
+                HTTP/1.1 \(status) \(statusText)\r
+                Content-Type: text/plain; charset=utf-8\r
+                Content-Length: \(body.utf8.count)\r
+                Connection: close\r
+                \r
+                \(body)
+                """
             return response.data(using: .utf8)!
         }
     }
@@ -223,16 +224,20 @@ import Network
         private func handleData(_ data: Data) async {
             guard let request = parseHTTPRequest(data) else {
                 let errorResponse = HTTPResponse(status: 400, body: "Bad Request")
-                connection.send(content: errorResponse.data, completion: .contentProcessed { _ in
-                    self.connection.cancel()
-                })
+                connection.send(
+                    content: errorResponse.data,
+                    completion: .contentProcessed { _ in
+                        self.connection.cancel()
+                    })
                 return
             }
 
             let response = await handler(request)
-            connection.send(content: response.data, completion: .contentProcessed { _ in
-                self.connection.cancel()
-            })
+            connection.send(
+                content: response.data,
+                completion: .contentProcessed { _ in
+                    self.connection.cancel()
+                })
         }
 
         private func parseHTTPRequest(_ data: Data) -> HTTPRequest? {

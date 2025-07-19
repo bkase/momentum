@@ -13,7 +13,7 @@ let project = Project(
         .remote(
             url: "https://github.com/pointfreeco/swift-composable-architecture",
             requirement: .upToNextMajor(from: "1.15.0")
-        ),
+        )
     ],
     settings: .settings(
         base: [
@@ -25,9 +25,11 @@ let project = Project(
             "ENABLE_USER_SCRIPT_SANDBOXING": "NO",
         ],
         configurations: [
-            .debug(name: .debug, settings: [
-                "OTHER_SWIFT_FLAGS": "$(inherited) -D DEBUG -enable-experimental-feature StrictConcurrency",
-            ]),
+            .debug(
+                name: .debug,
+                settings: [
+                    "OTHER_SWIFT_FLAGS": "$(inherited) -D DEBUG -enable-experimental-feature StrictConcurrency"
+                ]),
             .release(name: .release),
         ]
     ),
@@ -39,7 +41,7 @@ let project = Project(
             bundleId: "com.momentum.Momentum",
             infoPlist: .extendingDefault(with: [
                 "CFBundleDisplayName": "Momentum",
-                "LSUIElement": true, // Hide from dock by default (menu bar app)
+                "LSUIElement": true,  // Hide from dock by default (menu bar app)
                 "NSHumanReadableCopyright": "Copyright © 2025 Momentum. All rights reserved.",
                 "CFBundleVersion": "1",
                 "CFBundleShortVersionString": "1.0.0",
@@ -54,42 +56,42 @@ let project = Project(
             scripts: [
                 .pre(
                     script: """
-                    #!/bin/zsh
-                    set -e
+                        #!/bin/zsh
+                        set -e
 
-                    # Source user's zsh configuration to get mise/cargo in PATH
-                    if [ -f "$HOME/.zshrc" ]; then
-                        source "$HOME/.zshrc"
-                    fi
+                        # Source user's zsh configuration to get mise/cargo in PATH
+                        if [ -f "$HOME/.zshrc" ]; then
+                            source "$HOME/.zshrc"
+                        fi
 
-                    echo "Building Rust CLI..."
-                    cd "$SRCROOT"
+                        echo "Building Rust CLI..."
+                        cd "$SRCROOT"
 
-                    # Build Rust and copy binary
-                    make rust-build || { echo "Error: make rust-build failed"; exit 1; }
-                    make copy-rust-binary || { echo "Error: make copy-rust-binary failed"; exit 1; }
+                        # Build Rust and copy binary
+                        make rust-build || { echo "Error: make rust-build failed"; exit 1; }
+                        make copy-rust-binary || { echo "Error: make copy-rust-binary failed"; exit 1; }
 
-                    # Verify the binary was copied
-                    if [ ! -f "$SRCROOT/MomentumApp/Resources/momentum" ]; then
-                        echo "Error: Failed to copy momentum binary"
-                        exit 1
-                    fi
+                        # Verify the binary was copied
+                        if [ ! -f "$SRCROOT/MomentumApp/Resources/momentum" ]; then
+                            echo "Error: Failed to copy momentum binary"
+                            exit 1
+                        fi
 
-                    echo "✓ Rust CLI build complete"
-                    """,
+                        echo "✓ Rust CLI build complete"
+                        """,
                     name: "Build Rust CLI",
                     inputPaths: [
                         "$(SRCROOT)/momentum/Cargo.toml",
                         "$(SRCROOT)/momentum/src",
                     ],
                     outputPaths: [
-                        "$(SRCROOT)/MomentumApp/Resources/momentum",
+                        "$(SRCROOT)/MomentumApp/Resources/momentum"
                     ],
                     basedOnDependencyAnalysis: false
-                ),
+                )
             ],
             dependencies: [
-                .package(product: "ComposableArchitecture"),
+                .package(product: "ComposableArchitecture")
             ]
         ),
         .target(
@@ -99,7 +101,7 @@ let project = Project(
             bundleId: "com.momentum.MomentumTests",
             sources: ["MomentumApp/Tests/**"],
             dependencies: [
-                .target(name: "MomentumApp"),
+                .target(name: "MomentumApp")
             ]
         ),
     ],
@@ -116,6 +118,6 @@ let project = Project(
                 configuration: .debug,
                 executable: "MomentumApp"
             )
-        ),
+        )
     ]
 )

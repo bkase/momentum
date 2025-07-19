@@ -1,5 +1,5 @@
-import SwiftUI
 import ComposableArchitecture
+import SwiftUI
 
 struct PreparationView: View {
     @Bindable var store: StoreOf<PreparationFeature>
@@ -31,10 +31,13 @@ struct PreparationView: View {
 
     private var intentionInput: some View {
         VStack(alignment: .leading, spacing: 8) {
-            TextField("What will you accomplish?", text: Binding(
-                get: { store.goal },
-                set: { store.send(.goalChanged($0)) }
-            ))
+            TextField(
+                "What will you accomplish?",
+                text: Binding(
+                    get: { store.goal },
+                    set: { store.send(.goalChanged($0)) }
+                )
+            )
             .textFieldStyle(.intention)
             .focused($isGoalFieldFocused)
             .onSubmit {
@@ -59,10 +62,13 @@ struct PreparationView: View {
                 .font(.system(size: 14))
                 .foregroundStyle(Color.textPrimary)
 
-            TextField("30", text: Binding(
-                get: { store.timeInput },
-                set: { store.send(.timeInputChanged($0)) }
-            ))
+            TextField(
+                "30",
+                text: Binding(
+                    get: { store.timeInput },
+                    set: { store.send(.timeInputChanged($0)) }
+                )
+            )
             .frame(width: 60)
             .multilineTextAlignment(.center)
             .font(.system(size: 15, weight: .medium))

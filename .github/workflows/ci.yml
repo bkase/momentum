@@ -89,7 +89,10 @@ jobs:
         mise install
         eval "$(mise activate bash)"
         tuist version
-        swiftformat --version
+        
+    - name: Build swift-format
+      run: |
+        cd BuildTools && swift build
         
     - name: Generate Xcode project
       run: make swift-generate

@@ -1,6 +1,7 @@
-import Testing
-import Foundation
 import ComposableArchitecture
+import Foundation
+import Testing
+
 @testable import MomentumApp
 
 @Suite("Full Flow Tests")
@@ -21,7 +22,7 @@ struct FullFlowTests {
 
     @Test("Full Flow")
     func fullFlow() async {
-        let fixedTime: UInt64 = 1700000000
+        let fixedTime: UInt64 = 1_700_000_000
 
         // Set up initial shared state with the values we want
         @Shared(.lastGoal) var lastGoal: String
@@ -29,7 +30,7 @@ struct FullFlowTests {
         @Shared(.analysisHistory) var analysisHistory: [AnalysisResult]
         $lastGoal.withLock { $0 = "Full Flow Test" }
         $lastTimeMinutes.withLock { $0 = "20" }
-        $analysisHistory.withLock { $0 = [] } // Ensure empty history
+        $analysisHistory.withLock { $0 = [] }  // Ensure empty history
 
         let store = TestStore(initialState: AppFeature.State()) {
             AppFeature()
@@ -38,7 +39,7 @@ struct FullFlowTests {
                 SessionData(
                     goal: goal,
                     startTime: fixedTime,
-                    timeExpected: UInt64(minutes), // timeExpected is in minutes
+                    timeExpected: UInt64(minutes),  // timeExpected is in minutes
                     reflectionFilePath: nil
                 )
             }
@@ -53,9 +54,10 @@ struct FullFlowTests {
                 )
             }
             $0.rustCoreClient.checkList = {
-                ChecklistState(items: (0 ..< 10).map { i in
-                    ChecklistItem(id: String(i), text: "Item \(i)", on: true)
-                })
+                ChecklistState(
+                    items: (0..<10).map { i in
+                        ChecklistItem(id: String(i), text: "Item \(i)", on: true)
+                    })
             }
         }
         store.exhaustivity = .off
@@ -68,9 +70,10 @@ struct FullFlowTests {
         await store.send(.destination(.presented(.preparation(.loadChecklist))))
 
         // Simulate checklist loaded with all items checked
-        let checklistState = ChecklistState(items: (0 ..< 10).map { i in
-            ChecklistItem(id: String(i), text: "Item \(i)", on: true)
-        })
+        let checklistState = ChecklistState(
+            items: (0..<10).map { i in
+                ChecklistItem(id: String(i), text: "Item \(i)", on: true)
+            })
         await store.send(.destination(.presented(.preparation(.checklistResponse(.success(checklistState))))))
 
         // Since we can't complete all 10 items easily in the test,
@@ -79,7 +82,7 @@ struct FullFlowTests {
         let sessionData = SessionData(
             goal: "Full Flow Test",
             startTime: fixedTime,
-            timeExpected: 20, // 20 minutes
+            timeExpected: 20,  // 20 minutes
             reflectionFilePath: nil
         )
 
@@ -87,11 +90,12 @@ struct FullFlowTests {
             $0.isLoading = false
             // Don't manually update shared state - the reducer handles it
             $0.reflectionPath = nil
-            $0.destination = .activeSession(ActiveSessionFeature.State(
-                goal: "Full Flow Test",
-                startTime: Date(timeIntervalSince1970: TimeInterval(fixedTime)),
-                expectedMinutes: 20
-            ))
+            $0.destination = .activeSession(
+                ActiveSessionFeature.State(
+                    goal: "Full Flow Test",
+                    startTime: Date(timeIntervalSince1970: TimeInterval(fixedTime)),
+                    expectedMinutes: 20
+                ))
         }
 
         // 2. Stop session immediately
@@ -105,9 +109,10 @@ struct FullFlowTests {
         // Receive delegate response from ActiveSessionFeature
         await store
             .receive(
-                .destination(.presented(
-                    .activeSession(.delegate(.sessionStopped(reflectionPath: "/tmp/test-reflection.md")))
-                ))
+                .destination(
+                    .presented(
+                        .activeSession(.delegate(.sessionStopped(reflectionPath: "/tmp/test-reflection.md")))
+                    ))
             ) {
                 $0.isLoading = false
                 // Don't manually update shared state - the reducer handles it
@@ -121,19 +126,28 @@ struct FullFlowTests {
         }
 
         await store
-            .receive(.destination(.presented(.reflection(.delegate(.analysisRequested(analysisResult: AnalysisResult(
-                summary: "Test analysis summary",
-                suggestion: "Test suggestion",
-                reasoning: "Test reasoning"
-            ))))))) {
+            .receive(
+                .destination(
+                    .presented(
+                        .reflection(
+                            .delegate(
+                                .analysisRequested(
+                                    analysisResult: AnalysisResult(
+                                        summary: "Test analysis summary",
+                                        suggestion: "Test suggestion",
+                                        reasoning: "Test reasoning"
+                                    ))))))
+            ) {
                 $0.isLoading = false
                 $0.reflectionPath = nil
                 // The reducer automatically appends to analysisHistory, so we don't do it here
-                $0.destination = .analysis(AnalysisFeature.State(analysis: AnalysisResult(
-                    summary: "Test analysis summary",
-                    suggestion: "Test suggestion",
-                    reasoning: "Test reasoning"
-                )))
+                $0.destination = .analysis(
+                    AnalysisFeature.State(
+                        analysis: AnalysisResult(
+                            summary: "Test analysis summary",
+                            suggestion: "Test suggestion",
+                            reasoning: "Test reasoning"
+                        )))
             }
 
         // 4. Reset to preparing immediately
@@ -144,10 +158,11 @@ struct FullFlowTests {
             $0.reflectionPath = nil
             // Clear state
             $0.isLoading = false
-            $0.destination = .preparation(PreparationFeature.State(
-                goal: "Full Flow Test",
-                timeInput: "20"
-            ))
+            $0.destination = .preparation(
+                PreparationFeature.State(
+                    goal: "Full Flow Test",
+                    timeInput: "20"
+                ))
         }
     }
 }

@@ -20,7 +20,7 @@ struct SessionData: Equatable, Codable {
     }
 
     var expectedMinutes: UInt64 {
-        timeExpected // timeExpected is already in minutes from Rust
+        timeExpected  // timeExpected is already in minutes from Rust
     }
 }
 

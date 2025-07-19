@@ -1,7 +1,7 @@
 import ComposableArchitecture
 import Foundation
-import Testing
 import Sharing
+import Testing
 
 @testable import MomentumApp
 
@@ -33,7 +33,7 @@ struct PreparationFeatureTests {
             timeInput: "30"
         )
         // Set checklist items directly on state
-        initialState.checklistItems = (0 ..< 10).map { i in
+        initialState.checklistItems = (0..<10).map { i in
             ChecklistItem(id: String(i), text: "Item \(i)", on: true)
         }
 
@@ -177,7 +177,7 @@ struct PreparationFeatureTests {
 
         await store.send(.goalChanged("New goal")) {
             $0.goal = "New goal"
-            $0.operationError = nil // Error should be cleared
+            $0.operationError = nil  // Error should be cleared
         }
 
         // Set error again
@@ -187,7 +187,7 @@ struct PreparationFeatureTests {
 
         await store.send(.timeInputChanged("45")) {
             $0.timeInput = "45"
-            $0.operationError = nil // Error should be cleared
+            $0.operationError = nil  // Error should be cleared
         }
     }
 }

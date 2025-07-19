@@ -3,7 +3,7 @@ import Foundation
 
 extension PreparationFeature {
     struct ChecklistSlot: Equatable, Identifiable, Codable {
-        let id: Int // Position 0-3
+        let id: Int  // Position 0-3
         var item: ChecklistItem?
         var isTransitioning: Bool = false
         var isFadingIn: Bool = false
@@ -26,7 +26,8 @@ extension PreparationFeature {
         clock: any Clock<Duration>
     ) -> Effect<Action> {
         guard slotId < state.checklistSlots.count,
-              let item = state.checklistSlots[slotId].item else { return .none }
+            let item = state.checklistSlots[slotId].item
+        else { return .none }
 
         // Toggle the item via Rust CLI
         return .run { send in
@@ -45,7 +46,7 @@ extension PreparationFeature {
 
         // Update the slot's item to reflect the new state
         if let slotItem = state.checklistSlots[slotId].item,
-           let updatedItem = updatedItems.first(where: { $0.id == slotItem.id })
+            let updatedItem = updatedItems.first(where: { $0.id == slotItem.id })
         {
             var slots = state.checklistSlots
             slots[slotId].item = updatedItem
@@ -54,7 +55,7 @@ extension PreparationFeature {
 
         // If the item was just checked, start the transition
         if let slotItem = state.checklistSlots[slotId].item,
-           slotItem.on
+            slotItem.on
         {
             // Find next unchecked item
             let uncheckedItems = updatedItems.filter { !$0.on }

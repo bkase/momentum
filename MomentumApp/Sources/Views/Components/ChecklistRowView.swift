@@ -27,7 +27,7 @@ struct ChecklistRowView: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .background(backgroundGradient)
-        .contentShape(Rectangle()) // Ensure the entire row is clickable
+        .contentShape(Rectangle())  // Ensure the entire row is clickable
         .cornerRadius(2)
         .overlay(
             RoundedRectangle(cornerRadius: 2)
@@ -37,8 +37,8 @@ struct ChecklistRowView: View {
         .offset(x: offsetX)
         .animation(.easeOut(duration: 0.3), value: isTransitioning)
         .animation(.easeOut(duration: 0.3), value: hasAppeared)
-        .animation(.easeOut(duration: 0.3), value: item.on) // Animate background color change
-        .allowsHitTesting(!isTransitioning && (!isFadingIn || hasAppeared)) // Enable clicks after fade-in completes
+        .animation(.easeOut(duration: 0.3), value: item.on)  // Animate background color change
+        .allowsHitTesting(!isTransitioning && (!isFadingIn || hasAppeared))  // Enable clicks after fade-in completes
         .onHover { isHovered in
             if isHovered && !isTransitioning && (!isFadingIn || hasAppeared) {
                 NSCursor.pointingHand.push()
@@ -105,13 +105,16 @@ extension Color {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
         var int: UInt64 = 0
         Scanner(string: hex).scanHexInt64(&int)
-        let a, r, g, b: UInt64
+        let a: UInt64
+        let r: UInt64
+        let g: UInt64
+        let b: UInt64
         switch hex.count {
-        case 3: // RGB (12-bit)
+        case 3:  // RGB (12-bit)
             (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6: // RGB (24-bit)
+        case 6:  // RGB (24-bit)
             (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8: // ARGB (32-bit)
+        case 8:  // ARGB (32-bit)
             (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
         default:
             (a, r, g, b) = (255, 0, 0, 0)

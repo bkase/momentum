@@ -1,6 +1,7 @@
-import Testing
-import Foundation
 import ComposableArchitecture
+import Foundation
+import Testing
+
 @testable import MomentumApp
 
 @Suite("Error Handling Tests")
@@ -37,11 +38,12 @@ struct ErrorHandlingTests {
     @Test("Direct Session Stop")
     func directSessionStop() async {
         var state = AppFeature.State()
-        state.destination = .activeSession(ActiveSessionFeature.State(
-            goal: "Test Goal",
-            startTime: Date(timeIntervalSince1970: 1700000000),
-            expectedMinutes: 30
-        ))
+        state.destination = .activeSession(
+            ActiveSessionFeature.State(
+                goal: "Test Goal",
+                startTime: Date(timeIntervalSince1970: 1_700_000_000),
+                expectedMinutes: 30
+            ))
 
         let store = TestStore(
             initialState: state

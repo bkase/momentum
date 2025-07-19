@@ -8,6 +8,8 @@ install-tools:
 	@echo "Installing required tools via mise..."
 	@mise install
 	@eval "$$(mise activate bash)" && rustup component add rustfmt clippy
+	@echo "Building swift-format..."
+	@cd BuildTools && swift build
 
 # Rust targets
 rust-test:
@@ -42,7 +44,7 @@ copy-rust-binary:
 # Swift targets
 swift-format:
 	@echo "Formatting Swift code..."
-	@eval "$$(mise activate bash)" && swiftformat .
+	@./scripts/run-swift-format.sh format --recursive --in-place --configuration $(PWD)/.swift-format $(PWD)
 
 swift-generate:
 	@echo "Generating Xcode project..."
@@ -63,7 +65,7 @@ swift-build-only:
 
 swift-lint:
 	@echo "Checking Swift formatting..."
-	@eval "$$(mise activate bash)" && swiftformat --lint .
+	@./scripts/run-swift-format.sh lint --recursive --configuration $(PWD)/.swift-format $(PWD)
 
 swift-test-only:
 	@echo "Running Swift tests..."

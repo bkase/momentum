@@ -1,6 +1,6 @@
 import AppKit
-import SwiftUI
 import ComposableArchitecture
+import SwiftUI
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -38,7 +38,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 ]
 
                 if let data = try? JSONSerialization.data(withJSONObject: debugState),
-                   let json = String(data: data, encoding: .utf8)
+                    let json = String(data: data, encoding: .utf8)
                 {
                     return json
                 }

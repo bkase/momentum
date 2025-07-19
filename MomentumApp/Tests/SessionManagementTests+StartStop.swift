@@ -1,6 +1,7 @@
-import Testing
-import Foundation
 import ComposableArchitecture
+import Foundation
+import Testing
+
 @testable import MomentumApp
 
 extension SessionManagementTests {
@@ -18,9 +19,10 @@ extension SessionManagementTests {
             AppFeature()
         } withDependencies: {
             $0.rustCoreClient.checkList = {
-                ChecklistState(items: (0 ..< 10).map { i in
-                    ChecklistItem(id: String(i), text: "Item \(i)", on: true)
-                })
+                ChecklistState(
+                    items: (0..<10).map { i in
+                        ChecklistItem(id: String(i), text: "Item \(i)", on: true)
+                    })
             }
         }
         store.exhaustivity = .off
@@ -33,16 +35,17 @@ extension SessionManagementTests {
         await store.send(.destination(.presented(.preparation(.loadChecklist))))
 
         // Simulate checklist loaded with all items checked
-        let checklistState = ChecklistState(items: (0 ..< 10).map { i in
-            ChecklistItem(id: String(i), text: "Item \(i)", on: true)
-        })
+        let checklistState = ChecklistState(
+            items: (0..<10).map { i in
+                ChecklistItem(id: String(i), text: "Item \(i)", on: true)
+            })
         await store.send(.destination(.presented(.preparation(.checklistResponse(.success(checklistState))))))
 
         // Start session through delegate action from PreparationFeature
         let sessionData = SessionData.mock(
             goal: "Test Goal",
             startTime: Date(timeIntervalSince1970: 1_700_000_000),
-            timeExpected: 30 // 30 minutes
+            timeExpected: 30  // 30 minutes
         )
 
         // Send delegate action from PreparationFeature
@@ -50,11 +53,12 @@ extension SessionManagementTests {
             $0.isLoading = false
             // Don't manually update shared state - the reducer handles it
             $0.reflectionPath = nil
-            $0.destination = .activeSession(ActiveSessionFeature.State(
-                goal: "Test Goal",
-                startTime: Date(timeIntervalSince1970: 1_700_000_000),
-                expectedMinutes: 30
-            ))
+            $0.destination = .activeSession(
+                ActiveSessionFeature.State(
+                    goal: "Test Goal",
+                    startTime: Date(timeIntervalSince1970: 1_700_000_000),
+                    expectedMinutes: 30
+                ))
         }
     }
 
@@ -81,7 +85,7 @@ extension SessionManagementTests {
         let sessionData = SessionData.mock(
             goal: "Test Goal",
             startTime: startTime,
-            timeExpected: 30 // 30 minutes
+            timeExpected: 30  // 30 minutes
         )
 
         // Set up shared state before creating the store
@@ -113,9 +117,10 @@ extension SessionManagementTests {
         // Receive delegate response from ActiveSessionFeature
         await store
             .receive(
-                .destination(.presented(
-                    .activeSession(.delegate(.sessionStopped(reflectionPath: "/tmp/test-reflection.md")))
-                ))
+                .destination(
+                    .presented(
+                        .activeSession(.delegate(.sessionStopped(reflectionPath: "/tmp/test-reflection.md")))
+                    ))
             ) {
                 $0.isLoading = false
                 // Don't manually update shared state - the reducer handles it

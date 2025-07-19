@@ -28,16 +28,18 @@ struct AppFeature {
                 } else if let reflectionPath = state.reflectionPath {
                     state.destination = .reflection(ReflectionFeature.State(reflectionPath: reflectionPath))
                 } else if let sessionData = state.sessionData {
-                    state.destination = .activeSession(ActiveSessionFeature.State(
-                        goal: sessionData.goal,
-                        startTime: sessionData.startDate,
-                        expectedMinutes: sessionData.expectedMinutes
-                    ))
+                    state.destination = .activeSession(
+                        ActiveSessionFeature.State(
+                            goal: sessionData.goal,
+                            startTime: sessionData.startDate,
+                            expectedMinutes: sessionData.expectedMinutes
+                        ))
                 } else {
-                    state.destination = .preparation(PreparationFeature.State(
-                        goal: state.lastGoal,
-                        timeInput: state.lastTimeMinutes
-                    ))
+                    state.destination = .preparation(
+                        PreparationFeature.State(
+                            goal: state.lastGoal,
+                            timeInput: state.lastTimeMinutes
+                        ))
                 }
                 return .none
 
@@ -61,11 +63,12 @@ struct AppFeature {
                 state.$sessionData.withLock { $0 = sessionData }
                 state.reflectionPath = nil
                 state.$analysisHistory.withLock { $0 = [] }
-                state.destination = .activeSession(ActiveSessionFeature.State(
-                    goal: sessionData.goal,
-                    startTime: sessionData.startDate,
-                    expectedMinutes: sessionData.expectedMinutes
-                ))
+                state.destination = .activeSession(
+                    ActiveSessionFeature.State(
+                        goal: sessionData.goal,
+                        startTime: sessionData.startDate,
+                        expectedMinutes: sessionData.expectedMinutes
+                    ))
                 return .none
 
             case let .destination(.presented(.preparation(.delegate(.sessionFailedToStart(error))))):
@@ -116,10 +119,11 @@ struct AppFeature {
                 state.destination = nil
                 state.reflectionPath = nil
                 // Go back to preparation
-                state.destination = .preparation(PreparationFeature.State(
-                    goal: state.lastGoal,
-                    timeInput: state.lastTimeMinutes
-                ))
+                state.destination = .preparation(
+                    PreparationFeature.State(
+                        goal: state.lastGoal,
+                        timeInput: state.lastTimeMinutes
+                    ))
                 return .none
 
             case .destination(.presented(.analysis(.resetButtonTapped))):
@@ -129,10 +133,11 @@ struct AppFeature {
             case .destination(.presented(.analysis(.dismissButtonTapped))):
                 state.destination = nil
                 // Keep analysis in history but go to preparation
-                state.destination = .preparation(PreparationFeature.State(
-                    goal: state.lastGoal,
-                    timeInput: state.lastTimeMinutes
-                ))
+                state.destination = .preparation(
+                    PreparationFeature.State(
+                        goal: state.lastGoal,
+                        timeInput: state.lastTimeMinutes
+                    ))
                 return .none
 
             case .resetToIdle:
@@ -140,10 +145,11 @@ struct AppFeature {
                 state.reflectionPath = nil
                 state.$analysisHistory.withLock { $0 = [] }
                 state.isLoading = false
-                state.destination = .preparation(PreparationFeature.State(
-                    goal: state.lastGoal,
-                    timeInput: state.lastTimeMinutes
-                ))
+                state.destination = .preparation(
+                    PreparationFeature.State(
+                        goal: state.lastGoal,
+                        timeInput: state.lastTimeMinutes
+                    ))
                 return .cancel(id: CancelID.rustOperation)
 
             case .cancelCurrentOperation:

@@ -16,7 +16,7 @@ extension RustCoreClient: DependencyKey {
             let result = try await executeCommand("start", arguments: ["--goal", goal, "--time", String(minutes)])
 
             guard let sessionPath = result.output?.trimmingCharacters(in: .whitespacesAndNewlines),
-                  !sessionPath.isEmpty
+                !sessionPath.isEmpty
             else {
                 throw RustCoreError.invalidOutput("start command returned no session path")
             }
@@ -31,7 +31,7 @@ extension RustCoreClient: DependencyKey {
             let result = try await executeCommand("stop", arguments: [])
 
             guard let reflectionPath = result.output?.trimmingCharacters(in: .whitespacesAndNewlines),
-                  !reflectionPath.isEmpty
+                !reflectionPath.isEmpty
             else {
                 throw RustCoreError.invalidOutput("stop command returned no reflection path")
             }
@@ -42,8 +42,8 @@ extension RustCoreClient: DependencyKey {
             let result = try await executeCommand("analyze", arguments: ["--file", filePath])
 
             guard let analysisJson = result.output,
-                  !analysisJson.isEmpty,
-                  let data = analysisJson.data(using: .utf8)
+                !analysisJson.isEmpty,
+                let data = analysisJson.data(using: .utf8)
             else {
                 throw RustCoreError.invalidOutput("analyze command returned no JSON")
             }
@@ -58,8 +58,8 @@ extension RustCoreClient: DependencyKey {
             let result = try await executeCommand("check", arguments: ["list"])
 
             guard let checklistJson = result.output,
-                  !checklistJson.isEmpty,
-                  let data = checklistJson.data(using: .utf8)
+                !checklistJson.isEmpty,
+                let data = checklistJson.data(using: .utf8)
             else {
                 throw RustCoreError.invalidOutput("check list command returned no JSON")
             }
@@ -74,8 +74,8 @@ extension RustCoreClient: DependencyKey {
             let result = try await executeCommand("check", arguments: ["toggle", id])
 
             guard let checklistJson = result.output,
-                  !checklistJson.isEmpty,
-                  let data = checklistJson.data(using: .utf8)
+                !checklistJson.isEmpty,
+                let data = checklistJson.data(using: .utf8)
             else {
                 throw RustCoreError.invalidOutput("check toggle command returned no JSON")
             }
@@ -93,7 +93,7 @@ extension RustCoreClient: DependencyKey {
             SessionData(
                 goal: goal,
                 startTime: 1_700_000_000,
-                timeExpected: UInt64(minutes), // Rust expects minutes, not seconds
+                timeExpected: UInt64(minutes),  // Rust expects minutes, not seconds
                 reflectionFilePath: nil
             )
         },

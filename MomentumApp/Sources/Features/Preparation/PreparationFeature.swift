@@ -1,7 +1,7 @@
 import ComposableArchitecture
 import Foundation
-import Sharing
 import OSLog
+import Sharing
 
 @Reducer
 struct PreparationFeature {
@@ -10,8 +10,8 @@ struct PreparationFeature {
     struct State: Equatable {
         var goal: String = ""
         var timeInput: String = ""
-        var checklistItems: [ChecklistItem] = [] // Full list from Rust CLI
-        var checklistSlots: [ChecklistSlot] = [] // 4 visible slots
+        var checklistItems: [ChecklistItem] = []  // Full list from Rust CLI
+        var checklistSlots: [ChecklistSlot] = []  // 4 visible slots
         var activeTransitions: [Int: ItemTransition] = [:]
         var isLoadingChecklist: Bool = false
         var operationError: String?
@@ -25,11 +25,8 @@ struct PreparationFeature {
         }
 
         var isStartButtonEnabled: Bool {
-            !goal.isEmpty &&
-                Int(timeInput).map { $0 > 0 } == true &&
-                checklistItems.count >= 5 && // Ensure we have the full checklist
-                checklistItems.allSatisfy { $0.on } &&
-                goalValidationError == nil
+            !goal.isEmpty && Int(timeInput).map { $0 > 0 } == true && checklistItems.count >= 5  // Ensure we have the full checklist
+                && checklistItems.allSatisfy { $0.on } && goalValidationError == nil
         }
 
         init(
@@ -42,7 +39,7 @@ struct PreparationFeature {
         }
 
         static func createInitialSlots() -> [ChecklistSlot] {
-            (0 ..< 4).map { ChecklistSlot(id: $0) }
+            (0..<4).map { ChecklistSlot(id: $0) }
         }
 
         init(preparationState: PreparationState) {
@@ -54,7 +51,7 @@ struct PreparationFeature {
             PreparationState(
                 goal: goal,
                 timeInput: timeInput,
-                checklist: IdentifiedArray(uniqueElements: []) // No longer used
+                checklist: IdentifiedArray(uniqueElements: [])  // No longer used
             )
         }
     }

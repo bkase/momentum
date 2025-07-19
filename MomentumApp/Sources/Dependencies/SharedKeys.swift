@@ -4,8 +4,8 @@ import Foundation
 // MARK: - Shared Keys for Persistence
 
 // Helper to get app support directory
-private extension URL {
-    static var appSupportDirectory: URL {
+extension URL {
+    fileprivate static var appSupportDirectory: URL {
         let urls = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
         let appSupportURL = urls[0].appendingPathComponent("com.momentum.app")
 

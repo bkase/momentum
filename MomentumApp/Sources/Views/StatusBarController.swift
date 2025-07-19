@@ -1,6 +1,6 @@
 import AppKit
-import SwiftUI
 import ComposableArchitecture
+import SwiftUI
 
 @MainActor
 final class StatusBarController: NSObject {

@@ -27,12 +27,12 @@ struct ProcessRunner: DependencyKey {
             )
         case "analyze":
             let analysisJson = """
-            {
-                "summary": "Test analysis summary",
-                "suggestion": "Test suggestion",
-                "reasoning": "Test reasoning"
-            }
-            """
+                {
+                    "summary": "Test analysis summary",
+                    "suggestion": "Test suggestion",
+                    "reasoning": "Test reasoning"
+                }
+                """
             return ProcessResult(
                 output: analysisJson,
                 error: nil,

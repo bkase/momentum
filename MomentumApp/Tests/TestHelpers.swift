@@ -1,6 +1,7 @@
 import ComposableArchitecture
-import Foundation
 import Dependencies
+import Foundation
+
 @testable import MomentumApp
 
 // MARK: - Test Helpers for Shared State
@@ -49,7 +50,7 @@ extension SessionData {
     static func mock(
         goal: String = "Test Goal",
         startTime: Date = Date(timeIntervalSince1970: 1_700_000_000),
-        timeExpected: UInt64 = 30, // Default to 30 minutes
+        timeExpected: UInt64 = 30,  // Default to 30 minutes
         reflectionFilePath: String? = nil
     ) -> Self {
         SessionData(

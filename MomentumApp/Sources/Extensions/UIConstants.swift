@@ -29,7 +29,7 @@ extension CGFloat {
     // MARK: - Checklist Specific
     static let momentumChecklistSectionSpacing: CGFloat = 12
     static let momentumChecklistItemSpacing: CGFloat = 4
-    static let momentumChecklistFixedHeight: CGFloat = 156 // For 4 items
+    static let momentumChecklistFixedHeight: CGFloat = 156  // For 4 items
     static let momentumChecklistRowHeight: CGFloat = 36
 
     // MARK: - Small Spacing Values

@@ -1,5 +1,5 @@
-import SwiftUI
 import ComposableArchitecture
+import SwiftUI
 
 struct AnalysisResultView: View {
     @Bindable var store: StoreOf<AnalysisFeature>
