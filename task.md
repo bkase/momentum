@@ -1,6 +1,6 @@
 # Auto-formatting
 
-**Status:** Refining
+**Status:** InProgress
 **Agent PID:** 86816
 
 ## Original Todo
@@ -9,15 +9,34 @@ We need to introduce targets for auto-formatting in the Makefile. Then we need t
 
 ## Description
 
-[what we're building]
+We're adding comprehensive auto-formatting capabilities to the Momentum project for both Swift and Rust code. This includes:
+- Creating new Makefile targets for formatting Swift and Rust code
+- Installing and configuring SwiftFormat for Swift code formatting
+- Leveraging the existing cargo fmt for Rust code formatting  
+- Updating the CI pipeline to enforce formatting standards
+- Updating documentation to reflect the new formatting commands
+- Creating a `.swiftformat` configuration file to maintain the project's existing code style
+
+The goal is to ensure consistent code formatting across the entire codebase and make it easy for contributors to format their code before committing.
 
 ## Implementation Plan
 
-[how we are building it]
+Here's how we'll implement auto-formatting for the Momentum project:
 
-- [ ] Code change with location(s) if applicable (src/file.ts:45-93)
-- [ ] Automated test: ...
-- [ ] User test: ...
+- [ ] Create .swiftformat configuration file with project-specific rules (/.swiftformat)
+- [ ] Add swiftformat to mise configuration (.mise.toml or .tool-versions)
+- [ ] Add rust-format target to Makefile that runs `cargo fmt`
+- [ ] Add swift-format target to Makefile that runs `swiftformat .`
+- [ ] Add combined format target to Makefile that runs both rust-format and swift-format
+- [ ] Update rust-lint target to separate formatting check from clippy
+- [ ] Create swift-lint target that runs `swiftformat --lint .`
+- [ ] Update lint target to include both rust-lint and swift-lint
+- [ ] Update CI workflow to run the new lint target that checks both formatters
+- [ ] Format entire codebase with new formatters and commit changes
+- [ ] Update todos/project-description.md to include new format command
+- [ ] Update CLAUDE.md to mention auto-formatting during tasks
+- [ ] Automated test: Run `make format` and verify no errors
+- [ ] User test: Run `make lint` and verify formatting is checked
 
 ## Notes
 
