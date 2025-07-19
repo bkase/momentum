@@ -1,6 +1,6 @@
 # Fix finding claude CLI properly
 
-**Status:** Refining
+**Status:** Complete
 **Agent PID:** 31118
 
 ## Original Todo
@@ -15,16 +15,18 @@ The way to get to claude is to (from within zsh), `source ~/.zshrc`, then `eval 
 
 ## Description
 
-[what we're building]
+Fixed the issue where the claude CLI tool could not be found when running in the GUI environment by hardcoding the path to the claude binary installed via mise.
 
 ## Implementation Plan
 
-[how we are building it]
-
-- [ ] Code change with location(s) if applicable (src/file.ts:45-93)
-- [ ] Automated test: ...
-- [ ] User test: ...
+- [x] Code change with location(s) if applicable (momentum/src/environment.rs:116-138)
+- [x] Automated test: All existing tests pass
+- [x] User test: Verified claude CLI works via hardcoded path (~/.local/share/mise/shims/claude)
 
 ## Notes
 
-[Implementation notes]
+The claude CLI is installed as an npm package via mise at version 1.0.55. The actual executable is a Node.js script located at:
+- Shim: `~/.local/share/mise/shims/claude`
+- Actual script: `~/.local/share/mise/installs/npm-anthropic-ai-claude-code/1.0.55/lib/node_modules/@anthropic-ai/claude-code/cli.js`
+
+The fix replaces the previous approach of using `zsh -c` to load shell configuration with a direct path to the claude shim. This ensures the CLI can be found regardless of the environment's PATH configuration.

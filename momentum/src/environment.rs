@@ -113,24 +113,27 @@ Respond in JSON format with these exact fields:
 }}"#
         );
 
-        // Use zsh -c to ensure user's shell configuration is loaded
+        // Hardcode the path to claude CLI for now
+        // The claude CLI is installed via mise and located at this path
+        let claude_path = std::path::Path::new(
+            &std::env::var("HOME").unwrap_or_else(|_| "/Users/bkase".to_string())
+        ).join(".local/share/mise/shims/claude");
+        
         // Set a timeout of 90 seconds for the claude CLI
-        // Escape the prompt for shell - replace ' with '\''
-        let escaped_prompt = prompt.replace("'", "'\"'\"'");
         let output = tokio::time::timeout(
             std::time::Duration::from_secs(90),
-            tokio::process::Command::new("zsh")
-                .arg("-c")
-                .arg(format!("claude -p '{escaped_prompt}'"))
+            tokio::process::Command::new(&claude_path)
+                .arg("-p")
+                .arg(&prompt)
                 .output(),
         )
         .await
         .map_err(|_| anyhow::anyhow!("claude CLI timed out after 90 seconds"))?
         .map_err(|e| {
             if e.kind() == std::io::ErrorKind::NotFound {
-                anyhow::anyhow!("zsh not found. Please ensure zsh is installed.")
+                anyhow::anyhow!("claude CLI not found at: {:?}. Please ensure it is installed via mise.", claude_path)
             } else {
-                anyhow::anyhow!("Failed to execute zsh: {}", e)
+                anyhow::anyhow!("Failed to execute claude: {}", e)
             }
         })?;
 
