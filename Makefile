@@ -1,4 +1,4 @@
-.PHONY: all test build clean rust-test rust-build rust-lint swift-test swift-build install-tools tail-logs
+.PHONY: all test build clean rust-test rust-build rust-lint rust-format swift-test swift-build swift-format swift-lint format lint install-tools tail-logs
 
 # Default target
 all: build test
@@ -13,6 +13,10 @@ install-tools:
 rust-test:
 	@echo "Running Rust tests..."
 	@eval "$$(mise activate bash)" && cd momentum && cargo test
+
+rust-format:
+	@echo "Formatting Rust code..."
+	@eval "$$(mise activate bash)" && cd momentum && cargo fmt
 
 rust-lint:
 	@echo "Checking Rust formatting..."
