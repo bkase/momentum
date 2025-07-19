@@ -115,9 +115,11 @@ Respond in JSON format with these exact fields:
 
         // Load shell environment to access mise-managed claude
         // Now that sandboxing is disabled, we can use the simpler approach
-        let escaped_prompt = prompt.replace("'", "'\"'\"'");
+        // Escape single quotes by replacing them with '\''
+        let escaped_prompt = prompt.replace("'", "'\\''");
+        // Use mise hook-env instead of activate to get just the env vars
         let command = format!(
-            "source ~/.zshrc && eval $(mise activate) && claude -p '{}'",
+            "source ~/.zshrc && eval \"$(mise hook-env -s zsh)\" && claude -p '{}'",
             escaped_prompt
         );
 

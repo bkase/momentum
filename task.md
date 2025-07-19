@@ -25,6 +25,7 @@ Fixed the issue where the claude CLI tool could not be found when running in the
 - [x] Fix macOS sandboxing issue by using shell execution to bypass permission restrictions
 - [x] Use full shell environment loading to execute claude through mise activation
 - [x] Disable app sandboxing following Vibetunnel approach
+- [x] Fix shell parsing error by using mise hook-env instead of mise activate
 
 ## Notes
 
