@@ -57,9 +57,6 @@ final class StatusBarController: NSObject {
         let hostingController = NSHostingController(rootView: contentView)
         popover.contentViewController = hostingController
         
-        // Let the content size itself - the fixedSize() modifier on ContentView will handle this
-        // The popover will automatically size to fit the content
-        
         if let button = statusItem?.button {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         }
