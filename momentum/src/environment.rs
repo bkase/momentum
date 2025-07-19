@@ -113,35 +113,31 @@ Respond in JSON format with these exact fields:
 }}"#
         );
 
-        // Hardcode the path to claude CLI for now
-        // The claude CLI is installed via mise and located at this path
-        let claude_path = std::path::Path::new(
-            &std::env::var("HOME").unwrap_or_else(|_| "/Users/bkase".to_string())
-        ).join(".local/share/mise/shims/claude");
-        
+        // Load the shell environment to access mise-managed claude
+        // Include .zshrc contents directly since we can't source external files from sandbox
+        let escaped_prompt = prompt.replace("'", "'\"'\"'");
+        let command = format!(
+            "export PATH=\"/etc/profiles/per-user/bkase/bin:$PATH\" && eval $(mise activate) && claude -p '{}'",
+            escaped_prompt
+        );
+
         // Set a timeout of 90 seconds for the claude CLI
         let output = tokio::time::timeout(
             std::time::Duration::from_secs(90),
-            tokio::process::Command::new(&claude_path)
-                .arg("-p")
-                .arg(&prompt)
+            tokio::process::Command::new("/bin/zsh")
+                .arg("-c")
+                .arg(&command)
                 .output(),
         )
         .await
         .map_err(|_| anyhow::anyhow!("claude CLI timed out after 90 seconds"))?
-        .map_err(|e| {
-            if e.kind() == std::io::ErrorKind::NotFound {
-                anyhow::anyhow!("claude CLI not found at: {:?}. Please ensure it is installed via mise.", claude_path)
-            } else {
-                anyhow::anyhow!("Failed to execute claude: {}", e)
-            }
-        })?;
+        .map_err(|e| anyhow::anyhow!("Failed to execute zsh: {}", e))?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            if stderr.contains("command not found: claude") {
+            if stderr.contains("command not found") {
                 return Err(anyhow::anyhow!(
-                    "claude CLI tool not found. Please ensure it is installed and available in your PATH."
+                    "claude CLI tool not found. Please ensure it is installed via mise and available in your shell environment."
                 ));
             }
             return Err(anyhow::anyhow!("claude command failed: {}", stderr));

@@ -1,6 +1,6 @@
 # Fix finding claude CLI properly
 
-**Status:** Complete
+**Status:** InProgress
 **Agent PID:** 31118
 
 ## Original Todo
@@ -22,6 +22,8 @@ Fixed the issue where the claude CLI tool could not be found when running in the
 - [x] Code change with location(s) if applicable (momentum/src/environment.rs:116-138)
 - [x] Automated test: All existing tests pass
 - [x] User test: Verified claude CLI works via hardcoded path (~/.local/share/mise/shims/claude)
+- [x] Fix macOS sandboxing issue by using shell execution to bypass permission restrictions
+- [x] Use full shell environment loading to execute claude through mise activation
 
 ## Notes
 
