@@ -7,22 +7,23 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             headerView
+                .background(Color.canvasBackground)
             
             Divider()
             
             sessionContentView
-                .padding()
-                .frame(maxHeight: .infinity)
                 .overlay(alignment: .bottom) {
                     if store.isLoading {
                         ProgressView()
                             .progressViewStyle(.circular)
                             .scaleEffect(0.7)
+                            .padding(.bottom)
                     }
                 }
         }
-        .frame(width: 360, height: 500)
-        .background(Color(NSColor.windowBackgroundColor))
+        .frame(minWidth: 360, idealWidth: 360, maxWidth: 360, minHeight: 400, maxHeight: 700)
+        .fixedSize(horizontal: false, vertical: true)
+        .background(Color.canvasBackground)
         .onKeyPress(.escape) {
             if store.isLoading {
                 store.send(.cancelCurrentOperation)
@@ -56,7 +57,9 @@ struct ContentView: View {
             .buttonStyle(.plain)
             .help("Quit Momentum")
         }
-        .padding()
+        .padding(.horizontal, .momentumContainerPaddingHorizontal)
+        .padding(.top, 20)
+        .padding(.bottom, 20)
     }
     
     @ViewBuilder

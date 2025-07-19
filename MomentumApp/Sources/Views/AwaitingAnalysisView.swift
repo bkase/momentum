@@ -8,10 +8,8 @@ struct AwaitingAnalysisView: View {
         VStack(spacing: 0) {
             // Title section
             Text("Reflection Complete")
-                .font(.momentumTitle)
-                .foregroundStyle(Color.textPrimary)
-                .frame(maxWidth: .infinity)
-                .padding(.bottom, .momentumTitleBottomPadding)
+                .momentumTitleStyle()
+                .padding(CGFloat.momentumSpacingLarge)
             
             // Content sections
             VStack(spacing: .momentumSectionSpacing) {
@@ -59,10 +57,6 @@ struct AwaitingAnalysisView: View {
                 OperationErrorView(error: store.operationError)
             }
         }
-        .frame(width: .momentumContainerWidth)
-        .padding(.top, .momentumContainerPaddingTop)
-        .padding(.horizontal, .momentumContainerPaddingHorizontal)
-        .padding(.bottom, .momentumContainerPaddingBottom)
-        .background(Color.canvasBackground)
+        .momentumContainer()
     }
 }

@@ -49,13 +49,13 @@ final class StatusBarController: NSObject {
     
     private func showPopover() {
         let popover = NSPopover()
-        popover.contentSize = NSSize(width: 360, height: 500)
         popover.behavior = .transient
         popover.animates = false
         
         // Create the content view with the store
         let contentView = ContentView(store: store)
-        popover.contentViewController = NSHostingController(rootView: contentView)
+        let hostingController = NSHostingController(rootView: contentView)
+        popover.contentViewController = hostingController
         
         if let button = statusItem?.button {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)

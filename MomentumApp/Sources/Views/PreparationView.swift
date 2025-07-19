@@ -17,11 +17,7 @@ struct PreparationView: View {
             
             buttonAndProgress
         }
-        .frame(width: 320)
-        .padding(.top, 24)
-        .padding(.horizontal, 20)
-        .padding(.bottom, 24)
-        .background(Color.canvasBackground)
+        .momentumContainer()
         .onAppear {
             isGoalFieldFocused = true
             store.send(.onAppear)
@@ -30,10 +26,7 @@ struct PreparationView: View {
     
     private var titleSection: some View {
         Text("Compose Your Intention")
-            .font(.momentumTitle)
-            .foregroundStyle(Color.textPrimary)
-            .frame(maxWidth: .infinity)
-            .padding(.bottom, 24)
+            .momentumTitleStyle()
     }
     
     private var intentionInput: some View {
@@ -95,13 +88,11 @@ struct PreparationView: View {
                     .foregroundStyle(Color.textSecondary)
                     .tracking(2)
                 
-                // Fixed height container for 4 items
                 VStack(spacing: 4) {
                     ForEach(store.checklistSlots) { slot in
                         checklistSlotView(for: slot)
                     }
                 }
-                .frame(height: 156) // Fixed height for 4 items
             }
         }
     }
@@ -128,7 +119,7 @@ struct PreparationView: View {
     }
     
     private var buttonAndProgress: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             Button("Enter Sanctuary") {
                 startSession()
             }
@@ -145,7 +136,7 @@ struct PreparationView: View {
             // Operation error
             OperationErrorView(error: store.operationError)
         }
-        .padding(.top, 24)
+        .padding(.top, .momentumButtonSectionTopPadding)
     }
     
     private func startSession() {

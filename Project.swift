@@ -46,7 +46,9 @@ let project = Project(
             ]),
             sources: ["MomentumApp/Sources/**"],
             resources: [
-                "MomentumApp/Resources/**"
+                "MomentumApp/Resources/checklist.json",
+                "MomentumApp/Resources/reflection-template.md",
+                "MomentumApp/Resources/momentum"
             ],
             entitlements: .file(path: "MomentumApp/Resources/Momentum.entitlements"),
             scripts: [

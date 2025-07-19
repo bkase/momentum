@@ -7,9 +7,9 @@ import SwiftUI
 extension CGFloat {
     // MARK: - Main Container
     static let momentumContainerWidth: CGFloat = 320
-    static let momentumContainerPaddingTop: CGFloat = 24
+    static let momentumContainerPaddingTop: CGFloat = 20
     static let momentumContainerPaddingHorizontal: CGFloat = 20
-    static let momentumContainerPaddingBottom: CGFloat = 24
+    static let momentumContainerPaddingBottom: CGFloat = 20
     
     // MARK: - Section Spacing
     static let momentumSectionSpacing: CGFloat = 24
