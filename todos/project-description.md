@@ -8,6 +8,7 @@ Momentum is a macOS menu bar productivity application that helps users track and
 - Post-session structured reflection templates
 - AI-powered analysis using Claude API for insights
 - Local-first data storage (JSON and markdown files)
+- Built-in test server for debugging (DEBUG builds only)
 
 ## Tech Stack
 - **Languages**: Swift 6.0, Rust (edition 2021)
@@ -51,6 +52,7 @@ Momentum is a macOS menu bar productivity application that helps users track and
 - **Swift**: Create tests in MomentumApp/Tests/ using @Test attribute and TCA TestStore
 - **Rust**: Add tests in src/tests.rs using #[test] attribute
 - **Pattern**: Mock all dependencies, use deterministic data, test state transitions
+- **Test Server**: HTTP server on port 8765 for debugging (see docs/test-server.md)
 
 ## Editor
 - Open folder: I will open a new ghostty window and open the folder with `nvim`, you will provide an nvim invocation I can copy+paste

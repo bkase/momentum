@@ -113,32 +113,32 @@ Respond in JSON format with these exact fields:
 }}"#
         );
 
-        // Use zsh -c to ensure user's shell configuration is loaded
+        // Load shell environment to access mise-managed claude
+        // Now that sandboxing is disabled, we can use the simpler approach
+        // Escape single quotes by replacing them with '\''
+        let escaped_prompt = prompt.replace("'", "'\\''");
+        // Use mise hook-env instead of activate to get just the env vars
+        let command = format!(
+            "source ~/.zshrc && eval \"$(mise hook-env -s zsh)\" && claude -p '{escaped_prompt}'"
+        );
+
         // Set a timeout of 90 seconds for the claude CLI
-        // Escape the prompt for shell - replace ' with '\''
-        let escaped_prompt = prompt.replace("'", "'\"'\"'");
         let output = tokio::time::timeout(
             std::time::Duration::from_secs(90),
-            tokio::process::Command::new("zsh")
+            tokio::process::Command::new("/bin/zsh")
                 .arg("-c")
-                .arg(format!("claude -p '{escaped_prompt}'"))
+                .arg(&command)
                 .output(),
         )
         .await
         .map_err(|_| anyhow::anyhow!("claude CLI timed out after 90 seconds"))?
-        .map_err(|e| {
-            if e.kind() == std::io::ErrorKind::NotFound {
-                anyhow::anyhow!("zsh not found. Please ensure zsh is installed.")
-            } else {
-                anyhow::anyhow!("Failed to execute zsh: {}", e)
-            }
-        })?;
+        .map_err(|e| anyhow::anyhow!("Failed to execute zsh: {}", e))?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            if stderr.contains("command not found: claude") {
+            if stderr.contains("command not found") {
                 return Err(anyhow::anyhow!(
-                    "claude CLI tool not found. Please ensure it is installed and available in your PATH."
+                    "claude CLI tool not found. Please ensure it is installed via mise and available in your shell environment."
                 ));
             }
             return Err(anyhow::anyhow!("claude command failed: {}", stderr));

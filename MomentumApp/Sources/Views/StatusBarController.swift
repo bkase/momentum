@@ -47,6 +47,10 @@ final class StatusBarController: NSObject {
         }
     }
     
+    func showMenu() {
+        showPopover()
+    }
+    
     private func showPopover() {
         let popover = NSPopover()
         popover.behavior = .transient

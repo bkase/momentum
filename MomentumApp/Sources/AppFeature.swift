@@ -4,6 +4,9 @@ import Foundation
 @Reducer
 struct AppFeature {
     @Dependency(\.rustCoreClient) var rustCoreClient
+    #if DEBUG
+    @Dependency(\.testServer) var testServer
+    #endif
 
     enum CancelID { case rustOperation }
     
@@ -150,6 +153,24 @@ struct AppFeature {
             case .cancelCurrentOperation:
                 state.isLoading = false
                 return .cancel(id: CancelID.rustOperation)
+                
+            #if DEBUG
+            case .testServerShowMenu:
+                // Force the menu to be visible - this would be handled by the view
+                TestLogger.log("Test server requested menu show")
+                return .none
+                
+            case .testServerRefreshState:
+                // Force reload state from disk
+                TestLogger.log("Test server requested state refresh")
+                return .send(.onAppear)
+                
+            case .startTestServer:
+                return .run { _ in
+                    try await testServer.start(8765)
+                    TestLogger.log("Test server started on port 8765")
+                }
+            #endif
                 
             case .destination:
                 return .none

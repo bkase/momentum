@@ -41,6 +41,11 @@ extension AppFeature {
         case onAppear
         case resetToIdle
         case cancelCurrentOperation
+        #if DEBUG
+        case testServerShowMenu
+        case testServerRefreshState
+        case startTestServer
+        #endif
     }
     
 }
