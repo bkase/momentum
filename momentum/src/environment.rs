@@ -119,8 +119,7 @@ Respond in JSON format with these exact fields:
         let escaped_prompt = prompt.replace("'", "'\\''");
         // Use mise hook-env instead of activate to get just the env vars
         let command = format!(
-            "source ~/.zshrc && eval \"$(mise hook-env -s zsh)\" && claude -p '{}'",
-            escaped_prompt
+            "source ~/.zshrc && eval \"$(mise hook-env -s zsh)\" && claude -p '{escaped_prompt}'"
         );
 
         // Set a timeout of 90 seconds for the claude CLI

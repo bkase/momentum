@@ -27,10 +27,10 @@ xcodebuild -workspace Momentum.xcworkspace -scheme MomentumApp -configuration De
 
 ### Known Issues and Solutions
 
-1. **"Failed to create session" error**: 
-   - The Rust CLI requires `ANTHROPIC_API_KEY` environment variable
-   - The SwiftUI app needs to pass this to the subprocess
-   - Solution implemented: Auto-set dummy key for development in `RustCoreClient.swift`
+1. **"claude CLI not found" error**: 
+   - The Rust CLI requires the `claude` CLI tool to be installed via mise
+   - App sandboxing must be disabled to allow subprocess execution
+   - Solution: Disabled sandboxing in Info.plist following Vibetunnel pattern
 
 2. **"Multiple commands produce" error**:
    - Caused by duplicate resource copying in Project.swift
@@ -229,22 +229,22 @@ When completing any task (especially from todos/):
 
 NEVER mark a task as done if tests are failing!
 
-## Setting Environment Variables in Xcode
+## Environment Setup
 
-To set `ANTHROPIC_API_KEY` for the app:
-1. In Xcode, click the scheme selector → "Edit Scheme..."
-2. Select "Run" → "Arguments" tab
-3. Under "Environment Variables", add:
-   - Name: `ANTHROPIC_API_KEY`
-   - Value: Your actual API key
+The app uses the `claude` CLI tool which should be installed via mise:
+1. Install mise if not already installed
+2. Install claude CLI: `mise use -g npm:anthropic-ai-claude-code@latest`
+3. Authenticate with claude: `claude login`
+4. The app will automatically load your shell environment to access the tool
 
-## API Integration
+## Claude Integration
 
-The Rust CLI now makes real Claude API calls:
-- Endpoint: `https://api.anthropic.com/v1/messages`
-- Model: `claude-3-5-sonnet-20241022`
-- Requires valid `ANTHROPIC_API_KEY` environment variable
+The Rust CLI uses the `claude` CLI tool for analysis:
+- Uses the authenticated `claude` CLI installed via mise
+- No API keys required - uses your existing Claude subscription
+- Loads shell environment to access mise-managed tools
 - Returns structured JSON with summary, suggestion, and reasoning
+- Requires app sandboxing to be disabled for subprocess execution
 
 ## Project Structure
 ```

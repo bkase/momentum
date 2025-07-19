@@ -38,13 +38,8 @@ func executeCommand(_ command: String, arguments: [String]) async throws -> Proc
             
             task.arguments = [command] + arguments
             
-            // Set environment variables
-            var environment = ProcessInfo.processInfo.environment
-            // Set a dummy API key if not present (the mock implementation doesn't use it)
-            if environment["ANTHROPIC_API_KEY"] == nil {
-                environment["ANTHROPIC_API_KEY"] = "dummy-key-for-development"
-            }
-            task.environment = environment
+            // Pass through environment variables
+            task.environment = ProcessInfo.processInfo.environment
             
             let outputPipe = Pipe()
             let errorPipe = Pipe()
