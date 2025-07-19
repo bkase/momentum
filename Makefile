@@ -78,9 +78,11 @@ swift-test: rust-build copy-rust-binary swift-test-only
 # Combined targets
 format: rust-format swift-format
 
+lint: rust-lint swift-lint
+
 build: rust-build swift-generate swift-build
 
-test: rust-test rust-lint swift-test
+test: rust-test lint swift-test
 
 # Clean build artifacts
 clean:
