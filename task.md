@@ -1,6 +1,6 @@
 # UI sizing glitches on all the views
 
-**Status:** InProgress
+**Status:** AwaitingCommit
 **Agent PID:** 29367
 
 ## Original Todo
