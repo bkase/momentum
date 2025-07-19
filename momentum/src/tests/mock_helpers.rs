@@ -1,17 +1,17 @@
 use crate::{environment::*, models::*};
 use async_trait::async_trait;
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 // Mock implementations for testing
 pub struct MockFileSystem {
-    files: Mutex<HashMap<String, String>>,
+    pub files: Arc<Mutex<HashMap<String, String>>>,
 }
 
 impl MockFileSystem {
     pub fn new() -> Self {
         Self {
-            files: Mutex::new(HashMap::new()),
+            files: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 }
@@ -58,5 +58,14 @@ impl ApiClient for MockApiClient {
             suggestion: "Test suggestion".to_string(),
             reasoning: "Test reasoning".to_string(),
         })
+    }
+}
+
+/// Create a test environment with mock implementations
+pub fn create_test_environment() -> Environment {
+    Environment {
+        file_system: Box::new(MockFileSystem::new()),
+        api_client: Box::new(MockApiClient),
+        clock: Box::new(MockClock { time: 1700000000 }),
     }
 }

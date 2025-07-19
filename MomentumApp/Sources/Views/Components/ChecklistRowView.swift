@@ -37,6 +37,7 @@ struct ChecklistRowView: View {
         .offset(x: offsetX)
         .animation(.easeOut(duration: 0.3), value: isTransitioning)
         .animation(.easeOut(duration: 0.3), value: hasAppeared)
+        .animation(.easeOut(duration: 0.3), value: item.on) // Animate background color change
         .allowsHitTesting(!isTransitioning && (!isFadingIn || hasAppeared)) // Enable clicks after fade-in completes
         .onHover { isHovered in
             if isHovered && !isTransitioning && (!isFadingIn || hasAppeared) {

@@ -10,17 +10,13 @@ import Sharing
 struct PreparationFeatureTests {
     init() {
         // Reset shared state before each test
-        @Shared(.preparationState) var preparationState: PreparationPersistentState
-        $preparationState.withLock { $0 = PreparationPersistentState(
-            checklistSlots: [
-                PreparationFeature.ChecklistSlot(id: 0),
-                PreparationFeature.ChecklistSlot(id: 1),
-                PreparationFeature.ChecklistSlot(id: 2),
-                PreparationFeature.ChecklistSlot(id: 3)
-            ],
-            totalItemsCompleted: 0,
-            nextItemIndex: 4
-        ) }
+        @Shared(.sessionData) var sessionData: SessionData?
+        @Shared(.lastGoal) var lastGoal: String
+        @Shared(.lastTimeMinutes) var lastTimeMinutes: String
+        
+        $sessionData.withLock { $0 = nil }
+        $lastGoal.withLock { $0 = "" }
+        $lastTimeMinutes.withLock { $0 = "30" }
     }
     @Test("Start session with valid inputs sends success delegate")
     func startSessionSuccess() async {
@@ -31,11 +27,17 @@ struct PreparationFeatureTests {
             reflectionFilePath: nil
         )
         
-        let store = await TestStore(
-            initialState: PreparationFeature.State(
-                goal: "Test goal",
-                timeInput: "30"
-            )
+        var initialState = PreparationFeature.State(
+            goal: "Test goal",
+            timeInput: "30"
+        )
+        // Set checklist items directly on state
+        initialState.checklistItems = (0..<10).map { i in
+            ChecklistItem(id: String(i), text: "Item \(i)", on: true)
+        }
+        
+        let store = TestStore(
+            initialState: initialState
         ) {
             PreparationFeature()
         } withDependencies: {
@@ -53,7 +55,7 @@ struct PreparationFeatureTests {
     
     @Test("Start session with empty goal shows error")
     func startSessionEmptyGoal() async {
-        let store = await TestStore(
+        let store = TestStore(
             initialState: PreparationFeature.State(
                 goal: "",
                 timeInput: "30"
@@ -69,7 +71,7 @@ struct PreparationFeatureTests {
     
     @Test("Start session with invalid time shows error")
     func startSessionInvalidTime() async {
-        let store = await TestStore(
+        let store = TestStore(
             initialState: PreparationFeature.State(
                 goal: "Test goal",
                 timeInput: "invalid"
@@ -85,7 +87,7 @@ struct PreparationFeatureTests {
     
     @Test("Start session with zero time shows error")
     func startSessionZeroTime() async {
-        let store = await TestStore(
+        let store = TestStore(
             initialState: PreparationFeature.State(
                 goal: "Test goal",
                 timeInput: "0"
@@ -102,7 +104,7 @@ struct PreparationFeatureTests {
     @Test("Start session with RustCoreError shows error")
     func startSessionRustCoreError() async {
         let clock = TestClock()
-        let store = await TestStore(
+        let store = TestStore(
             initialState: PreparationFeature.State(
                 goal: "Test goal",
                 timeInput: "30"
@@ -135,7 +137,7 @@ struct PreparationFeatureTests {
         }
         
         let clock = TestClock()
-        let store = await TestStore(
+        let store = TestStore(
             initialState: PreparationFeature.State(
                 goal: "Test goal",
                 timeInput: "30"
@@ -166,7 +168,7 @@ struct PreparationFeatureTests {
         var initialState = PreparationFeature.State()
         initialState.operationError = "Some error"
         
-        let store = await TestStore(
+        let store = TestStore(
             initialState: initialState
         ) {
             PreparationFeature()

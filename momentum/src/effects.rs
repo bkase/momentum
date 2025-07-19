@@ -24,9 +24,6 @@ fn sanitize_goal_for_filename(goal: &str) -> String {
 /// Side effects that can be executed
 #[derive(Debug, Clone)]
 pub enum Effect {
-    CreateSession {
-        session: Session,
-    },
     CreateReflection {
         session: Session,
     },
@@ -55,17 +52,6 @@ pub enum Effect {
 /// Execute side effects
 pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
     match effect {
-        Effect::CreateSession { session } => {
-            // Save session to file system
-            let session_path = env.get_session_path()?;
-            let content = serde_json::to_string_pretty(&session)?;
-            env.file_system.write(&session_path, &content)?;
-
-            // Print the session file path to stdout
-            println!("{}", session_path.display());
-            Ok(())
-        }
-
         Effect::CreateReflection { mut session } => {
             // Create timestamp for filename
             let now = Local::now();
@@ -152,10 +138,10 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
             }
             Ok(())
         }
-        
+
         Effect::LoadAndPrintChecklist => {
             let checklist_path = env.get_checklist_path()?;
-            
+
             // Load or create checklist
             let checklist = match env.file_system.read(&checklist_path) {
                 Ok(content) => serde_json::from_str(&content)?,
@@ -163,7 +149,7 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
                     // Initialize from template
                     let template_json = Environment::get_checklist_template();
                     let templates: Vec<ChecklistTemplate> = serde_json::from_str(template_json)?;
-                    
+
                     let items: Vec<ChecklistItem> = templates
                         .into_iter()
                         .map(|t| ChecklistItem {
@@ -172,27 +158,27 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
                             on: false,
                         })
                         .collect();
-                    
+
                     let checklist = ChecklistState { items };
-                    
+
                     // Save initial state
                     let json = serde_json::to_string_pretty(&checklist)?;
                     env.file_system.write(&checklist_path, &json)?;
-                    
+
                     checklist
                 }
             };
-            
+
             // Print as JSON to stdout
             let json = serde_json::to_string(&checklist)?;
-            println!("{}", json);
-            
+            println!("{json}");
+
             Ok(())
         }
-        
+
         Effect::ToggleChecklistItem { id } => {
             let checklist_path = env.get_checklist_path()?;
-            
+
             // Load checklist
             let mut checklist: ChecklistState = match env.file_system.read(&checklist_path) {
                 Ok(content) => serde_json::from_str(&content)?,
@@ -200,7 +186,7 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
                     // Initialize from template if not exists
                     let template_json = Environment::get_checklist_template();
                     let templates: Vec<ChecklistTemplate> = serde_json::from_str(template_json)?;
-                    
+
                     let items: Vec<ChecklistItem> = templates
                         .into_iter()
                         .map(|t| ChecklistItem {
@@ -209,60 +195,60 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
                             on: false,
                         })
                         .collect();
-                    
+
                     ChecklistState { items }
                 }
             };
-            
+
             // Toggle the item
             let found = checklist.items.iter_mut().find(|item| item.id == id);
-            
+
             match found {
                 Some(item) => {
                     item.on = !item.on;
-                    
+
                     // Save updated state
                     let json = serde_json::to_string_pretty(&checklist)?;
                     env.file_system.write(&checklist_path, &json)?;
-                    
+
                     // Print updated list as JSON
                     let json = serde_json::to_string(&checklist)?;
-                    println!("{}", json);
+                    println!("{json}");
                 }
                 None => {
-                    eprintln!("Error: Checklist item with id '{}' not found", id);
+                    eprintln!("Error: Checklist item with id '{id}' not found");
                     // Still print current state
                     let json = serde_json::to_string(&checklist)?;
-                    println!("{}", json);
+                    println!("{json}");
                 }
             }
-            
+
             Ok(())
         }
-        
+
         Effect::ValidateChecklistAndStart { goal, time } => {
             let checklist_path = env.get_checklist_path()?;
-            
+
             // Load checklist
             let checklist: ChecklistState = match env.file_system.read(&checklist_path) {
                 Ok(content) => serde_json::from_str(&content)?,
                 Err(_) => {
                     // No checklist exists, can't start
-                    eprintln!("Error: Checklist not initialized. Run 'momentum check list' first.");
-                    return Ok(());
+                    return Err(anyhow::anyhow!(
+                        "Checklist not initialized. Run 'momentum check list' first."
+                    ));
                 }
             };
-            
+
             // Check if all items are completed
             if !checklist.all_completed() {
-                eprintln!("Error: All checklist items must be completed before starting a session.");
-                eprintln!("Uncompleted items:");
+                let mut error_msg = "All checklist items must be completed before starting a session.\nUncompleted items:".to_string();
                 for item in checklist.items.iter().filter(|i| !i.on) {
-                    eprintln!("  - {}", item.text);
+                    error_msg.push_str(&format!("\n  - {}", item.text));
                 }
-                return Ok(());
+                return Err(anyhow::anyhow!(error_msg));
             }
-            
+
             // All items checked, proceed with creating session
             let session = Session {
                 goal,
@@ -270,18 +256,18 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
                 time_expected: time,
                 reflection_file_path: None,
             };
-            
+
             // Create session
             let session_path = env.get_session_path()?;
             let json = serde_json::to_string_pretty(&session)?;
             env.file_system.write(&session_path, &json)?;
-            
+
             println!("{}", session_path.to_string_lossy());
-            
+
             // Reset checklist for next session
             let template_json = Environment::get_checklist_template();
             let templates: Vec<ChecklistTemplate> = serde_json::from_str(template_json)?;
-            
+
             let items: Vec<ChecklistItem> = templates
                 .into_iter()
                 .map(|t| ChecklistItem {
@@ -290,11 +276,11 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
                     on: false,
                 })
                 .collect();
-            
+
             let new_checklist = ChecklistState { items };
             let json = serde_json::to_string_pretty(&new_checklist)?;
             env.file_system.write(&checklist_path, &json)?;
-            
+
             Ok(())
         }
     }

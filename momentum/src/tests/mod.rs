@@ -12,3 +12,6 @@ mod analyze_tests;
 
 #[cfg(test)]
 mod filename_tests;
+
+#[cfg(test)]
+mod checklist_tests;

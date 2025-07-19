@@ -92,17 +92,23 @@ struct PreparationView: View {
                     .progressViewStyle(CircularProgressViewStyle())
                     .scaleEffect(0.8)
                     .frame(height: 36)
-            } else if !store.checklistItems.isEmpty {
+            } else {
                 VStack(spacing: 4) {
-                    ForEach(store.checklistItems) { item in
-                        ChecklistRowView(
-                            item: item,
-                            isTransitioning: false,
-                            isFadingIn: false,
-                            onToggle: {
-                                store.send(.checklistItemToggled(id: item.id))
-                            }
-                        )
+                    ForEach(store.checklistSlots) { slot in
+                        if let item = slot.item {
+                            ChecklistRowView(
+                                item: item,
+                                isTransitioning: slot.isTransitioning,
+                                isFadingIn: slot.isFadingIn,
+                                onToggle: {
+                                    store.send(.checklistSlotToggled(slotId: slot.id))
+                                }
+                            )
+                        } else {
+                            // Empty slot
+                            Color.clear
+                                .frame(height: 36)
+                        }
                     }
                 }
             }

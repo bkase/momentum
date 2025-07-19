@@ -40,7 +40,7 @@ enum Commands {
         #[arg(long)]
         file: PathBuf,
     },
-    
+
     /// Manage checklist items
     Check {
         #[command(subcommand)]
@@ -52,7 +52,7 @@ enum Commands {
 enum CheckCommands {
     /// List all checklist items with their current state
     List,
-    
+
     /// Toggle a checklist item by ID
     Toggle {
         /// ID of the checklist item to toggle

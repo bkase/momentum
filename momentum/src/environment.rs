@@ -58,7 +58,7 @@ impl Environment {
         path.push("checklist.json");
         Ok(path)
     }
-    
+
     /// Get the checklist template embedded in the binary
     pub fn get_checklist_template() -> &'static str {
         include_str!("../../MomentumApp/Resources/checklist.json")

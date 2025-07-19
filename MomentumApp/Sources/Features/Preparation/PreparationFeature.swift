@@ -10,7 +10,9 @@ struct PreparationFeature {
     struct State: Equatable {
         var goal: String = ""
         var timeInput: String = ""
-        var checklistItems: [ChecklistItem] = []
+        var checklistItems: [ChecklistItem] = []  // Full list from Rust CLI
+        var checklistSlots: [ChecklistSlot] = []  // 4 visible slots
+        var activeTransitions: [Int: ItemTransition] = [:]
         var isLoadingChecklist: Bool = false
         var operationError: String?
         
@@ -25,6 +27,7 @@ struct PreparationFeature {
         var isStartButtonEnabled: Bool {
             !goal.isEmpty &&
             Int(timeInput).map { $0 > 0 } == true &&
+            checklistItems.count >= 9 &&  // Ensure we have the full checklist
             checklistItems.allSatisfy { $0.on } &&
             goalValidationError == nil
         }
@@ -35,6 +38,11 @@ struct PreparationFeature {
         ) {
             self.goal = goal
             self.timeInput = timeInput
+            self.checklistSlots = Self.createInitialSlots()
+        }
+        
+        static func createInitialSlots() -> [ChecklistSlot] {
+            (0..<4).map { ChecklistSlot(id: $0) }
         }
         
         init(preparationState: PreparationState) {
@@ -56,8 +64,13 @@ struct PreparationFeature {
         case onAppear
         case loadChecklist
         case checklistResponse(TaskResult<ChecklistState>)
+        case checklistSlotToggled(slotId: Int)
         case checklistItemToggled(id: String)
-        case checklistToggleResponse(TaskResult<ChecklistState>)
+        case checklistToggleResponse(slotId: Int, TaskResult<ChecklistState>)
+        case beginSlotTransition(slotId: Int, replacementItemId: String?)
+        case completeSlotTransition(slotId: Int)
+        case fadeInNewItem(slotId: Int, itemId: String)
+        case resetFadeInFlag(slotId: Int)
         case goalChanged(String)
         case timeInputChanged(String)
         case startButtonTapped
@@ -81,7 +94,9 @@ struct PreparationFeature {
             switch action {
                 
             case .onAppear:
-                return .send(.loadChecklist)
+                return .run { send in
+                    await send(.loadChecklist)
+                }
                 
             case .loadChecklist:
                 state.isLoadingChecklist = true
@@ -98,6 +113,15 @@ struct PreparationFeature {
             case let .checklistResponse(.success(checklistState)):
                 state.isLoadingChecklist = false
                 state.checklistItems = checklistState.items
+                
+                // Fill slots with first 4 unchecked items
+                let uncheckedItems = checklistState.items.filter { !$0.on }
+                var slots = state.checklistSlots
+                for (index, item) in uncheckedItems.prefix(4).enumerated() {
+                    slots[index].item = item
+                }
+                state.checklistSlots = slots
+                
                 return .none
                 
             case let .checklistResponse(.failure(error)):
@@ -110,22 +134,39 @@ struct PreparationFeature {
                 }
                 .cancellable(id: CancelID.errorDismissal)
                 
+            case let .checklistSlotToggled(slotId):
+                return Self.handleChecklistSlotToggled(
+                    state: &state,
+                    slotId: slotId,
+                    clock: clock
+                )
+                
             case let .checklistItemToggled(id):
+                // Find which slot this item is in
+                let slotId = state.checklistSlots.firstIndex { $0.item?.id == id } ?? -1
+                
                 return .run { send in
-                    await send(
-                        .checklistToggleResponse(
-                            await TaskResult {
-                                try await rustCoreClient.checkToggle(id)
-                            }
-                        )
-                    )
+                    let result = await TaskResult {
+                        try await rustCoreClient.checkToggle(id)
+                    }
+                    await send(.checklistToggleResponse(slotId: slotId, result))
                 }
                 
-            case let .checklistToggleResponse(.success(checklistState)):
-                state.checklistItems = checklistState.items
-                return .none
+            case let .checklistToggleResponse(slotId, .success(checklistState)):
+                if slotId >= 0 {
+                    return Self.handleChecklistToggleSuccess(
+                        state: &state,
+                        slotId: slotId,
+                        updatedItems: checklistState.items,
+                        clock: clock
+                    )
+                } else {
+                    // Just update the items if we don't know the slot
+                    state.checklistItems = checklistState.items
+                    return .none
+                }
                 
-            case let .checklistToggleResponse(.failure(error)):
+            case let .checklistToggleResponse(_, .failure(error)):
                 state.operationError = "Failed to toggle checklist item: \(error.localizedDescription)"
                 Self.logger.error("Failed to toggle checklist item: \(error)")
                 return .run { send in
@@ -133,6 +174,35 @@ struct PreparationFeature {
                     await send(.clearOperationError)
                 }
                 .cancellable(id: CancelID.errorDismissal)
+                
+            case let .beginSlotTransition(slotId, replacementItemId):
+                return Self.handleBeginSlotTransition(
+                    state: &state,
+                    slotId: slotId,
+                    replacementItemId: replacementItemId,
+                    clock: clock
+                )
+                
+            case let .completeSlotTransition(slotId):
+                return Self.handleCompleteSlotTransition(
+                    state: &state,
+                    slotId: slotId,
+                    clock: clock
+                )
+                
+            case let .fadeInNewItem(slotId, itemId):
+                return Self.handleFadeInNewItem(
+                    state: &state,
+                    slotId: slotId,
+                    itemId: itemId,
+                    clock: clock
+                )
+                
+            case let .resetFadeInFlag(slotId):
+                var slots = state.checklistSlots
+                slots[slotId].isFadingIn = false
+                state.checklistSlots = slots
+                return .none
                 
             case let .goalChanged(newGoal):
                 state.goal = newGoal

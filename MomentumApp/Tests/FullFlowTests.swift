@@ -52,26 +52,26 @@ struct FullFlowTests {
                     reasoning: "Test reasoning"
                 )
             }
-            $0.checklistClient = .testValue
+            $0.rustCoreClient.checkList = {
+                ChecklistState(items: (0..<10).map { i in
+                    ChecklistItem(id: String(i), text: "Item \(i)", on: true)
+                })
+            }
         }
         store.exhaustivity = .off
         
         // Destination already set by init, onAppear should not change anything
         await store.send(.onAppear)
         
-        // Load checklist
-        await store.send(.destination(.presented(.preparation(.onAppear)))) {
-            if case .preparation(var preparationState) = $0.destination {
-                // onAppear now directly creates the first 4 items from ChecklistItemPool
-                preparationState.checklistSlots = [
-                    PreparationFeature.ChecklistSlot(id: 0, item: ChecklistItem(id: "0", text: "Rested", isCompleted: false)),
-                    PreparationFeature.ChecklistSlot(id: 1, item: ChecklistItem(id: "1", text: "Not hungry", isCompleted: false)),
-                    PreparationFeature.ChecklistSlot(id: 2, item: ChecklistItem(id: "2", text: "Bathroom break", isCompleted: false)),
-                    PreparationFeature.ChecklistSlot(id: 3, item: ChecklistItem(id: "3", text: "Phone on silent", isCompleted: false))
-                ]
-                $0.destination = .preparation(preparationState)
-            }
-        }
+        // Load checklist - this will trigger the Rust CLI
+        await store.send(.destination(.presented(.preparation(.onAppear))))
+        await store.send(.destination(.presented(.preparation(.loadChecklist))))
+        
+        // Simulate checklist loaded with all items checked
+        let checklistState = ChecklistState(items: (0..<10).map { i in
+            ChecklistItem(id: String(i), text: "Item \(i)", on: true)
+        })
+        await store.send(.destination(.presented(.preparation(.checklistResponse(.success(checklistState))))))
         
         // Since we can't complete all 10 items easily in the test, 
         // let's test the flow by simulating the delegate from PreparationFeature

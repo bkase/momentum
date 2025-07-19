@@ -71,24 +71,9 @@ extension AnalysisResult {
 
 extension ChecklistItem {
     static let mockItems = [
-        ChecklistItem(id: "test-1", text: "Close distractions", isCompleted: false),
-        ChecklistItem(id: "test-2", text: "Set timer", isCompleted: false),
-        ChecklistItem(id: "test-3", text: "Review goals", isCompleted: false)
+        ChecklistItem(id: "test-1", text: "Close distractions", on: false),
+        ChecklistItem(id: "test-2", text: "Set timer", on: false),
+        ChecklistItem(id: "test-3", text: "Review goals", on: false)
     ]
 }
 
-// MARK: - Preparation State Testing
-
-extension PreparationState {
-    static func mock(
-        goal: String = "Test Goal",
-        timeInput: String = "30",
-        checklist: [ChecklistItem] = ChecklistItem.mockItems
-    ) -> Self {
-        PreparationState(
-            goal: goal,
-            timeInput: timeInput,
-            checklist: IdentifiedArray(uniqueElements: checklist)
-        )
-    }
-}
