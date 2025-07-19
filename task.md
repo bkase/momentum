@@ -33,7 +33,7 @@ Implement a system where the Rust CLI manages all checklist state, making the ap
 - [x] Add checklist data models and storage (momentum/src/models.rs)
 - [x] Implement `check list` command to return JSON checklist state (momentum/src/main.rs, action.rs, update.rs, effects.rs)
 - [x] Implement `check toggle <id>` command to toggle item and return updated state (momentum/src/main.rs, action.rs, update.rs, effects.rs)
-- [ ] Add checklist validation to `start` command - require all items checked (momentum/src/update.rs)
+- [x] Add checklist validation to `start` command - require all items checked (momentum/src/update.rs)
 - [x] Create checklist state file management (momentum/src/environment.rs, effects.rs)
 
 **Swift UI Changes:**
