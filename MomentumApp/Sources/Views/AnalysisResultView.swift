@@ -9,10 +9,7 @@ struct AnalysisResultView: View {
             VStack(spacing: 0) {
                 // Title section
                 Text("Session Insights")
-                    .font(.momentumTitle)
-                    .foregroundStyle(Color.textPrimary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.bottom, .momentumTitleBottomPadding)
+                    .momentumTitleStyle()
                 
                 // Content sections
                 VStack(alignment: .leading, spacing: .momentumSectionSpacing) {

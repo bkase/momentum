@@ -8,10 +8,7 @@ struct AwaitingAnalysisView: View {
         VStack(spacing: 0) {
             // Title section
             Text("Reflection Complete")
-                .font(.momentumTitle)
-                .foregroundStyle(Color.textPrimary)
-                .frame(maxWidth: .infinity)
-                .padding(.bottom, .momentumTitleBottomPadding)
+                .momentumTitleStyle()
             
             // Content sections
             VStack(spacing: .momentumSectionSpacing) {

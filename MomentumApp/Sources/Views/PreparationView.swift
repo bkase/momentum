@@ -26,10 +26,7 @@ struct PreparationView: View {
     
     private var titleSection: some View {
         Text("Compose Your Intention")
-            .font(.momentumTitle)
-            .foregroundStyle(Color.textPrimary)
-            .frame(maxWidth: .infinity)
-            .padding(.bottom, 24)
+            .momentumTitleStyle()
     }
     
     private var intentionInput: some View {

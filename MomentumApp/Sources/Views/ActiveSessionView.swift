@@ -40,10 +40,7 @@ struct ActiveSessionView: View {
         VStack(spacing: 0) {
             // Title section
             Text("Active Session")
-                .font(.momentumTitle)
-                .foregroundStyle(Color.textPrimary)
-                .frame(maxWidth: .infinity)
-                .padding(.bottom, .momentumTitleBottomPadding)
+                .momentumTitleStyle()
             
             // Content sections
             VStack(spacing: .momentumSectionSpacing) {
