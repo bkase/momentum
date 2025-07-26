@@ -20,7 +20,7 @@ We'll integrate the Momentum Rust application with aethel for document managemen
 - [x] Create a Momentum pack with document type schemas for session, reflection, and checklist types (momentum/packs/momentum/)
 - [x] Add aethel-core as a local dependency in Cargo.toml (momentum/Cargo.toml)
 - [x] Create an AethelStorage trait and implementation to replace FileSystem trait for document operations (momentum/src/aethel_storage.rs)
-- [ ] Update environment.rs to configure vault location and return aethel-compatible paths (momentum/src/environment.rs)
+- [x] Update environment.rs to configure vault location and return aethel-compatible paths (momentum/src/environment.rs)
 - [ ] Modify session state operations in state.rs to use aethel documents instead of session.json (momentum/src/state.rs)
 - [ ] Update reflection creation in effects.rs to store reflections as aethel documents (momentum/src/effects.rs)
 - [ ] Convert checklist operations to use aethel document storage (momentum/src/effects.rs)

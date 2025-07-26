@@ -1,3 +1,4 @@
+use crate::aethel_storage::{AethelStorage, RealAethelStorage};
 use crate::models::AnalysisResult;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -8,16 +9,38 @@ pub struct Environment {
     pub file_system: Box<dyn FileSystem>,
     pub api_client: Box<dyn ApiClient>,
     pub clock: Box<dyn Clock>,
+    pub aethel_storage: Box<dyn AethelStorage>,
 }
 
 impl Environment {
     /// Create a new environment with real implementations
     pub fn new() -> Result<Self> {
+        let vault_root = Self::get_vault_root()?;
         Ok(Environment {
             file_system: Box::new(RealFileSystem),
             api_client: Box::new(RealApiClient::new()),
             clock: Box::new(RealClock),
+            aethel_storage: Box::new(RealAethelStorage::new(vault_root)),
         })
+    }
+
+    /// Get the vault root directory
+    pub fn get_vault_root() -> Result<PathBuf> {
+        // Check environment variable first
+        if let Ok(vault_path) = std::env::var("MOMENTUM_VAULT_PATH") {
+            let path = PathBuf::from(vault_path);
+            if path.exists() {
+                return Ok(path);
+            }
+        }
+        
+        // Default to ~/Documents/vault
+        let mut path = dirs::home_dir()
+            .ok_or_else(|| anyhow::anyhow!("Could not find home directory"))?;
+        path.push("Documents");
+        path.push("vault");
+        
+        Ok(path)
     }
 
     /// Get the path to session.json
