@@ -1,6 +1,6 @@
 # Integrate with aethel and my vault
 
-**Status:** Refining
+**Status:** InProgress
 **Agent PID:** 28825
 
 ## Original Todo
@@ -9,16 +9,30 @@ The momentum rust application should rely on aethel for its document management.
 
 ## Description
 
-[what we're building]
+We'll integrate the Momentum Rust application with aethel for document management. This involves:
+- Replacing JSON file storage (session.json, checklist.json) with aethel documents that use YAML frontmatter
+- Storing reflection markdown files as aethel documents in the vault
+- Creating a Momentum pack with proper document type schemas
+- Using aethel-core as a local dependency to manage all document operations
 
 ## Implementation Plan
 
-[how we are building it]
-
-- [ ] Code change with location(s) if applicable (src/file.ts:45-93)
-- [ ] Automated test: ...
-- [ ] User test: ...
+- [ ] Create a Momentum pack with document type schemas for session, reflection, and checklist types (momentum/packs/momentum/)
+- [ ] Add aethel-core as a local dependency in Cargo.toml (momentum/Cargo.toml)
+- [ ] Create an AethelStorage trait and implementation to replace FileSystem trait for document operations (momentum/src/aethel_storage.rs)
+- [ ] Update environment.rs to configure vault location and return aethel-compatible paths (momentum/src/environment.rs)
+- [ ] Modify session state operations in state.rs to use aethel documents instead of session.json (momentum/src/state.rs)
+- [ ] Update reflection creation in effects.rs to store reflections as aethel documents (momentum/src/effects.rs)
+- [ ] Convert checklist operations to use aethel document storage (momentum/src/effects.rs)
+- [ ] Add vault initialization logic to ensure docs/ and packs/ directories exist (momentum/src/main.rs)
+- [ ] Install the Momentum pack in the vault during first run (momentum/src/main.rs)
+- [ ] Update tests to work with aethel storage (momentum/src/tests/)
+- [ ] Add configuration option for vault location (environment variable or CLI flag) (momentum/src/cli.rs)
+- [ ] Update Swift app to pass vault location to Rust CLI via environment variable (MomentumApp/Sources/Dependencies/ProcessRunner.swift)
+- [ ] Ensure Swift app can read session state from aethel documents (MomentumApp/Sources/Dependencies/RustCoreClient.swift)
 
 ## Notes
 
-[Implementation notes]
+- Using aethel-core from local filesystem at /Users/bkase/Documents/aethel/crates/aethel-core
+- Need to maintain backward compatibility or provide migration path from existing JSON storage
+- Vault location will default to ~/Documents/Vault or be configurable via MOMENTUM_VAULT_PATH env var
