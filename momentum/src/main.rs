@@ -47,6 +47,9 @@ enum Commands {
         #[command(subcommand)]
         subcommand: CheckCommands,
     },
+
+    /// Get current session (for Swift app)
+    GetSession,
 }
 
 #[derive(Subcommand)]
@@ -69,7 +72,7 @@ async fn main() -> Result<()> {
     let env = environment::Environment::new()?;
 
     // Get current state
-    let state = state::State::load(&env)?;
+    let state = state::State::load(&env).await?;
 
     // Convert CLI command to action
     let action = match cli.command {
@@ -80,6 +83,7 @@ async fn main() -> Result<()> {
             CheckCommands::List => action::Action::CheckList,
             CheckCommands::Toggle { id } => action::Action::CheckToggle { id },
         },
+        Commands::GetSession => action::Action::GetSession,
     };
 
     // Run update function

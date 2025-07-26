@@ -64,6 +64,9 @@ pub enum Effect {
         goal: String,
         time: u64,
     },
+    PrintSession {
+        state: crate::state::State,
+    },
 }
 
 /// Execute side effects
@@ -126,25 +129,14 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
         }
 
         Effect::SaveState { state } => {
-            // Save state to file system
-            let state_path = env.get_session_path()?;
-            match state {
-                crate::state::State::SessionActive { session } => {
-                    let content = serde_json::to_string_pretty(&session)?;
-                    env.file_system.write(&state_path, &content)?;
-                }
-                crate::state::State::Idle => {
-                    // Should not save idle state
-                    return Err(anyhow::anyhow!("Cannot save idle state"));
-                }
-            }
+            // Save state to aethel storage
+            state.save(env).await?;
             Ok(())
         }
 
         Effect::ClearState => {
-            // Delete session file
-            let state_path = env.get_session_path()?;
-            env.file_system.delete(&state_path)?;
+            // Clear session from aethel storage
+            crate::state::State::Idle.save(env).await?;
             Ok(())
         }
 
@@ -250,18 +242,37 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
                 reflection_file_path: None,
             };
 
-            // Create session
-            let session_path = env.get_session_path()?;
-            let json = serde_json::to_string_pretty(&session)?;
-            env.file_system.write(&session_path, &json)?;
-
-            println!("{}", session_path.to_string_lossy());
+            // Save session to aethel
+            let state = crate::state::State::SessionActive { 
+                session: session.clone(),
+                session_uuid: None,
+            };
+            let _uuid = state.save(env).await?;
+            
+            // Print the session data as JSON for the Swift app
+            let json = serde_json::to_string(&session)?;
+            println!("{}", json);
 
             // Reset checklist for next session
             let new_checklist = create_checklist_from_template()?;
             let json = serde_json::to_string_pretty(&new_checklist)?;
             env.file_system.write(&checklist_path, &json)?;
 
+            Ok(())
+        }
+
+        Effect::PrintSession { state } => {
+            match state {
+                crate::state::State::SessionActive { session, .. } => {
+                    // Print session as JSON for Swift app
+                    let json = serde_json::to_string(&session)?;
+                    println!("{}", json);
+                }
+                crate::state::State::Idle => {
+                    // Print empty JSON object to indicate no session
+                    println!("{{}}");
+                }
+            }
             Ok(())
         }
     }

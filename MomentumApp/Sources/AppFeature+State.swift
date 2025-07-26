@@ -41,6 +41,7 @@ extension AppFeature {
     enum Action: Equatable {
         case destination(PresentationAction<Destination.Action>)
         case onAppear
+        case sessionDataLoaded(SessionData?)
         case resetToIdle
         case cancelCurrentOperation
         #if DEBUG
