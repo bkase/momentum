@@ -24,6 +24,16 @@ impl Environment {
         })
     }
 
+    /// Create a new environment with a specific vault path
+    pub fn with_vault_path(vault_path: PathBuf) -> Result<Self> {
+        Ok(Environment {
+            file_system: Box::new(RealFileSystem),
+            api_client: Box::new(RealApiClient::new()),
+            clock: Box::new(RealClock),
+            aethel_storage: Box::new(RealAethelStorage::new(vault_path)),
+        })
+    }
+
     /// Get the vault root directory
     pub fn get_vault_root() -> Result<PathBuf> {
         // Check environment variable first

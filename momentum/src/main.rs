@@ -15,6 +15,10 @@ use std::path::PathBuf;
 #[command(name = "momentum")]
 #[command(about = "Focus session tracking tool")]
 struct Cli {
+    /// Path to the aethel vault (overrides MOMENTUM_VAULT_PATH env var)
+    #[arg(long, global = true)]
+    vault: Option<PathBuf>,
+    
     #[command(subcommand)]
     command: Commands,
 }
@@ -69,7 +73,11 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     // Initialize environment with real dependencies
-    let env = environment::Environment::new()?;
+    let env = if let Some(vault_path) = cli.vault {
+        environment::Environment::with_vault_path(vault_path)?
+    } else {
+        environment::Environment::new()?
+    };
     
     // Initialize vault if needed
     initialize_vault(&env).await?;
