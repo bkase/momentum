@@ -73,14 +73,6 @@ pub enum Effect {
 pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
     match effect {
         Effect::CreateReflection { mut session } => {
-            // Create timestamp for filename
-            let now = Local::now();
-            let sanitized_goal = sanitize_goal_for_filename(&session.goal);
-            let filename = format!("{}-{}.md", now.format("%Y-%m-%d-%H%M"), sanitized_goal);
-
-            let mut reflection_path = env.get_reflections_dir()?;
-            reflection_path.push(&filename);
-
             // Load template
             let template_content = include_str!("../../reflection-template.md");
 
@@ -94,28 +86,42 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
                 .replace("{{time_taken}}", &time_taken.to_string())
                 .replace("{{time_expected}}", &session.time_expected.to_string());
 
-            // Write reflection file
-            env.file_system.write(&reflection_path, &content)?;
+            // Create reflection document in aethel
+            let reflection_uuid = env.aethel_storage.create_reflection(&session, content).await?;
 
-            // Update session with reflection file path
-            session.reflection_file_path = Some(reflection_path.to_string_lossy().to_string());
+            // Update session with reflection UUID
+            session.reflection_file_path = Some(reflection_uuid.to_string());
 
             // Save updated session
-            let session_path = env.get_session_path()?;
-            let session_content = serde_json::to_string_pretty(&session)?;
-            env.file_system.write(&session_path, &session_content)?;
+            let state = crate::state::State::SessionActive {
+                session,
+                session_uuid: None, // We don't have the session UUID here
+            };
+            state.save(env).await?;
 
-            // Print the reflection file path to stdout
-            println!("{}", reflection_path.display());
+            // Print the reflection UUID to stdout for the Swift app
+            println!("{}", reflection_uuid);
             Ok(())
         }
 
         Effect::AnalyzeReflection { path } => {
-            // Read the reflection file
-            let content = env.file_system.read(&path)?;
+            // Try to parse as UUID first (for aethel documents)
+            let content = if let Ok(uuid) = uuid::Uuid::parse_str(path.to_str().unwrap_or("")) {
+                // Read from aethel
+                let doc = aethel_core::read_doc(env.aethel_storage.vault_root(), &uuid)?;
+                doc.body
+            } else {
+                // Fall back to file system for backward compatibility
+                env.file_system.read(&path)?
+            };
 
             // Call Claude API for analysis
             let result = env.api_client.analyze(&content).await?;
+
+            // If this was an aethel document, update it with the analysis
+            if let Ok(uuid) = uuid::Uuid::parse_str(path.to_str().unwrap_or("")) {
+                env.aethel_storage.update_reflection_analysis(&uuid, serde_json::to_value(&result)?).await?;
+            }
 
             // Print the raw JSON result to stdout
             let json = serde_json::to_string(&result)?;
