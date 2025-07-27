@@ -45,3 +45,10 @@ pub struct ChecklistTemplate {
     pub id: String,
     pub text: String,
 }
+
+/// Checklist data for aethel storage
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ChecklistData {
+    pub items: Vec<(String, bool)>, // (text, completed)
+}
+

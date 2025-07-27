@@ -131,6 +131,7 @@ impl RealAethelStorage {
         
         Ok(None)
     }
+
 }
 
 #[async_trait]
@@ -287,14 +288,39 @@ impl AethelStorage for RealAethelStorage {
             
             Ok((uuid, ChecklistData { items }))
         } else {
-            // Create new checklist with default items
-            let default_checklist = ChecklistData::default();
+            // Load template from the pack
+            let pack_path = self.vault_root.join("packs/momentum/templates/checklist.md");
+            if !pack_path.exists() {
+                return Err(anyhow!(
+                    "Checklist template not found. Please install the Momentum pack first."
+                ));
+            }
+            
+            let template_content = std::fs::read_to_string(&pack_path)?;
+            
+            // Parse checklist items from the template - expecting markdown list
+            let template_items = template_content
+                .lines()
+                .filter_map(|line| {
+                    line.trim_start()
+                        .strip_prefix("- ")
+                        .or_else(|| line.trim_start().strip_prefix("* "))
+                        .or_else(|| line.trim_start().strip_prefix("+ "))
+                        .map(|text| (text.to_string(), false))
+                })
+                .collect::<Vec<_>>();
+                
+            if template_items.is_empty() {
+                return Err(anyhow!("Checklist template contains no items"));
+            }
+            
+            let checklist = ChecklistData { items: template_items };
             
             let patch = Patch {
                 uuid: None,
                 doc_type: Some("momentum.checklist".to_string()),
                 frontmatter: Some(json!({
-                    "items": default_checklist.items.iter().map(|(item, completed)| {
+                    "items": checklist.items.iter().map(|(item, completed)| {
                         json!({
                             "item": item,
                             "completed": completed,
@@ -306,7 +332,7 @@ impl AethelStorage for RealAethelStorage {
             };
             
             let result = apply_patch(&self.vault_root, patch)?;
-            Ok((result.uuid, default_checklist))
+            Ok((result.uuid, checklist))
         }
     }
 

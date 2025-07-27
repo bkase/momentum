@@ -155,21 +155,18 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
         }
 
         Effect::LoadAndPrintChecklist => {
-            let checklist_path = env.get_checklist_path()?;
-
-            // Load or create checklist
-            let checklist = match env.file_system.read(&checklist_path) {
-                Ok(content) => serde_json::from_str(&content)?,
-                Err(_) => {
-                    // Initialize from template
-                    let checklist = create_checklist_from_template()?;
-
-                    // Save initial state
-                    let json = serde_json::to_string_pretty(&checklist)?;
-                    env.file_system.write(&checklist_path, &json)?;
-
-                    checklist
-                }
+            // Load or create checklist from aethel
+            let (_uuid, checklist_data) = env.aethel_storage.get_or_create_checklist().await?;
+            
+            // Convert to ChecklistState for backward compatibility
+            let checklist = ChecklistState {
+                items: checklist_data.items.into_iter().enumerate().map(|(i, (text, on))| {
+                    ChecklistItem {
+                        id: format!("item-{}", i),
+                        text,
+                        on,
+                    }
+                }).collect(),
             };
 
             // Print as JSON to stdout
@@ -180,62 +177,60 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
         }
 
         Effect::ToggleChecklistItem { id } => {
-            let checklist_path = env.get_checklist_path()?;
+            // Load checklist from aethel
+            let (uuid, mut checklist_data) = env.aethel_storage.get_or_create_checklist().await?;
 
-            // Load checklist
-            let mut checklist: ChecklistState = match env.file_system.read(&checklist_path) {
-                Ok(content) => serde_json::from_str(&content)?,
-                Err(_) => {
-                    // Initialize from template if not exists
-                    create_checklist_from_template()?
-                }
+            // Parse the ID to get the index
+            let index = if let Some(num_str) = id.strip_prefix("item-") {
+                num_str.parse::<usize>().ok()
+            } else {
+                None
             };
 
             // Toggle the item
-            let found = checklist.items.iter_mut().find(|item| item.id == id);
-
-            match found {
-                Some(item) => {
-                    item.on = !item.on;
-
-                    // Save updated state
-                    let json = serde_json::to_string_pretty(&checklist)?;
-                    env.file_system.write(&checklist_path, &json)?;
-
-                    // Print updated list as JSON
-                    let json = serde_json::to_string(&checklist)?;
-                    println!("{json}");
-                }
-                None => {
+            if let Some(idx) = index {
+                if let Some((_, on)) = checklist_data.items.get_mut(idx) {
+                    *on = !*on;
+                    
+                    // Save updated state to aethel
+                    env.aethel_storage.update_checklist(&uuid, &checklist_data).await?;
+                } else {
                     eprintln!("Error: Checklist item with id '{id}' not found");
-                    // Still print current state
-                    let json = serde_json::to_string(&checklist)?;
-                    println!("{json}");
                 }
+            } else {
+                eprintln!("Error: Invalid checklist item id '{id}'");
             }
+
+            // Convert to ChecklistState and print
+            let checklist = ChecklistState {
+                items: checklist_data.items.into_iter().enumerate().map(|(i, (text, on))| {
+                    ChecklistItem {
+                        id: format!("item-{}", i),
+                        text,
+                        on,
+                    }
+                }).collect(),
+            };
+            
+            let json = serde_json::to_string(&checklist)?;
+            println!("{json}");
 
             Ok(())
         }
 
         Effect::ValidateChecklistAndStart { goal, time } => {
-            let checklist_path = env.get_checklist_path()?;
-
-            // Load checklist
-            let checklist: ChecklistState = match env.file_system.read(&checklist_path) {
-                Ok(content) => serde_json::from_str(&content)?,
-                Err(_) => {
-                    // No checklist exists, can't start
-                    return Err(anyhow::anyhow!(
-                        "Checklist not initialized. Run 'momentum check list' first."
-                    ));
-                }
-            };
+            // Load checklist from aethel
+            let (checklist_uuid, checklist_data) = env.aethel_storage.get_or_create_checklist().await?;
 
             // Check if all items are completed
-            if !checklist.all_completed() {
+            let all_completed = checklist_data.items.iter().all(|(_, on)| *on);
+            
+            if !all_completed {
                 let mut error_msg = "All checklist items must be completed before starting a session.\nUncompleted items:".to_string();
-                for item in checklist.items.iter().filter(|i| !i.on) {
-                    error_msg.push_str(&format!("\n  - {}", item.text));
+                for (text, on) in &checklist_data.items {
+                    if !on {
+                        error_msg.push_str(&format!("\n  - {}", text));
+                    }
                 }
                 return Err(anyhow::anyhow!(error_msg));
             }
@@ -259,10 +254,12 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
             let json = serde_json::to_string(&session)?;
             println!("{}", json);
 
-            // Reset checklist for next session
-            let new_checklist = create_checklist_from_template()?;
-            let json = serde_json::to_string_pretty(&new_checklist)?;
-            env.file_system.write(&checklist_path, &json)?;
+            // Reset checklist for next session - reset all items to unchecked
+            let mut reset_checklist_data = checklist_data;
+            for (_, completed) in &mut reset_checklist_data.items {
+                *completed = false;
+            }
+            env.aethel_storage.update_checklist(&checklist_uuid, &reset_checklist_data).await?;
 
             Ok(())
         }

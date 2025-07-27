@@ -23,7 +23,7 @@ We'll integrate the Momentum Rust application with aethel for document managemen
 - [x] Update environment.rs to configure vault location and return aethel-compatible paths (momentum/src/environment.rs)
 - [x] Modify session state operations in state.rs to use aethel documents instead of session.json (momentum/src/state.rs)
 - [x] Update reflection creation in effects.rs to store reflections as aethel documents (momentum/src/effects.rs)
-- [ ] Convert checklist operations to use aethel document storage (momentum/src/effects.rs)
+- [x] Convert checklist operations to use aethel document storage (momentum/src/effects.rs)
 - [ ] Add vault initialization logic to ensure docs/ and packs/ directories exist (momentum/src/main.rs)
 - [ ] Install the Momentum pack in the vault during first run (momentum/src/main.rs)
 - [ ] Update tests to work with aethel storage (momentum/src/tests/)
