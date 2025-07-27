@@ -288,11 +288,32 @@ impl AethelStorage for RealAethelStorage {
             
             Ok((uuid, ChecklistData { items }))
         } else {
-            // Load template from the pack
-            let pack_path = self.vault_root.join("packs/momentum/templates/checklist.md");
+            // Load template from the pack - need to find the right version
+            let packs_dir = self.vault_root.join("packs");
+            let mut pack_path = None;
+            
+            // Find any momentum@* directory
+            if let Ok(entries) = std::fs::read_dir(&packs_dir) {
+                for entry in entries {
+                    if let Ok(entry) = entry {
+                        let file_name = entry.file_name();
+                        let name_str = file_name.to_string_lossy();
+                        if name_str.starts_with("momentum@") && entry.path().is_dir() {
+                            pack_path = Some(entry.path().join("templates/checklist.md"));
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            let pack_path = pack_path.ok_or_else(|| {
+                anyhow!("Momentum pack not found. Please run momentum to install it first.")
+            })?;
+            
             if !pack_path.exists() {
                 return Err(anyhow!(
-                    "Checklist template not found. Please install the Momentum pack first."
+                    "Checklist template not found at: {}",
+                    pack_path.display()
                 ));
             }
             
