@@ -28,7 +28,7 @@ We'll integrate the Momentum Rust application with aethel for document managemen
 - [x] Install the Momentum pack in the vault during first run (momentum/src/main.rs)
 - [ ] Update tests to work with aethel storage (momentum/src/tests/)
 - [x] Add configuration option for vault location (environment variable or CLI flag) (momentum/src/cli.rs)
-- [ ] Update Swift app to pass vault location to Rust CLI via environment variable (MomentumApp/Sources/Dependencies/ProcessRunner.swift)
+- [x] Update Swift app to pass vault location to Rust CLI via environment variable (MomentumApp/Sources/Dependencies/ProcessRunner.swift)
 - [ ] Ensure Swift app can read session state from aethel documents (MomentumApp/Sources/Dependencies/RustCoreClient.swift)
 
 ## Notes
