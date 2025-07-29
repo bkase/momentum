@@ -23,7 +23,7 @@ pub fn update(state: State, action: Action, _env: &Environment) -> (State, Optio
         }
 
         // Stop an active session
-        (State::SessionActive { session }, Action::Stop) => {
+        (State::SessionActive { session, .. }, Action::Stop) => {
             let effect = Effect::Composite(vec![
                 Effect::CreateReflection { session },
                 Effect::ClearState,

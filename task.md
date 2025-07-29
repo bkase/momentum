@@ -1,7 +1,7 @@
 # Integrate with aethel and my vault
 
 **Status:** InProgress
-**Agent PID:** 28825
+**Agent PID:** 28892
 
 ## Original Todo
 
@@ -26,7 +26,7 @@ We'll integrate the Momentum Rust application with aethel for document managemen
 - [x] Convert checklist operations to use aethel document storage (momentum/src/effects.rs)
 - [x] Add vault initialization logic to ensure docs/ and packs/ directories exist (momentum/src/main.rs)
 - [x] Install the Momentum pack in the vault during first run (momentum/src/main.rs)
-- [ ] Update tests to work with aethel storage (momentum/src/tests/)
+- [x] Update tests to work with aethel storage (momentum/src/tests/)
 - [x] Add configuration option for vault location (environment variable or CLI flag) (momentum/src/cli.rs)
 - [x] Update Swift app to pass vault location to Rust CLI via environment variable (MomentumApp/Sources/Dependencies/ProcessRunner.swift)
 - [ ] Ensure Swift app can read session state from aethel documents (MomentumApp/Sources/Dependencies/RustCoreClient.swift)
