@@ -1,21 +1,22 @@
 use crate::{aethel_storage::*, environment::*, models::*};
 use anyhow::Result;
 use async_trait::async_trait;
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex as StdMutex};
+use tokio::sync::Mutex as TokioMutex;
 use uuid::Uuid;
 
 // Mock implementations for testing
 pub struct MockFileSystem {
-    pub files: Arc<Mutex<HashMap<String, String>>>,
+    pub files: Arc<StdMutex<HashMap<String, String>>>,
 }
 
 impl MockFileSystem {
     pub fn new() -> Self {
         Self {
-            files: Arc::new(Mutex::new(HashMap::new())),
+            files: Arc::new(StdMutex::new(HashMap::new())),
         }
     }
 }
@@ -67,20 +68,20 @@ impl ApiClient for MockApiClient {
 
 /// Mock aethel storage for testing
 pub struct MockAethelStorage {
-    pub sessions: Arc<Mutex<HashMap<Uuid, Session>>>,
-    pub reflections: Arc<Mutex<HashMap<Uuid, (String, Option<Value>)>>>,
-    pub checklist: Arc<Mutex<Option<(Uuid, ChecklistData)>>>,
-    pub active_session_uuid: Arc<Mutex<Option<Uuid>>>,
+    pub sessions: Arc<TokioMutex<HashMap<Uuid, Session>>>,
+    pub reflections: Arc<TokioMutex<HashMap<Uuid, (String, Option<Value>)>>>,
+    pub checklist: Arc<TokioMutex<Option<(Uuid, ChecklistData)>>>,
+    pub active_session_uuid: Arc<TokioMutex<Option<Uuid>>>,
     pub vault_root: PathBuf,
 }
 
 impl MockAethelStorage {
     pub fn new() -> Self {
         Self {
-            sessions: Arc::new(Mutex::new(HashMap::new())),
-            reflections: Arc::new(Mutex::new(HashMap::new())),
-            checklist: Arc::new(Mutex::new(None)),
-            active_session_uuid: Arc::new(Mutex::new(None)),
+            sessions: Arc::new(TokioMutex::new(HashMap::new())),
+            reflections: Arc::new(TokioMutex::new(HashMap::new())),
+            checklist: Arc::new(TokioMutex::new(None)),
+            active_session_uuid: Arc::new(TokioMutex::new(None)),
             vault_root: PathBuf::from("/tmp/test-vault"),
         }
     }
@@ -93,19 +94,20 @@ impl AethelStorage for MockAethelStorage {
     }
 
     async fn find_active_session(&self) -> Result<Option<Uuid>> {
-        Ok(self.active_session_uuid.lock().unwrap().clone())
+        Ok(self.active_session_uuid.lock().await.clone())
     }
 
     async fn save_session(&self, session: &Session) -> Result<Uuid> {
-        let uuid = if let Some(existing_uuid) = *self.active_session_uuid.lock().unwrap() {
+        let existing_uuid = *self.active_session_uuid.lock().await;
+        let uuid = if let Some(existing_uuid) = existing_uuid {
             // Update existing session
-            self.sessions.lock().unwrap().insert(existing_uuid, session.clone());
+            self.sessions.lock().await.insert(existing_uuid, session.clone());
             existing_uuid
         } else {
             // Create new session
             let uuid = Uuid::new_v4();
-            self.sessions.lock().unwrap().insert(uuid, session.clone());
-            *self.active_session_uuid.lock().unwrap() = Some(uuid);
+            self.sessions.lock().await.insert(uuid, session.clone());
+            *self.active_session_uuid.lock().await = Some(uuid);
             uuid
         };
         Ok(uuid)
@@ -114,16 +116,17 @@ impl AethelStorage for MockAethelStorage {
     async fn read_session(&self, uuid: &Uuid) -> Result<Session> {
         self.sessions
             .lock()
-            .unwrap()
+            .await
             .get(uuid)
             .cloned()
             .ok_or_else(|| anyhow::anyhow!("Session not found"))
     }
 
     async fn delete_session(&self, uuid: &Uuid) -> Result<()> {
-        self.sessions.lock().unwrap().remove(uuid);
-        if self.active_session_uuid.lock().unwrap().as_ref() == Some(uuid) {
-            *self.active_session_uuid.lock().unwrap() = None;
+        self.sessions.lock().await.remove(uuid);
+        let mut active_guard = self.active_session_uuid.lock().await;
+        if active_guard.as_ref() == Some(uuid) {
+            *active_guard = None;
         }
         Ok(())
     }
@@ -134,7 +137,7 @@ impl AethelStorage for MockAethelStorage {
         body: String,
     ) -> Result<Uuid> {
         let uuid = Uuid::new_v4();
-        self.reflections.lock().unwrap().insert(uuid, (body, None));
+        self.reflections.lock().await.insert(uuid, (body, None));
         Ok(uuid)
     }
 
@@ -143,7 +146,7 @@ impl AethelStorage for MockAethelStorage {
         uuid: &Uuid,
         analysis: Value,
     ) -> Result<()> {
-        let mut reflections = self.reflections.lock().unwrap();
+        let mut reflections = self.reflections.lock().await;
         if let Some((body, _)) = reflections.get(uuid).cloned() {
             reflections.insert(*uuid, (body, Some(analysis)));
             Ok(())
@@ -153,7 +156,7 @@ impl AethelStorage for MockAethelStorage {
     }
 
     async fn get_or_create_checklist(&self) -> Result<(Uuid, ChecklistData)> {
-        let mut checklist = self.checklist.lock().unwrap();
+        let mut checklist = self.checklist.lock().await;
         if let Some((uuid, data)) = checklist.as_ref() {
             Ok((*uuid, data.clone()))
         } else {
@@ -170,7 +173,7 @@ impl AethelStorage for MockAethelStorage {
     }
 
     async fn update_checklist(&self, uuid: &Uuid, checklist_data: &ChecklistData) -> Result<()> {
-        let mut checklist = self.checklist.lock().unwrap();
+        let mut checklist = self.checklist.lock().await;
         if let Some((stored_uuid, _)) = checklist.as_ref() {
             if stored_uuid == uuid {
                 *checklist = Some((*uuid, checklist_data.clone()));

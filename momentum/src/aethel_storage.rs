@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use aethel_core::{apply_patch, read_doc, Doc, Patch, PatchMode, WriteResult};
+use aethel_core::{apply_patch, read_doc, Patch, PatchMode};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use serde_json::{json, Value};
