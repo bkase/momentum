@@ -79,10 +79,10 @@ The solution creates a lightweight index file at `<vault>/.aethel/indexes/moment
 
 ## Implementation Plan
 
-- [ ] Create index management module in momentum/src/aethel_storage.rs with pack-namespaced index functions
-- [ ] Add get_index_path() function that returns <vault>/.aethel/indexes/momentum.index.json
-- [ ] Add read_index() function to load existing index or return empty map
-- [ ] Add write_index() function with directory creation and atomic writes
+- [x] Create index management module in momentum/src/aethel_storage.rs with pack-namespaced index functions
+- [x] Add get_index_path() function that returns <vault>/.aethel/indexes/momentum.index.json
+- [x] Add read_index() function to load existing index or return empty map
+- [x] Add write_index() function with directory creation and atomic writes
 - [ ] Replace find_active_session() to use index lookup instead of linear search
 - [ ] Replace get_or_create_checklist() to use index lookup instead of linear search  
 - [ ] Update save_session() to maintain index when creating/updating session documents

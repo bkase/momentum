@@ -6,6 +6,7 @@ use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
+use crate::index::IndexManager;
 use crate::models::{ChecklistData, Session};
 
 /// Trait for interacting with aethel document storage
@@ -41,11 +42,13 @@ pub trait AethelStorage: Send + Sync {
 
 pub struct RealAethelStorage {
     vault_root: PathBuf,
+    index_manager: IndexManager,
 }
 
 impl RealAethelStorage {
     pub fn new(vault_root: PathBuf) -> Self {
-        Self { vault_root }
+        let index_manager = IndexManager::new(vault_root.clone());
+        Self { vault_root, index_manager }
     }
 
     /// Parse frontmatter from document content, returning (frontmatter_text, is_archived)
