@@ -52,57 +52,11 @@ impl Environment {
 
         Ok(path)
     }
-
-    /// Get the path to session.json
-    pub fn get_session_path(&self) -> Result<PathBuf> {
-        let mut path =
-            dirs::data_dir().ok_or_else(|| anyhow::anyhow!("Could not find data directory"))?;
-        path.push("Momentum");
-
-        // Ensure directory exists
-        std::fs::create_dir_all(&path)?;
-
-        path.push("session.json");
-        Ok(path)
-    }
-
-    /// Get the directory for reflection files
-    pub fn get_reflections_dir(&self) -> Result<PathBuf> {
-        let mut path =
-            dirs::data_dir().ok_or_else(|| anyhow::anyhow!("Could not find data directory"))?;
-        path.push("Momentum");
-        path.push("reflections");
-
-        // Ensure directory exists
-        std::fs::create_dir_all(&path)?;
-
-        Ok(path)
-    }
-
-    /// Get the path to checklist.json state file
-    pub fn get_checklist_path(&self) -> Result<PathBuf> {
-        let mut path =
-            dirs::data_dir().ok_or_else(|| anyhow::anyhow!("Could not find data directory"))?;
-        path.push("Momentum");
-
-        // Ensure directory exists
-        std::fs::create_dir_all(&path)?;
-
-        path.push("checklist.json");
-        Ok(path)
-    }
-
-    /// Get the checklist template embedded in the binary
-    pub fn get_checklist_template() -> &'static str {
-        include_str!("../../MomentumApp/Resources/checklist.json")
-    }
 }
 
 /// File system operations trait
 pub trait FileSystem: Send + Sync {
     fn read(&self, path: &Path) -> Result<String>;
-    fn write(&self, path: &Path, content: &str) -> Result<()>;
-    fn delete(&self, path: &Path) -> Result<()>;
 }
 
 /// API client trait for Claude API
@@ -123,14 +77,6 @@ struct RealFileSystem;
 impl FileSystem for RealFileSystem {
     fn read(&self, path: &Path) -> Result<String> {
         Ok(std::fs::read_to_string(path)?)
-    }
-
-    fn write(&self, path: &Path, content: &str) -> Result<()> {
-        Ok(std::fs::write(path, content)?)
-    }
-
-    fn delete(&self, path: &Path) -> Result<()> {
-        Ok(std::fs::remove_file(path)?)
     }
 }
 

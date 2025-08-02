@@ -1,36 +1,11 @@
 use crate::environment::Environment;
-use crate::models::{ChecklistItem, ChecklistState, ChecklistTemplate, Session};
+use crate::models::{ChecklistItem, ChecklistState, Session};
 use anyhow::Result;
 use std::path::PathBuf;
-
-/// Initialize a fresh checklist from the template
-fn create_checklist_from_template() -> Result<ChecklistState> {
-    let template_json = Environment::get_checklist_template();
-    let templates: Vec<ChecklistTemplate> = serde_json::from_str(template_json)?;
-
-    let items: Vec<ChecklistItem> = templates
-        .into_iter()
-        .map(|t| ChecklistItem {
-            id: t.id,
-            text: t.text,
-            on: false,
-        })
-        .collect();
-
-    Ok(ChecklistState { items })
-}
 
 /// Sanitize a goal string for use in a filename
 #[cfg(test)]
 pub fn sanitize_goal_for_filename(goal: &str) -> String {
-    goal.to_lowercase()
-        .chars()
-        .map(|c| if c == ' ' { '-' } else { c })
-        .collect()
-}
-
-#[cfg(not(test))]
-fn sanitize_goal_for_filename(goal: &str) -> String {
     goal.to_lowercase()
         .chars()
         .map(|c| if c == ' ' { '-' } else { c })
@@ -102,7 +77,9 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
             state.save(env).await?;
 
             // Print the full file path to stdout for the Swift app
-            let reflection_path = env.aethel_storage.vault_root()
+            let reflection_path = env
+                .aethel_storage
+                .vault_root()
                 .join("docs")
                 .join(format!("{reflection_uuid}.md"));
             println!("{}", reflection_path.display());
@@ -114,8 +91,7 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
             let uuid = if let Some(filename) = path.file_name() {
                 // Try to extract UUID from filename (e.g., "uuid.md" -> "uuid")
                 let filename_str = filename.to_str().unwrap_or("");
-                if filename_str.ends_with(".md") {
-                    let uuid_str = &filename_str[..filename_str.len() - 3];
+                if let Some(uuid_str) = filename_str.strip_suffix(".md") {
                     uuid::Uuid::parse_str(uuid_str).ok()
                 } else {
                     // Try parsing the filename itself as a UUID (backward compatibility)

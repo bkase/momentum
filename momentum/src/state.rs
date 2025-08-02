@@ -58,21 +58,4 @@ impl State {
             }
         }
     }
-
-    /// Load state from session.json if it exists (backwards compatibility)
-    pub fn load_legacy(env: &Environment) -> Result<Self> {
-        let session_path = env.get_session_path()?;
-
-        // Try to read the file, if it doesn't exist, return Idle
-        match env.file_system.read(&session_path) {
-            Ok(content) => {
-                let session: Session = serde_json::from_str(&content)?;
-                Ok(State::SessionActive {
-                    session,
-                    session_uuid: None,
-                })
-            }
-            Err(_) => Ok(State::Idle),
-        }
-    }
 }

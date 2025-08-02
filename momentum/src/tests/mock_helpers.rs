@@ -19,6 +19,18 @@ impl MockFileSystem {
             files: Arc::new(StdMutex::new(HashMap::new())),
         }
     }
+
+    #[allow(dead_code)]
+    pub fn write_file(&self, path: &str, content: &str) {
+        let mut files = self.files.lock().unwrap();
+        files.insert(path.to_string(), content.to_string());
+    }
+
+    #[allow(dead_code)]
+    pub fn delete_file(&self, path: &str) {
+        let mut files = self.files.lock().unwrap();
+        files.remove(path);
+    }
 }
 
 impl FileSystem for MockFileSystem {
@@ -28,18 +40,6 @@ impl FileSystem for MockFileSystem {
             .get(&path.to_string_lossy().to_string())
             .cloned()
             .ok_or_else(|| anyhow::anyhow!("File not found"))
-    }
-
-    fn write(&self, path: &std::path::Path, content: &str) -> anyhow::Result<()> {
-        let mut files = self.files.lock().unwrap();
-        files.insert(path.to_string_lossy().to_string(), content.to_string());
-        Ok(())
-    }
-
-    fn delete(&self, path: &std::path::Path) -> anyhow::Result<()> {
-        let mut files = self.files.lock().unwrap();
-        files.remove(&path.to_string_lossy().to_string());
-        Ok(())
     }
 }
 

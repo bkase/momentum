@@ -32,20 +32,6 @@ pub struct ChecklistState {
     pub items: Vec<ChecklistItem>,
 }
 
-impl ChecklistState {
-    /// Check if all items are completed
-    pub fn all_completed(&self) -> bool {
-        self.items.iter().all(|item| item.on)
-    }
-}
-
-/// Template item from checklist.json
-#[derive(Debug, Clone, Deserialize)]
-pub struct ChecklistTemplate {
-    pub id: String,
-    pub text: String,
-}
-
 /// Checklist data for aethel storage
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ChecklistData {

@@ -292,14 +292,12 @@ impl AethelStorage for RealAethelStorage {
 
             // Find any momentum@* directory
             if let Ok(entries) = std::fs::read_dir(&packs_dir) {
-                for entry in entries {
-                    if let Ok(entry) = entry {
-                        let file_name = entry.file_name();
-                        let name_str = file_name.to_string_lossy();
-                        if name_str.starts_with("momentum@") && entry.path().is_dir() {
-                            pack_path = Some(entry.path().join("templates/checklist.md"));
-                            break;
-                        }
+                for entry in entries.flatten() {
+                    let file_name = entry.file_name();
+                    let name_str = file_name.to_string_lossy();
+                    if name_str.starts_with("momentum@") && entry.path().is_dir() {
+                        pack_path = Some(entry.path().join("templates/checklist.md"));
+                        break;
                     }
                 }
             }
