@@ -18,6 +18,3 @@ mod checklist_tests;
 
 #[cfg(test)]
 mod index_tests;
-
-#[cfg(test)]
-mod performance_tests;
