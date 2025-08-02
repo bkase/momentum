@@ -53,7 +53,7 @@ impl IndexManager {
     /// Write the index file, creating directories as needed
     pub fn write_index(&self, index: &HashMap<String, String>) -> Result<()> {
         let index_path = self.get_index_path();
-        
+
         // Create directories if they don't exist
         if let Some(parent) = index_path.parent() {
             std::fs::create_dir_all(parent)?;
@@ -64,7 +64,7 @@ impl IndexManager {
         let content = serde_json::to_string_pretty(index)?;
         std::fs::write(&temp_path, content)?;
         std::fs::rename(temp_path, index_path)?;
-        
+
         Ok(())
     }
 
@@ -86,7 +86,7 @@ impl IndexManager {
     pub fn get_entry(&self, key: &str) -> Result<Option<Uuid>> {
         let index = self.read_index()?;
         if let Some(uuid_str) = index.get(key) {
-            Ok(Some(Uuid::parse_str(uuid_str)?))  
+            Ok(Some(Uuid::parse_str(uuid_str)?))
         } else {
             Ok(None)
         }

@@ -48,7 +48,10 @@ pub struct RealAethelStorage {
 impl RealAethelStorage {
     pub fn new(vault_root: PathBuf) -> Self {
         let index_manager = IndexManager::new(vault_root.clone());
-        Self { vault_root, index_manager }
+        Self {
+            vault_root,
+            index_manager,
+        }
     }
 
     /// Parse frontmatter from document content, returning (frontmatter_text, is_archived)
@@ -198,7 +201,9 @@ impl AethelStorage for RealAethelStorage {
         if let Ok(Some(uuid)) = self.index_manager.get_entry("active_session") {
             // Verify the document still exists and is not archived
             if let Ok(doc) = read_doc(&self.vault_root, &uuid) {
-                let is_archived = doc.frontmatter_extra.get("archived")
+                let is_archived = doc
+                    .frontmatter_extra
+                    .get("archived")
                     .and_then(|v| v.as_bool())
                     .unwrap_or(false);
                 if !is_archived {
@@ -248,10 +253,12 @@ impl AethelStorage for RealAethelStorage {
         );
 
         let result = apply_patch(&self.vault_root, patch)?;
-        
+
         // Update index
-        let _ = self.index_manager.update_entry("active_session", &result.uuid);
-        
+        let _ = self
+            .index_manager
+            .update_entry("active_session", &result.uuid);
+
         Ok(result.uuid)
     }
 
@@ -270,10 +277,10 @@ impl AethelStorage for RealAethelStorage {
     async fn delete_session(&self, uuid: &Uuid) -> Result<()> {
         let patch = Self::create_patch(Some(*uuid), None, json!({"archived": true}), None);
         apply_patch(&self.vault_root, patch)?;
-        
+
         // Remove from index since archived sessions are excluded from active session lookups
         let _ = self.index_manager.remove_entry("active_session");
-        
+
         Ok(())
     }
 
@@ -321,7 +328,10 @@ impl AethelStorage for RealAethelStorage {
         }
 
         // Fallback to linear search or create new checklist
-        if let Some(uuid) = self.find_document_by_type("momentum.checklist", false).await? {
+        if let Some(uuid) = self
+            .find_document_by_type("momentum.checklist", false)
+            .await?
+        {
             let doc = read_doc(&self.vault_root, &uuid)?;
             let items = Self::extract_field(&doc.frontmatter_extra, "items", |v| {
                 v.as_array().map(|arr| {
@@ -335,7 +345,7 @@ impl AethelStorage for RealAethelStorage {
                         .collect()
                 })
             })?;
-            
+
             // Update index
             let _ = self.index_manager.update_entry("checklist", &uuid);
             Ok((uuid, ChecklistData { items }))
@@ -347,9 +357,10 @@ impl AethelStorage for RealAethelStorage {
             let frontmatter = json!({ "items": Self::checklist_to_json(&checklist.items) });
             let body = "# Pre-Session Checklist\n\nComplete these items before starting your focus session.".to_string();
 
-            let patch = Self::create_patch(None, Some("momentum.checklist"), frontmatter, Some(body));
+            let patch =
+                Self::create_patch(None, Some("momentum.checklist"), frontmatter, Some(body));
             let result = apply_patch(&self.vault_root, patch)?;
-            
+
             // Update index
             let _ = self.index_manager.update_entry("checklist", &result.uuid);
             Ok((result.uuid, checklist))

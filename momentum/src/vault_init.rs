@@ -30,7 +30,7 @@ pub async fn initialize_vault(env: &environment::Environment) -> Result<()> {
     // Initialize or migrate index if needed
     let index_manager = IndexManager::new(vault_root.to_path_buf());
     let index = index_manager.read_index()?;
-    
+
     // If index is empty and documents exist, migrate from existing vault
     if index.is_empty() && docs_dir.exists() {
         let doc_count = std::fs::read_dir(&docs_dir)?.count();
