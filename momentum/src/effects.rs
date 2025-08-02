@@ -101,14 +101,32 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
             };
             state.save(env).await?;
 
-            // Print the reflection UUID to stdout for the Swift app
-            println!("{reflection_uuid}");
+            // Print the full file path to stdout for the Swift app
+            let reflection_path = env.aethel_storage.vault_root()
+                .join("docs")
+                .join(format!("{reflection_uuid}.md"));
+            println!("{}", reflection_path.display());
             Ok(())
         }
 
         Effect::AnalyzeReflection { path } => {
-            // Try to parse as UUID first (for aethel documents)
-            let content = if let Ok(uuid) = uuid::Uuid::parse_str(path.to_str().unwrap_or("")) {
+            // Check if this is an aethel document by extracting UUID from path or raw UUID
+            let uuid = if let Some(filename) = path.file_name() {
+                // Try to extract UUID from filename (e.g., "uuid.md" -> "uuid")
+                let filename_str = filename.to_str().unwrap_or("");
+                if filename_str.ends_with(".md") {
+                    let uuid_str = &filename_str[..filename_str.len() - 3];
+                    uuid::Uuid::parse_str(uuid_str).ok()
+                } else {
+                    // Try parsing the filename itself as a UUID (backward compatibility)
+                    uuid::Uuid::parse_str(filename_str).ok()
+                }
+            } else {
+                // Try to parse the entire path as UUID (backward compatibility)
+                uuid::Uuid::parse_str(path.to_str().unwrap_or("")).ok()
+            };
+
+            let content = if let Some(uuid) = uuid {
                 // Read from aethel
                 let doc = aethel_core::read_doc(env.aethel_storage.vault_root(), &uuid)?;
                 doc.body
@@ -121,7 +139,7 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
             let result = env.api_client.analyze(&content).await?;
 
             // If this was an aethel document, update it with the analysis
-            if let Ok(uuid) = uuid::Uuid::parse_str(path.to_str().unwrap_or("")) {
+            if let Some(uuid) = uuid {
                 env.aethel_storage
                     .update_reflection_analysis(&uuid, serde_json::to_value(&result)?)
                     .await?;
