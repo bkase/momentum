@@ -1,6 +1,6 @@
 # Bug when checking checklist items too fast
 
-**Status:** Refining
+**Status:** InProgress
 **Agent PID:** 29931
 
 ## Original Todo
@@ -9,15 +9,19 @@ If you check the items on the checklist too quickly, then there's some kind of e
 
 ## Description
 
-[what we're building]
+We need to fix a race condition bug in the checklist feature where rapidly checking multiple items causes duplicate items to appear in the UI. The bug occurs because the item selection logic uses stale state during overlapping animations, allowing the same "next available item" to be assigned to multiple slots. The fix requires implementing eager state updates, proper concurrency control, and preventing duplicate item assignments during transitions.
 
 ## Implementation Plan
 
-[how we are building it]
+Based on the analysis, here's how we'll fix the race condition:
 
-- [ ] Code change with location(s) if applicable (src/file.ts:45-93)
-- [ ] Automated test: ...
-- [ ] User test: ...
+- [ ] Add immediate optimistic state updates in `checklistSlotToggled` action (MomentumApp/Sources/Features/Preparation/PreparationFeature.swift:140-148)
+- [ ] Implement item reservation system to prevent duplicate assignments (PreparationFeature+Checklist.swift:60-70)
+- [ ] Add slot-level locking to prevent overlapping transitions on same slot (PreparationFeature+Checklist.swift)
+- [ ] Make checkbox clicks final and non-reversible during animations (ChecklistRowView.swift)
+- [ ] Update item selection logic to consider reserved/transitioning items (PreparationFeature+Checklist.swift:60-70)
+- [ ] Automated test: Create TCA test for rapid clicking scenario with deterministic timing
+- [ ] User test: Verify rapid clicking no longer creates duplicates and animations work smoothly
 
 ## Notes
 
