@@ -26,9 +26,7 @@ extension PreparationFeature {
         clock: any Clock<Duration>
     ) -> Effect<Action> {
         guard slotId < state.checklistSlots.count,
-            let item = state.checklistSlots[slotId].item,
-            !state.checklistSlots[slotId].isTransitioning,  // Prevent overlapping transitions
-            !item.on  // Only allow checking, not unchecking
+            let item = state.checklistSlots[slotId].item
         else { return .none }
 
         // Toggle the item via Rust CLI
@@ -59,6 +57,11 @@ extension PreparationFeature {
         if let slotItem = state.checklistSlots[slotId].item,
             slotItem.on
         {
+            // Mark slot as transitioning immediately to prevent duplicate clicks
+            var slots = state.checklistSlots
+            slots[slotId].isTransitioning = true
+            state.checklistSlots = slots
+            
             // Find next unchecked item that isn't already reserved or in slots
             let uncheckedItems = updatedItems.filter { !$0.on }
             let currentSlotIds = state.checklistSlots.compactMap { $0.item?.id }

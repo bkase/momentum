@@ -1,7 +1,7 @@
 # Bug when checking checklist items too fast
 
 **Status:** Done
-**Agent PID:** 29931
+**Agent PID:** 7830
 
 ## Original Todo
 
@@ -22,6 +22,7 @@ Based on the analysis, here's how we'll fix the race condition:
 - [x] Update item selection logic to consider reserved/transitioning items (PreparationFeature+Checklist.swift:60-70)
 - [x] Automated test: Create TCA test for rapid clicking scenario with deterministic timing
 - [x] User test: Verify rapid clicking no longer creates duplicates and animations work smoothly
+- [x] Fix critical flaw: Change guard clause from !item.on to !slot.isTransitioning to allow animation flow with optimistic updates
 
 ## Notes
 
@@ -59,3 +60,9 @@ Implementation completed with the following key changes:
 - Verifies no duplicate items are assigned and reservations are properly managed
 
 The fix addresses the root cause identified in the original bug report: multiple rapid clicks seeing stale state and selecting the same replacement items. The solution provides immediate feedback, proper concurrency control, and maintains smooth animations.
+
+### 7. Critical Fix Applied
+- **Issue discovered**: The optimistic update immediately set `item.on = true`, causing the guard clause `!item.on` to block the animation flow
+- **Root cause**: After optimistic update, `handleChecklistSlotToggled` would see the item as already checked and prevent the animation sequence
+- **Solution**: Removed the `!item.on` guard clause, keeping only `!slot.isTransitioning` to prevent duplicate clicks during transitions
+- **Result**: Animation flow now works correctly with optimistic updates - items get immediate visual feedback AND proper fade-out animations

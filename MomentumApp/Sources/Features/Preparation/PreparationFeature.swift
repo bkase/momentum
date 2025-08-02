@@ -134,7 +134,7 @@ struct PreparationFeature {
                 // Immediate optimistic update to prevent racing conditions
                 guard slotId < state.checklistSlots.count,
                     let item = state.checklistSlots[slotId].item,
-                    !item.on  // Only allow checking, not unchecking
+                    !state.checklistSlots[slotId].isTransitioning  // Prevent duplicate clicks while transitioning
                 else { return .none }
 
                 // Optimistically mark the item as checked in local state
