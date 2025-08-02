@@ -1,6 +1,6 @@
 # Make finding needed momentum files not linear search through all docs
 
-**Status:** Refining
+**Status:** InProgress
 **Agent PID:** 32267
 
 ## Original Todo
@@ -73,15 +73,27 @@ This is the perfect example of how an application should build upon Aethel. You'
 
 ## Description
 
-[what we're building]
+Implement a pack-namespaced indexing system to eliminate the current O(n) linear search through all vault documents when finding momentum-specific documents. Currently, every operation that needs to find a session, checklist, or reflection document must read and parse every markdown file in the vault. This becomes extremely slow as vault size grows.
+
+The solution creates a lightweight index file at `<vault>/.aethel/indexes/momentum.index.json` that maps document types to their UUIDs, providing O(1) lookups instead of O(n) searches. The index is automatically maintained when documents are created, updated, or archived.
 
 ## Implementation Plan
 
-[how we are building it]
-
-- [ ] Code change with location(s) if applicable (src/file.ts:45-93)
-- [ ] Automated test: ...
-- [ ] User test: ...
+- [ ] Create index management module in momentum/src/aethel_storage.rs with pack-namespaced index functions
+- [ ] Add get_index_path() function that returns <vault>/.aethel/indexes/momentum.index.json
+- [ ] Add read_index() function to load existing index or return empty map
+- [ ] Add write_index() function with directory creation and atomic writes
+- [ ] Replace find_active_session() to use index lookup instead of linear search
+- [ ] Replace get_or_create_checklist() to use index lookup instead of linear search  
+- [ ] Update save_session() to maintain index when creating/updating session documents
+- [ ] Update archive_session() to maintain index when archiving session documents
+- [ ] Update get_or_create_checklist() to maintain index when creating checklist documents
+- [ ] Add index migration logic to populate index from existing documents on first run
+- [ ] Add comprehensive tests for index management functions
+- [ ] Add integration tests verifying O(1) lookup performance vs O(n) linear search
+- [ ] Add error handling for index corruption and automatic rebuilding
+- [ ] User test: Verify session start/stop operations work with large vault (create test vault with 1000+ docs)
+- [ ] User test: Verify checklist loading is fast with large vault
 
 ## Notes
 
