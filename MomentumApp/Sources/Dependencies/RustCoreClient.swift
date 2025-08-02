@@ -8,6 +8,7 @@ struct RustCoreClient {
     var analyze: @Sendable (String) async throws -> AnalysisResult
     var checkList: @Sendable () async throws -> ChecklistState
     var checkToggle: @Sendable (String) async throws -> ChecklistState
+    var getSession: @Sendable () async throws -> SessionData?
 }
 
 extension RustCoreClient: DependencyKey {
@@ -15,16 +16,17 @@ extension RustCoreClient: DependencyKey {
         start: { goal, minutes in
             let result = try await executeCommand("start", arguments: ["--goal", goal, "--time", String(minutes)])
 
-            guard let sessionPath = result.output?.trimmingCharacters(in: .whitespacesAndNewlines),
-                !sessionPath.isEmpty
+            guard let sessionJson = result.output,
+                !sessionJson.isEmpty,
+                let data = sessionJson.data(using: .utf8)
             else {
-                throw RustCoreError.invalidOutput("start command returned no session path")
+                throw RustCoreError.invalidOutput("start command returned no JSON")
             }
 
             do {
-                return try loadSession(from: sessionPath)
+                return try JSONDecoder().decode(SessionData.self, from: data)
             } catch {
-                throw RustCoreError.sessionLoadFailed(path: sessionPath, error: error)
+                throw RustCoreError.invalidOutput("Failed to decode session JSON: \(error)")
             }
         },
         stop: {
@@ -85,6 +87,32 @@ extension RustCoreClient: DependencyKey {
             } catch {
                 throw RustCoreError.decodingFailed(error)
             }
+        },
+        getSession: {
+            let result = try await executeCommand("get-session", arguments: [])
+
+            guard let sessionJson = result.output,
+                !sessionJson.isEmpty
+            else {
+                // No output means no active session
+                return nil
+            }
+
+            // Check if it's an empty JSON object (no session)
+            let trimmed = sessionJson.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed == "{}" {
+                return nil
+            }
+
+            guard let data = sessionJson.data(using: .utf8) else {
+                throw RustCoreError.invalidOutput("get-session returned invalid UTF-8")
+            }
+
+            do {
+                return try JSONDecoder().decode(SessionData.self, from: data)
+            } catch {
+                throw RustCoreError.decodingFailed(error)
+            }
         }
     )
 
@@ -120,6 +148,10 @@ extension RustCoreClient: DependencyKey {
                 ChecklistItem(id: "test-1", text: "Test item 1", on: id == "test-1"),
                 ChecklistItem(id: "test-2", text: "Test item 2", on: id == "test-2"),
             ])
+        },
+        getSession: {
+            // Return nil by default for tests - tests can override if needed
+            return nil
         }
     )
 }

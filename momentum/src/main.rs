@@ -1,10 +1,12 @@
 mod action;
+mod aethel_storage;
 mod effects;
 mod environment;
 mod models;
 mod state;
 mod tests;
 mod update;
+mod vault_init;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
@@ -14,6 +16,10 @@ use std::path::PathBuf;
 #[command(name = "momentum")]
 #[command(about = "Focus session tracking tool")]
 struct Cli {
+    /// Path to the aethel vault (overrides MOMENTUM_VAULT_PATH env var)
+    #[arg(long, global = true)]
+    vault: Option<PathBuf>,
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -46,6 +52,9 @@ enum Commands {
         #[command(subcommand)]
         subcommand: CheckCommands,
     },
+
+    /// Get current session (for Swift app)
+    GetSession,
 }
 
 #[derive(Subcommand)]
@@ -65,10 +74,17 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     // Initialize environment with real dependencies
-    let env = environment::Environment::new()?;
+    let env = if let Some(vault_path) = cli.vault {
+        environment::Environment::with_vault_path(vault_path)?
+    } else {
+        environment::Environment::new()?
+    };
+
+    // Initialize vault if needed
+    vault_init::initialize_vault(&env).await?;
 
     // Get current state
-    let state = state::State::load(&env)?;
+    let state = state::State::load(&env).await?;
 
     // Convert CLI command to action
     let action = match cli.command {
@@ -79,6 +95,7 @@ async fn main() -> Result<()> {
             CheckCommands::List => action::Action::CheckList,
             CheckCommands::Toggle { id } => action::Action::CheckToggle { id },
         },
+        Commands::GetSession => action::Action::GetSession,
     };
 
     // Run update function

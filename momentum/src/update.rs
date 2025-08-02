@@ -23,7 +23,7 @@ pub fn update(state: State, action: Action, _env: &Environment) -> (State, Optio
         }
 
         // Stop an active session
-        (State::SessionActive { session }, Action::Stop) => {
+        (State::SessionActive { session, .. }, Action::Stop) => {
             let effect = Effect::Composite(vec![
                 Effect::CreateReflection { session },
                 Effect::ClearState,
@@ -54,6 +54,14 @@ pub fn update(state: State, action: Action, _env: &Environment) -> (State, Optio
         // Toggle checklist item (works in any state)
         (state, Action::CheckToggle { id }) => {
             let effect = Effect::ToggleChecklistItem { id };
+            (state, Some(effect))
+        }
+
+        // Get current session (works in any state)
+        (state, Action::GetSession) => {
+            let effect = Effect::PrintSession {
+                state: state.clone(),
+            };
             (state, Some(effect))
         }
     }

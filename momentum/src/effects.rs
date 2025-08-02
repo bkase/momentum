@@ -1,37 +1,11 @@
 use crate::environment::Environment;
-use crate::models::{ChecklistItem, ChecklistState, ChecklistTemplate, Session};
+use crate::models::{ChecklistItem, ChecklistState, Session};
 use anyhow::Result;
-use chrono::Local;
 use std::path::PathBuf;
-
-/// Initialize a fresh checklist from the template
-fn create_checklist_from_template() -> Result<ChecklistState> {
-    let template_json = Environment::get_checklist_template();
-    let templates: Vec<ChecklistTemplate> = serde_json::from_str(template_json)?;
-
-    let items: Vec<ChecklistItem> = templates
-        .into_iter()
-        .map(|t| ChecklistItem {
-            id: t.id,
-            text: t.text,
-            on: false,
-        })
-        .collect();
-
-    Ok(ChecklistState { items })
-}
 
 /// Sanitize a goal string for use in a filename
 #[cfg(test)]
 pub fn sanitize_goal_for_filename(goal: &str) -> String {
-    goal.to_lowercase()
-        .chars()
-        .map(|c| if c == ' ' { '-' } else { c })
-        .collect()
-}
-
-#[cfg(not(test))]
-fn sanitize_goal_for_filename(goal: &str) -> String {
     goal.to_lowercase()
         .chars()
         .map(|c| if c == ' ' { '-' } else { c })
@@ -64,20 +38,15 @@ pub enum Effect {
         goal: String,
         time: u64,
     },
+    PrintSession {
+        state: crate::state::State,
+    },
 }
 
 /// Execute side effects
 pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
     match effect {
         Effect::CreateReflection { mut session } => {
-            // Create timestamp for filename
-            let now = Local::now();
-            let sanitized_goal = sanitize_goal_for_filename(&session.goal);
-            let filename = format!("{}-{}.md", now.format("%Y-%m-%d-%H%M"), sanitized_goal);
-
-            let mut reflection_path = env.get_reflections_dir()?;
-            reflection_path.push(&filename);
-
             // Load template
             let template_content = include_str!("../../reflection-template.md");
 
@@ -91,28 +60,66 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
                 .replace("{{time_taken}}", &time_taken.to_string())
                 .replace("{{time_expected}}", &session.time_expected.to_string());
 
-            // Write reflection file
-            env.file_system.write(&reflection_path, &content)?;
+            // Create reflection document in aethel
+            let reflection_uuid = env
+                .aethel_storage
+                .create_reflection(&session, content)
+                .await?;
 
-            // Update session with reflection file path
-            session.reflection_file_path = Some(reflection_path.to_string_lossy().to_string());
+            // Update session with reflection UUID
+            session.reflection_file_path = Some(reflection_uuid.to_string());
 
             // Save updated session
-            let session_path = env.get_session_path()?;
-            let session_content = serde_json::to_string_pretty(&session)?;
-            env.file_system.write(&session_path, &session_content)?;
+            let state = crate::state::State::SessionActive {
+                session,
+                session_uuid: None, // We don't have the session UUID here
+            };
+            state.save(env).await?;
 
-            // Print the reflection file path to stdout
+            // Print the full file path to stdout for the Swift app
+            let reflection_path = env
+                .aethel_storage
+                .vault_root()
+                .join("docs")
+                .join(format!("{reflection_uuid}.md"));
             println!("{}", reflection_path.display());
             Ok(())
         }
 
         Effect::AnalyzeReflection { path } => {
-            // Read the reflection file
-            let content = env.file_system.read(&path)?;
+            // Check if this is an aethel document by extracting UUID from path or raw UUID
+            let uuid = if let Some(filename) = path.file_name() {
+                // Try to extract UUID from filename (e.g., "uuid.md" -> "uuid")
+                let filename_str = filename.to_str().unwrap_or("");
+                if let Some(uuid_str) = filename_str.strip_suffix(".md") {
+                    uuid::Uuid::parse_str(uuid_str).ok()
+                } else {
+                    // Try parsing the filename itself as a UUID (backward compatibility)
+                    uuid::Uuid::parse_str(filename_str).ok()
+                }
+            } else {
+                // Try to parse the entire path as UUID (backward compatibility)
+                uuid::Uuid::parse_str(path.to_str().unwrap_or("")).ok()
+            };
+
+            let content = if let Some(uuid) = uuid {
+                // Read from aethel
+                let doc = aethel_core::read_doc(env.aethel_storage.vault_root(), &uuid)?;
+                doc.body
+            } else {
+                // Fall back to file system for backward compatibility
+                env.file_system.read(&path)?
+            };
 
             // Call Claude API for analysis
             let result = env.api_client.analyze(&content).await?;
+
+            // If this was an aethel document, update it with the analysis
+            if let Some(uuid) = uuid {
+                env.aethel_storage
+                    .update_reflection_analysis(&uuid, serde_json::to_value(&result)?)
+                    .await?;
+            }
 
             // Print the raw JSON result to stdout
             let json = serde_json::to_string(&result)?;
@@ -126,25 +133,14 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
         }
 
         Effect::SaveState { state } => {
-            // Save state to file system
-            let state_path = env.get_session_path()?;
-            match state {
-                crate::state::State::SessionActive { session } => {
-                    let content = serde_json::to_string_pretty(&session)?;
-                    env.file_system.write(&state_path, &content)?;
-                }
-                crate::state::State::Idle => {
-                    // Should not save idle state
-                    return Err(anyhow::anyhow!("Cannot save idle state"));
-                }
-            }
+            // Save state to aethel storage
+            state.save(env).await?;
             Ok(())
         }
 
         Effect::ClearState => {
-            // Delete session file
-            let state_path = env.get_session_path()?;
-            env.file_system.delete(&state_path)?;
+            // Clear session from aethel storage
+            crate::state::State::Idle.save(env).await?;
             Ok(())
         }
 
@@ -157,21 +153,21 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
         }
 
         Effect::LoadAndPrintChecklist => {
-            let checklist_path = env.get_checklist_path()?;
+            // Load or create checklist from aethel
+            let (_uuid, checklist_data) = env.aethel_storage.get_or_create_checklist().await?;
 
-            // Load or create checklist
-            let checklist = match env.file_system.read(&checklist_path) {
-                Ok(content) => serde_json::from_str(&content)?,
-                Err(_) => {
-                    // Initialize from template
-                    let checklist = create_checklist_from_template()?;
-
-                    // Save initial state
-                    let json = serde_json::to_string_pretty(&checklist)?;
-                    env.file_system.write(&checklist_path, &json)?;
-
-                    checklist
-                }
+            // Convert to ChecklistState for backward compatibility
+            let checklist = ChecklistState {
+                items: checklist_data
+                    .items
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, (text, on))| ChecklistItem {
+                        id: format!("item-{i}"),
+                        text,
+                        on,
+                    })
+                    .collect(),
             };
 
             // Print as JSON to stdout
@@ -182,62 +178,66 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
         }
 
         Effect::ToggleChecklistItem { id } => {
-            let checklist_path = env.get_checklist_path()?;
+            // Load checklist from aethel
+            let (uuid, mut checklist_data) = env.aethel_storage.get_or_create_checklist().await?;
 
-            // Load checklist
-            let mut checklist: ChecklistState = match env.file_system.read(&checklist_path) {
-                Ok(content) => serde_json::from_str(&content)?,
-                Err(_) => {
-                    // Initialize from template if not exists
-                    create_checklist_from_template()?
-                }
+            // Parse the ID to get the index
+            let index = if let Some(num_str) = id.strip_prefix("item-") {
+                num_str.parse::<usize>().ok()
+            } else {
+                None
             };
 
             // Toggle the item
-            let found = checklist.items.iter_mut().find(|item| item.id == id);
+            if let Some(idx) = index {
+                if let Some((_, on)) = checklist_data.items.get_mut(idx) {
+                    *on = !*on;
 
-            match found {
-                Some(item) => {
-                    item.on = !item.on;
-
-                    // Save updated state
-                    let json = serde_json::to_string_pretty(&checklist)?;
-                    env.file_system.write(&checklist_path, &json)?;
-
-                    // Print updated list as JSON
-                    let json = serde_json::to_string(&checklist)?;
-                    println!("{json}");
-                }
-                None => {
+                    // Save updated state to aethel
+                    env.aethel_storage
+                        .update_checklist(&uuid, &checklist_data)
+                        .await?;
+                } else {
                     eprintln!("Error: Checklist item with id '{id}' not found");
-                    // Still print current state
-                    let json = serde_json::to_string(&checklist)?;
-                    println!("{json}");
                 }
+            } else {
+                eprintln!("Error: Invalid checklist item id '{id}'");
             }
+
+            // Convert to ChecklistState and print
+            let checklist = ChecklistState {
+                items: checklist_data
+                    .items
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, (text, on))| ChecklistItem {
+                        id: format!("item-{i}"),
+                        text,
+                        on,
+                    })
+                    .collect(),
+            };
+
+            let json = serde_json::to_string(&checklist)?;
+            println!("{json}");
 
             Ok(())
         }
 
         Effect::ValidateChecklistAndStart { goal, time } => {
-            let checklist_path = env.get_checklist_path()?;
-
-            // Load checklist
-            let checklist: ChecklistState = match env.file_system.read(&checklist_path) {
-                Ok(content) => serde_json::from_str(&content)?,
-                Err(_) => {
-                    // No checklist exists, can't start
-                    return Err(anyhow::anyhow!(
-                        "Checklist not initialized. Run 'momentum check list' first."
-                    ));
-                }
-            };
+            // Load checklist from aethel
+            let (checklist_uuid, checklist_data) =
+                env.aethel_storage.get_or_create_checklist().await?;
 
             // Check if all items are completed
-            if !checklist.all_completed() {
+            let all_completed = checklist_data.items.iter().all(|(_, on)| *on);
+
+            if !all_completed {
                 let mut error_msg = "All checklist items must be completed before starting a session.\nUncompleted items:".to_string();
-                for item in checklist.items.iter().filter(|i| !i.on) {
-                    error_msg.push_str(&format!("\n  - {}", item.text));
+                for (text, on) in &checklist_data.items {
+                    if !on {
+                        error_msg.push_str(&format!("\n  - {text}"));
+                    }
                 }
                 return Err(anyhow::anyhow!(error_msg));
             }
@@ -250,18 +250,41 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
                 reflection_file_path: None,
             };
 
-            // Create session
-            let session_path = env.get_session_path()?;
-            let json = serde_json::to_string_pretty(&session)?;
-            env.file_system.write(&session_path, &json)?;
+            // Save session to aethel
+            let state = crate::state::State::SessionActive {
+                session: session.clone(),
+                session_uuid: None,
+            };
+            let _uuid = state.save(env).await?;
 
-            println!("{}", session_path.to_string_lossy());
+            // Print the session data as JSON for the Swift app
+            let json = serde_json::to_string(&session)?;
+            println!("{json}");
 
-            // Reset checklist for next session
-            let new_checklist = create_checklist_from_template()?;
-            let json = serde_json::to_string_pretty(&new_checklist)?;
-            env.file_system.write(&checklist_path, &json)?;
+            // Reset checklist for next session - reset all items to unchecked
+            let mut reset_checklist_data = checklist_data;
+            for (_, completed) in &mut reset_checklist_data.items {
+                *completed = false;
+            }
+            env.aethel_storage
+                .update_checklist(&checklist_uuid, &reset_checklist_data)
+                .await?;
 
+            Ok(())
+        }
+
+        Effect::PrintSession { state } => {
+            match state {
+                crate::state::State::SessionActive { session, .. } => {
+                    // Print session as JSON for Swift app
+                    let json = serde_json::to_string(&session)?;
+                    println!("{json}");
+                }
+                crate::state::State::Idle => {
+                    // Print empty JSON object to indicate no session
+                    println!("{{}}");
+                }
+            }
             Ok(())
         }
     }

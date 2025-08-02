@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Reflection",
+  "description": "Post-session reflection document",
+  "type": "object",
+  "properties": {
+    "goal": {
+      "type": "string",
+      "description": "The goal that was worked on"
+    },
+    "start_time": {
+      "type": "integer",
+      "description": "Unix timestamp when the session started"
+    },
+    "end_time": {
+      "type": "integer",
+      "description": "Unix timestamp when the session ended"
+    },
+    "time_expected": {
+      "type": "integer",
+      "description": "Expected duration in minutes"
+    },
+    "time_actual": {
+      "type": "integer",
+      "description": "Actual duration in minutes"
+    },
+    "analysis": {
+      "type": "object",
+      "description": "AI-generated analysis of the reflection",
+      "properties": {
+        "summary": {
+          "type": "string"
+        },
+        "suggestion": {
+          "type": "string"
+        },
+        "reasoning": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": ["goal", "start_time", "end_time", "time_expected", "time_actual"]
+}

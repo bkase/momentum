@@ -2,45 +2,60 @@ use crate::environment::Environment;
 use crate::models::Session;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 /// The application state
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum State {
     Idle,
-    SessionActive { session: Session },
+    SessionActive {
+        session: Session,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        session_uuid: Option<Uuid>,
+    },
 }
 
 impl State {
-    /// Load state from session.json if it exists
-    pub fn load(env: &Environment) -> Result<Self> {
-        let session_path = env.get_session_path()?;
-
-        // Try to read the file, if it doesn't exist, return Idle
-        match env.file_system.read(&session_path) {
-            Ok(content) => {
-                let session: Session = serde_json::from_str(&content)?;
-                Ok(State::SessionActive { session })
+    /// Load state from aethel documents
+    pub async fn load(env: &Environment) -> Result<Self> {
+        // Look for active session document in aethel vault
+        match env.aethel_storage.find_active_session().await? {
+            Some(uuid) => {
+                let session = env.aethel_storage.read_session(&uuid).await?;
+                Ok(State::SessionActive {
+                    session,
+                    session_uuid: Some(uuid),
+                })
             }
-            Err(_) => Ok(State::Idle),
+            None => Ok(State::Idle),
         }
     }
 
-    /// Save state to session.json
-    #[allow(dead_code)]
-    pub fn save(&self, env: &Environment) -> Result<()> {
+    /// Save state to aethel documents
+    pub async fn save(&self, env: &Environment) -> Result<Option<Uuid>> {
         match self {
             State::Idle => {
-                // Delete session.json if it exists
-                let session_path = env.get_session_path()?;
-                // Try to delete, ignore error if file doesn't exist
-                let _ = env.file_system.delete(&session_path);
+                // If we have a session UUID, mark it as archived
+                if let Ok(Some(uuid)) = env.aethel_storage.find_active_session().await {
+                    env.aethel_storage.delete_session(&uuid).await?;
+                }
+                Ok(None)
             }
-            State::SessionActive { session } => {
-                let session_path = env.get_session_path()?;
-                let content = serde_json::to_string_pretty(session)?;
-                env.file_system.write(&session_path, &content)?;
+            State::SessionActive {
+                session,
+                session_uuid,
+            } => {
+                // Save or update session document
+                let uuid = if let Some(existing_uuid) = session_uuid {
+                    // Update existing
+                    env.aethel_storage.save_session(session).await?;
+                    *existing_uuid
+                } else {
+                    // Create new
+                    env.aethel_storage.save_session(session).await?
+                };
+                Ok(Some(uuid))
             }
         }
-        Ok(())
     }
 }

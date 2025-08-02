@@ -1,13 +1,11 @@
 use super::mock_helpers::*;
-use crate::{action::Action, environment::*, models::Session, state::State, update::update};
+use crate::{action::Action, models::Session, state::State, update::update};
 
 #[test]
 fn test_analyze_action() {
-    let env = Environment {
-        file_system: Box::new(MockFileSystem::new()),
-        api_client: Box::new(MockApiClient),
-        clock: Box::new(MockClock { time: 1000 }),
-    };
+    let mut env = create_test_environment();
+    // Override the clock time for this specific test
+    env.clock = Box::new(MockClock { time: 1000 });
 
     let state = State::Idle;
     let path = std::path::PathBuf::from("/test/reflection.md");
@@ -27,26 +25,22 @@ fn test_analyze_action() {
     }
 }
 
-#[test]
-fn test_state_load_no_session() {
-    let env = Environment {
-        file_system: Box::new(MockFileSystem::new()),
-        api_client: Box::new(MockApiClient),
-        clock: Box::new(MockClock { time: 1000 }),
-    };
+#[tokio::test]
+async fn test_state_load_no_session() {
+    let mut env = create_test_environment();
+    // Override the clock time for this specific test
+    env.clock = Box::new(MockClock { time: 1000 });
 
-    // When no session file exists, should return Idle
-    let state = State::load(&env).unwrap();
+    // When no session exists in aethel, should return Idle
+    let state = State::load(&env).await.unwrap();
     assert!(matches!(state, State::Idle));
 }
 
-#[test]
-fn test_state_load_with_session() {
-    let env = Environment {
-        file_system: Box::new(MockFileSystem::new()),
-        api_client: Box::new(MockApiClient),
-        clock: Box::new(MockClock { time: 1000 }),
-    };
+#[tokio::test]
+async fn test_state_load_with_session() {
+    let mut env = create_test_environment();
+    // Override the clock time for this specific test
+    env.clock = Box::new(MockClock { time: 1000 });
 
     let session = Session {
         goal: "test goal".to_string(),
@@ -55,15 +49,15 @@ fn test_state_load_with_session() {
         reflection_file_path: None,
     };
 
-    // Write session to mock file system
-    let session_path = env.get_session_path().unwrap();
-    let content = serde_json::to_string(&session).unwrap();
-    env.file_system.write(&session_path, &content).unwrap();
+    // Save session to aethel mock storage
+    env.aethel_storage.save_session(&session).await.unwrap();
 
     // Load should return SessionActive
-    let state = State::load(&env).unwrap();
+    let state = State::load(&env).await.unwrap();
     match state {
-        State::SessionActive { session: loaded } => {
+        State::SessionActive {
+            session: loaded, ..
+        } => {
             assert_eq!(loaded.goal, session.goal);
             assert_eq!(loaded.start_time, session.start_time);
         }
@@ -74,11 +68,9 @@ fn test_state_load_with_session() {
 // Test for effect execution
 #[tokio::test]
 async fn test_effect_clear_state() {
-    let env = Environment {
-        file_system: Box::new(MockFileSystem::new()),
-        api_client: Box::new(MockApiClient),
-        clock: Box::new(MockClock { time: 1000 }),
-    };
+    let mut env = create_test_environment();
+    // Override the clock time for this specific test
+    env.clock = Box::new(MockClock { time: 1000 });
 
     let session = Session {
         goal: "test goal".to_string(),
@@ -88,26 +80,20 @@ async fn test_effect_clear_state() {
     };
 
     // First, save a session
-    let session_path = env.get_session_path().unwrap();
-    let content = serde_json::to_string(&session).unwrap();
-    env.file_system.write(&session_path, &content).unwrap();
+    let _uuid = env.aethel_storage.save_session(&session).await.unwrap();
 
     // Execute clear effect
     let effect = crate::effects::Effect::ClearState;
     crate::effects::execute(effect, &env).await.unwrap();
 
-    // Verify file was deleted
-    let result = env.file_system.read(&session_path);
-    assert!(result.is_err());
+    // Verify session was cleared
+    let active_session = env.aethel_storage.find_active_session().await.unwrap();
+    assert!(active_session.is_none());
 }
 
 #[tokio::test]
 async fn test_effect_composite() {
-    let env = Environment {
-        file_system: Box::new(MockFileSystem::new()),
-        api_client: Box::new(MockApiClient),
-        clock: Box::new(MockClock { time: 1000 }),
-    };
+    let env = create_test_environment();
 
     let effect = crate::effects::Effect::Composite(vec![
         crate::effects::Effect::PrintError {

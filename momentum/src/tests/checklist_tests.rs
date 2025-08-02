@@ -1,7 +1,7 @@
 use super::mock_helpers::create_test_environment;
 use crate::action::Action;
 use crate::effects::{execute, Effect};
-use crate::models::{ChecklistItem, ChecklistState};
+use crate::models::ChecklistData;
 use crate::state::State;
 use crate::update::update;
 
@@ -41,31 +41,21 @@ fn test_checklist_toggle_action() {
 async fn test_load_checklist_creates_default() {
     let env = create_test_environment();
 
-    // The test environment starts with no files
+    // The test environment starts with no checklist
 
     let effect = Effect::LoadAndPrintChecklist;
     let result = execute(effect, &env).await;
 
     assert!(result.is_ok());
 
-    // Check that checklist was created
-    let checklist_path = env.get_checklist_path().unwrap();
-    assert!(env.file_system.read(&checklist_path).is_ok());
+    // Check that checklist was created in aethel
+    let (_uuid, checklist_data) = env.aethel_storage.get_or_create_checklist().await.unwrap();
 
-    // Verify default content
-    let content = env.file_system.read(&checklist_path).unwrap();
-    let checklist: ChecklistState = serde_json::from_str(&content).unwrap();
-
-    assert_eq!(checklist.items.len(), 9);
-    assert!(checklist.items.iter().all(|item| !item.on));
-    assert_eq!(
-        checklist.items[0].text,
-        "Rested, if not take 10min to lie down"
-    );
-    assert_eq!(
-        checklist.items[1].text,
-        "Not hungry, if so, get a snack first"
-    );
+    // Verify default content from mock
+    assert_eq!(checklist_data.items.len(), 2); // Mock returns 2 test items
+    assert!(checklist_data.items.iter().all(|(_, on)| !on));
+    assert_eq!(checklist_data.items[0].0, "Test item 1");
+    assert_eq!(checklist_data.items[1].0, "Test item 2");
 }
 
 #[tokio::test]
@@ -73,38 +63,32 @@ async fn test_load_checklist_reads_existing() {
     let env = create_test_environment();
 
     // Create existing checklist with some items checked
-    let existing_checklist = ChecklistState {
+    let checklist_data = ChecklistData {
         items: vec![
-            ChecklistItem {
-                id: "0".to_string(),
-                text: "Test Item 1".to_string(),
-                on: true,
-            },
-            ChecklistItem {
-                id: "1".to_string(),
-                text: "Test Item 2".to_string(),
-                on: false,
-            },
+            ("Custom Item 1".to_string(), true),
+            ("Custom Item 2".to_string(), false),
         ],
     };
 
-    let checklist_path = env.get_checklist_path().unwrap();
-    let content = serde_json::to_string(&existing_checklist).unwrap();
-    env.file_system.write(&checklist_path, &content).unwrap();
+    // Update the checklist in aethel mock storage
+    let (uuid, _) = env.aethel_storage.get_or_create_checklist().await.unwrap();
+    env.aethel_storage
+        .update_checklist(&uuid, &checklist_data)
+        .await
+        .unwrap();
 
     let effect = Effect::LoadAndPrintChecklist;
     let result = execute(effect, &env).await;
 
     assert!(result.is_ok());
 
-    // Verify it reads the existing content
-    let saved_content = env.file_system.read(&checklist_path).unwrap();
-    let saved_checklist: ChecklistState = serde_json::from_str(&saved_content).unwrap();
+    // Verify it reads the updated content
+    let (_, saved_checklist) = env.aethel_storage.get_or_create_checklist().await.unwrap();
 
     assert_eq!(saved_checklist.items.len(), 2);
-    assert_eq!(saved_checklist.items[0].text, "Test Item 1");
-    assert!(saved_checklist.items[0].on);
-    assert!(!saved_checklist.items[1].on);
+    assert_eq!(saved_checklist.items[0].0, "Custom Item 1");
+    assert!(saved_checklist.items[0].1);
+    assert!(!saved_checklist.items[1].1);
 }
 
 #[tokio::test]
@@ -112,45 +96,35 @@ async fn test_toggle_checklist_item() {
     let env = create_test_environment();
 
     // Create checklist with all items unchecked
-    let checklist = ChecklistState {
+    let checklist_data = ChecklistData {
         items: vec![
-            ChecklistItem {
-                id: "0".to_string(),
-                text: "Item 0".to_string(),
-                on: false,
-            },
-            ChecklistItem {
-                id: "1".to_string(),
-                text: "Item 1".to_string(),
-                on: false,
-            },
-            ChecklistItem {
-                id: "2".to_string(),
-                text: "Item 2".to_string(),
-                on: false,
-            },
+            ("Item 0".to_string(), false),
+            ("Item 1".to_string(), false),
+            ("Item 2".to_string(), false),
         ],
     };
 
-    let checklist_path = env.get_checklist_path().unwrap();
-    let content = serde_json::to_string(&checklist).unwrap();
-    env.file_system.write(&checklist_path, &content).unwrap();
+    // Set up checklist in aethel storage
+    let (uuid, _) = env.aethel_storage.get_or_create_checklist().await.unwrap();
+    env.aethel_storage
+        .update_checklist(&uuid, &checklist_data)
+        .await
+        .unwrap();
 
-    // Toggle item 1
+    // Toggle item 1 (using item-1 format as per the effect implementation)
     let effect = Effect::ToggleChecklistItem {
-        id: "1".to_string(),
+        id: "item-1".to_string(),
     };
     let result = execute(effect, &env).await;
 
     assert!(result.is_ok());
 
     // Verify item was toggled
-    let saved_content = env.file_system.read(&checklist_path).unwrap();
-    let saved_checklist: ChecklistState = serde_json::from_str(&saved_content).unwrap();
+    let (_, saved_checklist) = env.aethel_storage.get_or_create_checklist().await.unwrap();
 
-    assert!(!saved_checklist.items[0].on);
-    assert!(saved_checklist.items[1].on); // This one should be toggled
-    assert!(!saved_checklist.items[2].on);
+    assert!(!saved_checklist.items[0].1);
+    assert!(saved_checklist.items[1].1); // This one should be toggled
+    assert!(!saved_checklist.items[2].1);
 }
 
 #[tokio::test]
@@ -158,32 +132,30 @@ async fn test_toggle_nonexistent_item() {
     let env = create_test_environment();
 
     // Create checklist
-    let checklist = ChecklistState {
-        items: vec![ChecklistItem {
-            id: "0".to_string(),
-            text: "Item 0".to_string(),
-            on: false,
-        }],
+    let checklist_data = ChecklistData {
+        items: vec![("Item 0".to_string(), false)],
     };
 
-    let checklist_path = env.get_checklist_path().unwrap();
-    let content = serde_json::to_string(&checklist).unwrap();
-    env.file_system.write(&checklist_path, &content).unwrap();
+    // Set up checklist in aethel storage
+    let (uuid, _) = env.aethel_storage.get_or_create_checklist().await.unwrap();
+    env.aethel_storage
+        .update_checklist(&uuid, &checklist_data)
+        .await
+        .unwrap();
 
     // Try to toggle non-existent item
     let effect = Effect::ToggleChecklistItem {
-        id: "999".to_string(),
+        id: "item-999".to_string(),
     };
     let result = execute(effect, &env).await;
 
     // Should not error, but item shouldn't change
     assert!(result.is_ok());
 
-    let saved_content = env.file_system.read(&checklist_path).unwrap();
-    let saved_checklist: ChecklistState = serde_json::from_str(&saved_content).unwrap();
+    let (_, saved_checklist) = env.aethel_storage.get_or_create_checklist().await.unwrap();
 
     // All items should remain unchanged
-    assert!(!saved_checklist.items[0].on);
+    assert!(!saved_checklist.items[0].1);
 }
 
 #[tokio::test]
@@ -191,31 +163,29 @@ async fn test_toggle_already_checked_item() {
     let env = create_test_environment();
 
     // Create checklist with one item already checked
-    let checklist = ChecklistState {
-        items: vec![ChecklistItem {
-            id: "0".to_string(),
-            text: "Item 0".to_string(),
-            on: true,
-        }],
+    let checklist_data = ChecklistData {
+        items: vec![("Item 0".to_string(), true)],
     };
 
-    let checklist_path = env.get_checklist_path().unwrap();
-    let content = serde_json::to_string(&checklist).unwrap();
-    env.file_system.write(&checklist_path, &content).unwrap();
+    // Set up checklist in aethel storage
+    let (uuid, _) = env.aethel_storage.get_or_create_checklist().await.unwrap();
+    env.aethel_storage
+        .update_checklist(&uuid, &checklist_data)
+        .await
+        .unwrap();
 
     // Toggle the already checked item
     let effect = Effect::ToggleChecklistItem {
-        id: "0".to_string(),
+        id: "item-0".to_string(),
     };
     let result = execute(effect, &env).await;
 
     assert!(result.is_ok());
 
     // Verify item was unchecked
-    let saved_content = env.file_system.read(&checklist_path).unwrap();
-    let saved_checklist: ChecklistState = serde_json::from_str(&saved_content).unwrap();
+    let (_, saved_checklist) = env.aethel_storage.get_or_create_checklist().await.unwrap();
 
-    assert!(!saved_checklist.items[0].on); // Should be unchecked now
+    assert!(!saved_checklist.items[0].1); // Should be unchecked now
 }
 
 #[tokio::test]
@@ -223,29 +193,20 @@ async fn test_start_with_incomplete_checklist() {
     let env = create_test_environment();
 
     // Create checklist with some items unchecked
-    let checklist = ChecklistState {
+    let checklist_data = ChecklistData {
         items: vec![
-            ChecklistItem {
-                id: "0".to_string(),
-                text: "Item 0".to_string(),
-                on: true,
-            },
-            ChecklistItem {
-                id: "1".to_string(),
-                text: "Item 1".to_string(),
-                on: false,
-            }, // Not checked
-            ChecklistItem {
-                id: "2".to_string(),
-                text: "Item 2".to_string(),
-                on: true,
-            },
+            ("Item 0".to_string(), true),
+            ("Item 1".to_string(), false), // Not checked
+            ("Item 2".to_string(), true),
         ],
     };
 
-    let checklist_path = env.get_checklist_path().unwrap();
-    let content = serde_json::to_string(&checklist).unwrap();
-    env.file_system.write(&checklist_path, &content).unwrap();
+    // Set up checklist in aethel storage
+    let (uuid, _) = env.aethel_storage.get_or_create_checklist().await.unwrap();
+    env.aethel_storage
+        .update_checklist(&uuid, &checklist_data)
+        .await
+        .unwrap();
 
     // Try to start session
     let effect = Effect::ValidateChecklistAndStart {
@@ -259,29 +220,26 @@ async fn test_start_with_incomplete_checklist() {
     let error_msg = result.unwrap_err().to_string();
     assert!(error_msg.contains("All checklist items must be completed"));
 
-    // Session should not be created
-    let session_path = env.get_session_path().unwrap();
-    assert!(env.file_system.read(&session_path).is_err());
+    // Session should not be created in aethel
+    let active_session = env.aethel_storage.find_active_session().await.unwrap();
+    assert!(active_session.is_none());
 }
 
 #[tokio::test]
 async fn test_start_with_complete_checklist() {
     let env = create_test_environment();
 
-    // Create checklist with all items checked (9 items matching the template)
-    let checklist = ChecklistState {
-        items: (0..9)
-            .map(|i| ChecklistItem {
-                id: i.to_string(),
-                text: format!("Item {}", i),
-                on: true,
-            })
-            .collect(),
+    // Create checklist with all items checked
+    let checklist_data = ChecklistData {
+        items: (0..3).map(|i| (format!("Item {i}"), true)).collect(),
     };
 
-    let checklist_path = env.get_checklist_path().unwrap();
-    let content = serde_json::to_string(&checklist).unwrap();
-    env.file_system.write(&checklist_path, &content).unwrap();
+    // Set up checklist in aethel storage
+    let (uuid, _) = env.aethel_storage.get_or_create_checklist().await.unwrap();
+    env.aethel_storage
+        .update_checklist(&uuid, &checklist_data)
+        .await
+        .unwrap();
 
     // Try to start session
     let effect = Effect::ValidateChecklistAndStart {
@@ -292,7 +250,7 @@ async fn test_start_with_complete_checklist() {
 
     assert!(result.is_ok());
 
-    // Session should be created
-    let session_path = env.get_session_path().unwrap();
-    assert!(env.file_system.read(&session_path).is_ok());
+    // Session should be created in aethel
+    let active_session = env.aethel_storage.find_active_session().await.unwrap();
+    assert!(active_session.is_some());
 }

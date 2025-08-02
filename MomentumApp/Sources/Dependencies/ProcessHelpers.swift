@@ -39,7 +39,16 @@ func executeCommand(_ command: String, arguments: [String]) async throws -> Proc
             task.arguments = [command] + arguments
 
             // Pass through environment variables
-            task.environment = ProcessInfo.processInfo.environment
+            var environment = ProcessInfo.processInfo.environment
+
+            // Set vault path to the default if not already set
+            if environment["MOMENTUM_VAULT_PATH"] == nil {
+                let homeDir = FileManager.default.homeDirectoryForCurrentUser
+                let defaultVaultPath = homeDir.appendingPathComponent("Documents/vault").path
+                environment["MOMENTUM_VAULT_PATH"] = defaultVaultPath
+            }
+
+            task.environment = environment
 
             let outputPipe = Pipe()
             let errorPipe = Pipe()

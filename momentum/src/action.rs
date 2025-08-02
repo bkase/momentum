@@ -8,4 +8,5 @@ pub enum Action {
     Analyze { path: PathBuf },
     CheckList,
     CheckToggle { id: String },
+    GetSession,
 }

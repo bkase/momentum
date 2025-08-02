@@ -1,13 +1,11 @@
 use super::mock_helpers::*;
-use crate::{action::Action, environment::*, state::State, update::update};
+use crate::{action::Action, state::State, update::update};
 
 #[test]
 fn test_start_session_when_idle() {
-    let env = Environment {
-        file_system: Box::new(MockFileSystem::new()),
-        api_client: Box::new(MockApiClient),
-        clock: Box::new(MockClock { time: 1000 }),
-    };
+    let mut env = create_test_environment();
+    // Override the clock time for this specific test
+    env.clock = Box::new(MockClock { time: 1000 });
 
     let state = State::Idle;
     let action = Action::Start {
@@ -30,11 +28,9 @@ fn test_start_session_when_idle() {
 
 #[test]
 fn test_cannot_start_session_when_active() {
-    let env = Environment {
-        file_system: Box::new(MockFileSystem::new()),
-        api_client: Box::new(MockApiClient),
-        clock: Box::new(MockClock { time: 1000 }),
-    };
+    let mut env = create_test_environment();
+    // Override the clock time for this specific test
+    env.clock = Box::new(MockClock { time: 1000 });
 
     let state = State::SessionActive {
         session: crate::models::Session {
@@ -43,6 +39,7 @@ fn test_cannot_start_session_when_active() {
             time_expected: 25,
             reflection_file_path: None,
         },
+        session_uuid: Some(uuid::Uuid::new_v4()),
     };
 
     let action = Action::Start {

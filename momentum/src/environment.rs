@@ -1,3 +1,4 @@
+use crate::aethel_storage::{AethelStorage, RealAethelStorage};
 use crate::models::AnalysisResult;
 use anyhow::Result;
 use async_trait::async_trait;
@@ -8,68 +9,53 @@ pub struct Environment {
     pub file_system: Box<dyn FileSystem>,
     pub api_client: Box<dyn ApiClient>,
     pub clock: Box<dyn Clock>,
+    pub aethel_storage: Box<dyn AethelStorage>,
 }
 
 impl Environment {
     /// Create a new environment with real implementations
     pub fn new() -> Result<Self> {
+        let vault_root = Self::get_vault_root()?;
         Ok(Environment {
             file_system: Box::new(RealFileSystem),
             api_client: Box::new(RealApiClient::new()),
             clock: Box::new(RealClock),
+            aethel_storage: Box::new(RealAethelStorage::new(vault_root)),
         })
     }
 
-    /// Get the path to session.json
-    pub fn get_session_path(&self) -> Result<PathBuf> {
-        let mut path =
-            dirs::data_dir().ok_or_else(|| anyhow::anyhow!("Could not find data directory"))?;
-        path.push("Momentum");
-
-        // Ensure directory exists
-        std::fs::create_dir_all(&path)?;
-
-        path.push("session.json");
-        Ok(path)
+    /// Create a new environment with a specific vault path
+    pub fn with_vault_path(vault_path: PathBuf) -> Result<Self> {
+        Ok(Environment {
+            file_system: Box::new(RealFileSystem),
+            api_client: Box::new(RealApiClient::new()),
+            clock: Box::new(RealClock),
+            aethel_storage: Box::new(RealAethelStorage::new(vault_path)),
+        })
     }
 
-    /// Get the directory for reflection files
-    pub fn get_reflections_dir(&self) -> Result<PathBuf> {
-        let mut path =
-            dirs::data_dir().ok_or_else(|| anyhow::anyhow!("Could not find data directory"))?;
-        path.push("Momentum");
-        path.push("reflections");
+    /// Get the vault root directory
+    pub fn get_vault_root() -> Result<PathBuf> {
+        // Check environment variable first
+        if let Ok(vault_path) = std::env::var("MOMENTUM_VAULT_PATH") {
+            let path = PathBuf::from(vault_path);
+            // In CI or test environments, we trust the environment variable even if path doesn't exist yet
+            return Ok(path);
+        }
 
-        // Ensure directory exists
-        std::fs::create_dir_all(&path)?;
+        // Default to ~/Documents/vault
+        let mut path =
+            dirs::home_dir().ok_or_else(|| anyhow::anyhow!("Could not find home directory"))?;
+        path.push("Documents");
+        path.push("vault");
 
         Ok(path)
-    }
-
-    /// Get the path to checklist.json state file
-    pub fn get_checklist_path(&self) -> Result<PathBuf> {
-        let mut path =
-            dirs::data_dir().ok_or_else(|| anyhow::anyhow!("Could not find data directory"))?;
-        path.push("Momentum");
-
-        // Ensure directory exists
-        std::fs::create_dir_all(&path)?;
-
-        path.push("checklist.json");
-        Ok(path)
-    }
-
-    /// Get the checklist template embedded in the binary
-    pub fn get_checklist_template() -> &'static str {
-        include_str!("../../MomentumApp/Resources/checklist.json")
     }
 }
 
 /// File system operations trait
 pub trait FileSystem: Send + Sync {
     fn read(&self, path: &Path) -> Result<String>;
-    fn write(&self, path: &Path, content: &str) -> Result<()>;
-    fn delete(&self, path: &Path) -> Result<()>;
 }
 
 /// API client trait for Claude API
@@ -90,14 +76,6 @@ struct RealFileSystem;
 impl FileSystem for RealFileSystem {
     fn read(&self, path: &Path) -> Result<String> {
         Ok(std::fs::read_to_string(path)?)
-    }
-
-    fn write(&self, path: &Path, content: &str) -> Result<()> {
-        Ok(std::fs::write(path, content)?)
-    }
-
-    fn delete(&self, path: &Path) -> Result<()> {
-        Ok(std::fs::remove_file(path)?)
     }
 }
 

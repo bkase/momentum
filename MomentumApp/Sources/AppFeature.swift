@@ -22,12 +22,28 @@ struct AppFeature {
         Reduce { state, action in
             switch action {
             case .onAppear:
+                // Load session data from aethel first
+                return .run { send in
+                    do {
+                        let sessionData = try await rustCoreClient.getSession()
+                        await send(.sessionDataLoaded(sessionData))
+                    } catch {
+                        // Log error but continue - no session is valid state
+                        print("Failed to load session from aethel: \(error)")
+                        await send(.sessionDataLoaded(nil))
+                    }
+                }
+
+            case let .sessionDataLoaded(sessionData):
+                // Update shared session data
+                state.$sessionData.withLock { $0 = sessionData }
+
                 // Set initial destination based on current state
                 if let analysis = state.analysisHistory.last {
                     state.destination = .analysis(AnalysisFeature.State(analysis: analysis))
                 } else if let reflectionPath = state.reflectionPath {
                     state.destination = .reflection(ReflectionFeature.State(reflectionPath: reflectionPath))
-                } else if let sessionData = state.sessionData {
+                } else if let sessionData = sessionData {
                     state.destination = .activeSession(
                         ActiveSessionFeature.State(
                             goal: sessionData.goal,
