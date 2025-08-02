@@ -1,6 +1,6 @@
 # Integrate with aethel and my vault
 
-**Status:** AwaitingCommit
+**Status:** Done
 **Agent PID:** 17142
 
 ## Original Todo
