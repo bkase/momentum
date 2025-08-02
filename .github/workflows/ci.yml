@@ -23,6 +23,8 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: recursive
     
     - name: Install mise
       run: |
@@ -35,6 +37,15 @@ jobs:
         eval "$(mise activate bash)"
         rustc --version
         rustup component add rustfmt clippy
+        
+    - name: Setup test vault
+      run: |
+        export MOMENTUM_VAULT_PATH="${{ runner.temp }}/test-vault"
+        mkdir -p "$MOMENTUM_VAULT_PATH/docs"
+        mkdir -p "$MOMENTUM_VAULT_PATH/packs"
+        # Copy momentum pack to test vault
+        cp -r momentum/packs/momentum "$MOMENTUM_VAULT_PATH/packs/momentum@0.2.0"
+        echo "MOMENTUM_VAULT_PATH=$MOMENTUM_VAULT_PATH" >> $GITHUB_ENV
         
     - name: Cache Cargo dependencies
       uses: actions/cache@v4
@@ -73,6 +84,8 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: recursive
     
     - name: Setup Xcode
       uses: maxim-lobanov/setup-xcode@v1

@@ -39,9 +39,8 @@ impl Environment {
         // Check environment variable first
         if let Ok(vault_path) = std::env::var("MOMENTUM_VAULT_PATH") {
             let path = PathBuf::from(vault_path);
-            if path.exists() {
-                return Ok(path);
-            }
+            // In CI or test environments, we trust the environment variable even if path doesn't exist yet
+            return Ok(path);
         }
 
         // Default to ~/Documents/vault

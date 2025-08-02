@@ -51,6 +51,12 @@ The `swift-generate` target automatically fixes formatting issues in generated f
    - Use fixed timestamps in tests (e.g., `1700000000`)
    - Update both test and mock implementations
 
+5. **Aethel submodule dependency**:
+   - The project uses aethel as a git submodule at `external/aethel`
+   - Clone with submodules: `git clone --recursive` or `git submodule update --init --recursive`
+   - CI automatically sets up a temporary vault via `MOMENTUM_VAULT_PATH` environment variable
+   - Local development uses `~/Documents/vault` by default
+
 ## Project Overview
 
 Momentum is a macOS menu bar productivity application that helps users track and optimize deep work sessions through AI-powered reflective practice. It consists of:
@@ -253,11 +259,24 @@ The project uses automatic code formatting to maintain consistent style:
 
 ## Environment Setup
 
-The app uses the `claude` CLI tool which should be installed via mise:
-1. Install mise if not already installed
-2. Install claude CLI: `mise use -g npm:anthropic-ai-claude-code@latest`
-3. Authenticate with claude: `claude login`
-4. The app will automatically load your shell environment to access the tool
+### Prerequisites
+1. **Aethel submodule**: Initialize submodules after cloning:
+   ```bash
+   git clone --recursive https://github.com/bkase/momentum.git
+   # OR if already cloned:
+   git submodule update --init --recursive
+   ```
+
+2. **Claude CLI**: Install via mise for AI analysis features:
+   - Install mise if not already installed
+   - Install claude CLI: `mise use -g npm:anthropic-ai-claude-code@latest`
+   - Authenticate with claude: `claude login`
+   - The app will automatically load your shell environment to access the tool
+
+3. **Vault Location**: 
+   - Default: `~/Documents/vault`
+   - Override with `MOMENTUM_VAULT_PATH` environment variable
+   - CI automatically creates temporary vault at `$RUNNER_TEMP/test-vault`
 
 ## Claude Integration
 
