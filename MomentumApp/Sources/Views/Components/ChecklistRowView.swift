@@ -29,6 +29,7 @@ struct ChecklistRowView: View {
             )
         )
         .toggleStyle(.checklist)
+        .animation(nil, value: item.on)  // Prevent inherited animations on checkbox state
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .background(backgroundGradient)
@@ -42,7 +43,6 @@ struct ChecklistRowView: View {
         .offset(x: offsetX)
         .animation(.easeOut(duration: 0.3), value: isTransitioning)
         .animation(.easeOut(duration: 0.3), value: hasAppeared)
-        .animation(.easeOut(duration: 0.3), value: item.on)  // Animate background color change
         .allowsHitTesting(!isTransitioning && (!isFadingIn || hasAppeared))  // Enable clicks after fade-in completes
         .onHover { isHovered in
             if isHovered && !isTransitioning && (!isFadingIn || hasAppeared) {

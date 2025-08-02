@@ -23,6 +23,7 @@ Based on the analysis, here's how we'll fix the race condition:
 - [x] Automated test: Create TCA test for rapid clicking scenario with deterministic timing
 - [x] User test: Verify rapid clicking no longer creates duplicates and animations work smoothly
 - [x] Fix critical flaw: Change guard clause from !item.on to !slot.isTransitioning to allow animation flow with optimistic updates
+- [x] Fix text jiggling during animations by removing conflicting text animations and using fixed frame alignment
 
 ## Notes
 
@@ -66,3 +67,15 @@ The fix addresses the root cause identified in the original bug report: multiple
 - **Root cause**: After optimistic update, `handleChecklistSlotToggled` would see the item as already checked and prevent the animation sequence
 - **Solution**: Removed the `!item.on` guard clause, keeping only `!slot.isTransitioning` to prevent duplicate clicks during transitions
 - **Result**: Animation flow now works correctly with optimistic updates - items get immediate visual feedback AND proper fade-out animations
+
+### 8. Text Jiggling Fix Applied
+- **Issue discovered**: Text was jiggling left/right during checkbox animations due to multiple conflicting animations
+- **Root causes**: 
+  - Text color animation (0.2s) + checkbox press animation (0.1s) causing layout recalculations
+  - Spacer() adjustments during HStack layout changes
+  - Multiple animation contexts interfering with each other
+- **Solutions implemented**:
+  - Wrapped checkbox in fixed-size container to prevent layout shifts during press animation
+  - Removed text color animation to eliminate layout recalculations
+  - Replaced Spacer() with fixed frame alignment (.frame(maxWidth: .infinity, alignment: .leading))
+- **Result**: Text remains perfectly stable during all animations while preserving visual feedback
