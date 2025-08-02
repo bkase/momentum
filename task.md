@@ -1,6 +1,6 @@
 # Bug when checking checklist items too fast
 
-**Status:** InProgress
+**Status:** AwaitingCommit
 **Agent PID:** 29931
 
 ## Original Todo
@@ -15,14 +15,47 @@ We need to fix a race condition bug in the checklist feature where rapidly check
 
 Based on the analysis, here's how we'll fix the race condition:
 
-- [ ] Add immediate optimistic state updates in `checklistSlotToggled` action (MomentumApp/Sources/Features/Preparation/PreparationFeature.swift:140-148)
-- [ ] Implement item reservation system to prevent duplicate assignments (PreparationFeature+Checklist.swift:60-70)
-- [ ] Add slot-level locking to prevent overlapping transitions on same slot (PreparationFeature+Checklist.swift)
-- [ ] Make checkbox clicks final and non-reversible during animations (ChecklistRowView.swift)
-- [ ] Update item selection logic to consider reserved/transitioning items (PreparationFeature+Checklist.swift:60-70)
-- [ ] Automated test: Create TCA test for rapid clicking scenario with deterministic timing
-- [ ] User test: Verify rapid clicking no longer creates duplicates and animations work smoothly
+- [x] Add immediate optimistic state updates in `checklistSlotToggled` action (MomentumApp/Sources/Features/Preparation/PreparationFeature.swift:140-148)
+- [x] Implement item reservation system to prevent duplicate assignments (PreparationFeature+Checklist.swift:60-70)
+- [x] Add slot-level locking to prevent overlapping transitions on same slot (PreparationFeature+Checklist.swift)
+- [x] Make checkbox clicks final and non-reversible during animations (ChecklistRowView.swift)
+- [x] Update item selection logic to consider reserved/transitioning items (PreparationFeature+Checklist.swift:60-70)
+- [x] Automated test: Create TCA test for rapid clicking scenario with deterministic timing
+- [x] User test: Verify rapid clicking no longer creates duplicates and animations work smoothly
 
 ## Notes
 
-[Implementation notes]
+Implementation completed with the following key changes:
+
+### 1. Immediate Optimistic State Updates
+- Modified `checklistSlotToggled` action to immediately mark items as checked in local state
+- Prevents stale state issues when multiple items are clicked rapidly
+- Only allows checking (not unchecking) to maintain UI consistency
+
+### 2. Item Reservation System  
+- Added `reservedItemIds: Set<String>` to state to track items pending transition
+- Items are reserved immediately when a transition starts
+- Reservations are cleaned up when items are placed in slots
+- Prevents the same item from being assigned to multiple slots
+
+### 3. Slot-Level Locking
+- Added checks to prevent overlapping transitions on the same slot
+- Modified `handleChecklistSlotToggled` to check `isTransitioning` flag
+- Ensures only one transition per slot at a time
+
+### 4. Final Checkbox Clicks
+- Modified Toggle logic in ChecklistRowView to only allow checking (false -> true)
+- Combined with existing `allowsHitTesting` logic to prevent clicks during animations
+- Makes checkbox behavior deterministic and prevents race conditions
+
+### 5. Updated Item Selection Logic
+- Modified replacement item selection to exclude both currently displayed items AND reserved items
+- Ensures each rapid click gets a unique replacement item
+- Prevents duplicate items from appearing in the UI
+
+### 6. Comprehensive Test Coverage
+- Added `rapidClickingRaceConditionPrevention` test in ChecklistTests.swift
+- Tests rapid clicking scenarios with deterministic timing using ImmediateClock
+- Verifies no duplicate items are assigned and reservations are properly managed
+
+The fix addresses the root cause identified in the original bug report: multiple rapid clicks seeing stale state and selecting the same replacement items. The solution provides immediate feedback, proper concurrency control, and maintains smooth animations.
