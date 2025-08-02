@@ -306,15 +306,17 @@ struct ChecklistTests {
             
             $0.rustCoreClient.checkToggle = { id in
                 // Simulate successful toggle
-                checkedItems.withValue { $0.insert(id) }
-                let updatedItems = fullChecklist.map { item in
-                    ChecklistItem(
-                        id: item.id,
-                        text: item.text,
-                        on: checkedItems.value.contains(item.id)
-                    )
+                _ = checkedItems.withValue { $0.insert(id) }
+                return checkedItems.withValue { checkedSet in
+                    let updatedItems = fullChecklist.map { item in
+                        ChecklistItem(
+                            id: item.id,
+                            text: item.text,
+                            on: checkedSet.contains(item.id)
+                        )
+                    }
+                    return ChecklistState(items: updatedItems)
                 }
-                return ChecklistState(items: updatedItems)
             }
         }
 
