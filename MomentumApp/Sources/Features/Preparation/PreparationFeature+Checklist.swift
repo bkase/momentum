@@ -152,7 +152,7 @@ extension PreparationFeature {
         slots[slotId].item = item
         slots[slotId].isFadingIn = true
         state.checklistSlots = slots
-        
+
         // Remove from reserved items since it's now placed
         state.reservedItemIds.remove(itemId)
 

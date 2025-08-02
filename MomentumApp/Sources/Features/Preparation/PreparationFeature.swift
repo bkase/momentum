@@ -136,7 +136,7 @@ struct PreparationFeature {
                     let item = state.checklistSlots[slotId].item,
                     !item.on  // Only allow checking, not unchecking
                 else { return .none }
-                
+
                 // Optimistically mark the item as checked in local state
                 var updatedItems = state.checklistItems
                 if let itemIndex = updatedItems.firstIndex(where: { $0.id == item.id }) {
@@ -146,13 +146,13 @@ struct PreparationFeature {
                         on: true
                     )
                     state.checklistItems = updatedItems
-                    
+
                     // Update the slot's item to reflect the checked state
                     var slots = state.checklistSlots
                     slots[slotId].item = updatedItems[itemIndex]
                     state.checklistSlots = slots
                 }
-                
+
                 return Self.handleChecklistSlotToggled(
                     state: &state,
                     slotId: slotId,
