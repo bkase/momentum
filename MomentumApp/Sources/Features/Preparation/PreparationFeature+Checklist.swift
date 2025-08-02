@@ -26,7 +26,9 @@ extension PreparationFeature {
         clock: any Clock<Duration>
     ) -> Effect<Action> {
         guard slotId < state.checklistSlots.count,
-            let item = state.checklistSlots[slotId].item
+            let item = state.checklistSlots[slotId].item,
+            !state.checklistSlots[slotId].isTransitioning,  // Prevent overlapping transitions
+            !item.on  // Only allow checking, not unchecking
         else { return .none }
 
         // Toggle the item via Rust CLI
@@ -57,10 +59,17 @@ extension PreparationFeature {
         if let slotItem = state.checklistSlots[slotId].item,
             slotItem.on
         {
-            // Find next unchecked item
+            // Find next unchecked item that isn't already reserved or in slots
             let uncheckedItems = updatedItems.filter { !$0.on }
             let currentSlotIds = state.checklistSlots.compactMap { $0.item?.id }
-            let nextItem = uncheckedItems.first { !currentSlotIds.contains($0.id) }
+            let nextItem = uncheckedItems.first { item in
+                !currentSlotIds.contains(item.id) && !state.reservedItemIds.contains(item.id)
+            }
+
+            // Reserve the item immediately to prevent duplicates
+            if let reservedItemId = nextItem?.id {
+                state.reservedItemIds.insert(reservedItemId)
+            }
 
             // Start fade-out transition after delay
             return .run { send in
@@ -117,6 +126,9 @@ extension PreparationFeature {
                 try await clock.sleep(for: .milliseconds(100))
                 await send(.fadeInNewItem(slotId: slotId, itemId: replacementId))
             }
+        } else {
+            // Clean up any dangling reservations if no replacement
+            // Note: This is a fallback - reservations should normally be cleaned up in fadeInNewItem
         }
 
         return .none
@@ -130,6 +142,8 @@ extension PreparationFeature {
     ) -> Effect<Action> {
         // Find the item with this ID
         guard let item = state.checklistItems.first(where: { $0.id == itemId }) else {
+            // Clean up reservation if item not found
+            state.reservedItemIds.remove(itemId)
             return .none
         }
 
@@ -138,6 +152,9 @@ extension PreparationFeature {
         slots[slotId].item = item
         slots[slotId].isFadingIn = true
         state.checklistSlots = slots
+        
+        // Remove from reserved items since it's now placed
+        state.reservedItemIds.remove(itemId)
 
         // Reset fade-in after animation completes
         return .run { send in
