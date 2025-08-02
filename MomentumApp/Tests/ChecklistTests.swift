@@ -280,4 +280,5 @@ struct ChecklistTests {
         #expect(state.isStartButtonEnabled == false)
         #expect(state.goalValidationError == "Goal contains invalid characters. Please avoid: / : * ? \" < > |")
     }
+
 }

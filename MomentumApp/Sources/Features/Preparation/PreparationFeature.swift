@@ -13,6 +13,7 @@ struct PreparationFeature {
         var checklistItems: [ChecklistItem] = []  // Full list from Rust CLI
         var checklistSlots: [ChecklistSlot] = []  // 4 visible slots
         var activeTransitions: [Int: ItemTransition] = [:]
+        var reservedItemIds: Set<String> = []  // Items reserved for upcoming transitions
         var isLoadingChecklist: Bool = false
         var operationError: String?
 
@@ -130,6 +131,28 @@ struct PreparationFeature {
                 .cancellable(id: CancelID.errorDismissal)
 
             case let .checklistSlotToggled(slotId):
+                // Immediate optimistic update to prevent racing conditions
+                guard slotId < state.checklistSlots.count,
+                    let item = state.checklistSlots[slotId].item,
+                    !state.checklistSlots[slotId].isTransitioning  // Prevent duplicate clicks while transitioning
+                else { return .none }
+
+                // Optimistically mark the item as checked in local state
+                var updatedItems = state.checklistItems
+                if let itemIndex = updatedItems.firstIndex(where: { $0.id == item.id }) {
+                    updatedItems[itemIndex] = ChecklistItem(
+                        id: item.id,
+                        text: item.text,
+                        on: true
+                    )
+                    state.checklistItems = updatedItems
+
+                    // Update the slot's item to reflect the checked state
+                    var slots = state.checklistSlots
+                    slots[slotId].item = updatedItems[itemIndex]
+                    state.checklistSlots = slots
+                }
+
                 return Self.handleChecklistSlotToggled(
                     state: &state,
                     slotId: slotId,
