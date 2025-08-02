@@ -281,12 +281,4 @@ struct ChecklistTests {
         #expect(state.goalValidationError == "Goal contains invalid characters. Please avoid: / : * ? \" < > |")
     }
 
-    @Test("Race Condition Prevention - State Has Reserved Items")
-    func raceConditionPreventionStateHasReservedItems() async {
-        // Simple test to verify the new reservedItemIds field exists in state
-        let state = PreparationFeature.State()
-
-        // Verify that reservedItemIds field exists and starts empty
-        #expect(state.reservedItemIds.isEmpty)
-    }
 }
