@@ -1,4 +1,5 @@
 use crate::environment;
+use crate::index::IndexManager;
 use anyhow::Result;
 
 const MOMENTUM_PACK_VERSION: &str = "0.2.0"; // Bump version when pack changes
@@ -24,6 +25,20 @@ pub async fn initialize_vault(env: &environment::Environment) -> Result<()> {
 
         // Install the current version
         install_momentum_pack(&packs_dir)?;
+    }
+
+    // Initialize or migrate index if needed
+    let index_manager = IndexManager::new(vault_root.to_path_buf());
+    let index = index_manager.read_index()?;
+
+    // If index is empty and documents exist, migrate from existing vault
+    if index.is_empty() && docs_dir.exists() {
+        let doc_count = std::fs::read_dir(&docs_dir)?.count();
+        if doc_count > 0 {
+            println!("Migrating existing vault to use pack-namespaced indexing...");
+            index_manager.migrate_from_vault(vault_root)?;
+            println!("Index migration completed successfully.");
+        }
     }
 
     Ok(())

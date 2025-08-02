@@ -6,6 +6,7 @@ use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
+use crate::index::IndexManager;
 use crate::models::{ChecklistData, Session};
 
 /// Trait for interacting with aethel document storage
@@ -41,11 +42,16 @@ pub trait AethelStorage: Send + Sync {
 
 pub struct RealAethelStorage {
     vault_root: PathBuf,
+    index_manager: IndexManager,
 }
 
 impl RealAethelStorage {
     pub fn new(vault_root: PathBuf) -> Self {
-        Self { vault_root }
+        let index_manager = IndexManager::new(vault_root.clone());
+        Self {
+            vault_root,
+            index_manager,
+        }
     }
 
     /// Parse frontmatter from document content, returning (frontmatter_text, is_archived)
@@ -191,7 +197,30 @@ impl AethelStorage for RealAethelStorage {
     }
 
     async fn find_active_session(&self) -> Result<Option<Uuid>> {
-        self.find_document_by_type("momentum.session", true).await
+        // Try index lookup first
+        if let Ok(Some(uuid)) = self.index_manager.get_entry("active_session") {
+            // Verify the document still exists and is not archived
+            if let Ok(doc) = read_doc(&self.vault_root, &uuid) {
+                let is_archived = doc
+                    .frontmatter_extra
+                    .get("archived")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false);
+                if !is_archived {
+                    return Ok(Some(uuid));
+                }
+            }
+            // Document is archived or missing, remove from index
+            let _ = self.index_manager.remove_entry("active_session");
+        }
+
+        // Fallback to linear search and update index
+        if let Some(uuid) = self.find_document_by_type("momentum.session", true).await? {
+            let _ = self.index_manager.update_entry("active_session", &uuid);
+            Ok(Some(uuid))
+        } else {
+            Ok(None)
+        }
     }
 
     async fn save_session(&self, session: &Session) -> Result<Uuid> {
@@ -223,7 +252,14 @@ impl AethelStorage for RealAethelStorage {
             Some(body),
         );
 
-        Ok(apply_patch(&self.vault_root, patch)?.uuid)
+        let result = apply_patch(&self.vault_root, patch)?;
+
+        // Update index
+        let _ = self
+            .index_manager
+            .update_entry("active_session", &result.uuid);
+
+        Ok(result.uuid)
     }
 
     async fn read_session(&self, uuid: &Uuid) -> Result<Session> {
@@ -241,6 +277,10 @@ impl AethelStorage for RealAethelStorage {
     async fn delete_session(&self, uuid: &Uuid) -> Result<()> {
         let patch = Self::create_patch(Some(*uuid), None, json!({"archived": true}), None);
         apply_patch(&self.vault_root, patch)?;
+
+        // Remove from index since archived sessions are excluded from active session lookups
+        let _ = self.index_manager.remove_entry("active_session");
+
         Ok(())
     }
 
@@ -265,6 +305,29 @@ impl AethelStorage for RealAethelStorage {
     }
 
     async fn get_or_create_checklist(&self) -> Result<(Uuid, ChecklistData)> {
+        // Try index lookup first
+        if let Ok(Some(uuid)) = self.index_manager.get_entry("checklist") {
+            if let Ok(doc) = read_doc(&self.vault_root, &uuid) {
+                if let Ok(items) = Self::extract_field(&doc.frontmatter_extra, "items", |v| {
+                    v.as_array().map(|arr| {
+                        arr.iter()
+                            .filter_map(|item| {
+                                Some((
+                                    item["item"].as_str()?.to_string(),
+                                    item["completed"].as_bool()?,
+                                ))
+                            })
+                            .collect()
+                    })
+                }) {
+                    return Ok((uuid, ChecklistData { items }));
+                }
+            }
+            // Document is missing or corrupted, remove from index
+            let _ = self.index_manager.remove_entry("checklist");
+        }
+
+        // Fallback to linear search or create new checklist
         if let Some(uuid) = self
             .find_document_by_type("momentum.checklist", false)
             .await?
@@ -283,8 +346,11 @@ impl AethelStorage for RealAethelStorage {
                 })
             })?;
 
+            // Update index
+            let _ = self.index_manager.update_entry("checklist", &uuid);
             Ok((uuid, ChecklistData { items }))
         } else {
+            // Create new checklist
             let items = self.load_checklist_template()?;
             let checklist = ChecklistData { items };
 
@@ -294,6 +360,9 @@ impl AethelStorage for RealAethelStorage {
             let patch =
                 Self::create_patch(None, Some("momentum.checklist"), frontmatter, Some(body));
             let result = apply_patch(&self.vault_root, patch)?;
+
+            // Update index
+            let _ = self.index_manager.update_entry("checklist", &result.uuid);
             Ok((result.uuid, checklist))
         }
     }

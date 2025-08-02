@@ -2,6 +2,7 @@ mod action;
 mod aethel_storage;
 mod effects;
 mod environment;
+mod index;
 mod models;
 mod state;
 mod tests;
