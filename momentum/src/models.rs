@@ -51,4 +51,3 @@ pub struct ChecklistTemplate {
 pub struct ChecklistData {
     pub items: Vec<(String, bool)>, // (text, completed)
 }
-

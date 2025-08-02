@@ -1,7 +1,6 @@
 use crate::environment::Environment;
 use crate::models::{ChecklistItem, ChecklistState, ChecklistTemplate, Session};
 use anyhow::Result;
-use chrono::Local;
 use std::path::PathBuf;
 
 /// Initialize a fresh checklist from the template
@@ -87,7 +86,10 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
                 .replace("{{time_expected}}", &session.time_expected.to_string());
 
             // Create reflection document in aethel
-            let reflection_uuid = env.aethel_storage.create_reflection(&session, content).await?;
+            let reflection_uuid = env
+                .aethel_storage
+                .create_reflection(&session, content)
+                .await?;
 
             // Update session with reflection UUID
             session.reflection_file_path = Some(reflection_uuid.to_string());
@@ -100,7 +102,7 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
             state.save(env).await?;
 
             // Print the reflection UUID to stdout for the Swift app
-            println!("{}", reflection_uuid);
+            println!("{reflection_uuid}");
             Ok(())
         }
 
@@ -120,7 +122,9 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
 
             // If this was an aethel document, update it with the analysis
             if let Ok(uuid) = uuid::Uuid::parse_str(path.to_str().unwrap_or("")) {
-                env.aethel_storage.update_reflection_analysis(&uuid, serde_json::to_value(&result)?).await?;
+                env.aethel_storage
+                    .update_reflection_analysis(&uuid, serde_json::to_value(&result)?)
+                    .await?;
             }
 
             // Print the raw JSON result to stdout
@@ -157,16 +161,19 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
         Effect::LoadAndPrintChecklist => {
             // Load or create checklist from aethel
             let (_uuid, checklist_data) = env.aethel_storage.get_or_create_checklist().await?;
-            
+
             // Convert to ChecklistState for backward compatibility
             let checklist = ChecklistState {
-                items: checklist_data.items.into_iter().enumerate().map(|(i, (text, on))| {
-                    ChecklistItem {
-                        id: format!("item-{}", i),
+                items: checklist_data
+                    .items
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, (text, on))| ChecklistItem {
+                        id: format!("item-{i}"),
                         text,
                         on,
-                    }
-                }).collect(),
+                    })
+                    .collect(),
             };
 
             // Print as JSON to stdout
@@ -191,9 +198,11 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
             if let Some(idx) = index {
                 if let Some((_, on)) = checklist_data.items.get_mut(idx) {
                     *on = !*on;
-                    
+
                     // Save updated state to aethel
-                    env.aethel_storage.update_checklist(&uuid, &checklist_data).await?;
+                    env.aethel_storage
+                        .update_checklist(&uuid, &checklist_data)
+                        .await?;
                 } else {
                     eprintln!("Error: Checklist item with id '{id}' not found");
                 }
@@ -203,15 +212,18 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
 
             // Convert to ChecklistState and print
             let checklist = ChecklistState {
-                items: checklist_data.items.into_iter().enumerate().map(|(i, (text, on))| {
-                    ChecklistItem {
-                        id: format!("item-{}", i),
+                items: checklist_data
+                    .items
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, (text, on))| ChecklistItem {
+                        id: format!("item-{i}"),
                         text,
                         on,
-                    }
-                }).collect(),
+                    })
+                    .collect(),
             };
-            
+
             let json = serde_json::to_string(&checklist)?;
             println!("{json}");
 
@@ -220,16 +232,17 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
 
         Effect::ValidateChecklistAndStart { goal, time } => {
             // Load checklist from aethel
-            let (checklist_uuid, checklist_data) = env.aethel_storage.get_or_create_checklist().await?;
+            let (checklist_uuid, checklist_data) =
+                env.aethel_storage.get_or_create_checklist().await?;
 
             // Check if all items are completed
             let all_completed = checklist_data.items.iter().all(|(_, on)| *on);
-            
+
             if !all_completed {
                 let mut error_msg = "All checklist items must be completed before starting a session.\nUncompleted items:".to_string();
                 for (text, on) in &checklist_data.items {
                     if !on {
-                        error_msg.push_str(&format!("\n  - {}", text));
+                        error_msg.push_str(&format!("\n  - {text}"));
                     }
                 }
                 return Err(anyhow::anyhow!(error_msg));
@@ -244,22 +257,24 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
             };
 
             // Save session to aethel
-            let state = crate::state::State::SessionActive { 
+            let state = crate::state::State::SessionActive {
                 session: session.clone(),
                 session_uuid: None,
             };
             let _uuid = state.save(env).await?;
-            
+
             // Print the session data as JSON for the Swift app
             let json = serde_json::to_string(&session)?;
-            println!("{}", json);
+            println!("{json}");
 
             // Reset checklist for next session - reset all items to unchecked
             let mut reset_checklist_data = checklist_data;
             for (_, completed) in &mut reset_checklist_data.items {
                 *completed = false;
             }
-            env.aethel_storage.update_checklist(&checklist_uuid, &reset_checklist_data).await?;
+            env.aethel_storage
+                .update_checklist(&checklist_uuid, &reset_checklist_data)
+                .await?;
 
             Ok(())
         }
@@ -269,7 +284,7 @@ pub async fn execute(effect: Effect, env: &Environment) -> Result<()> {
                 crate::state::State::SessionActive { session, .. } => {
                     // Print session as JSON for Swift app
                     let json = serde_json::to_string(&session)?;
-                    println!("{}", json);
+                    println!("{json}");
                 }
                 crate::state::State::Idle => {
                     // Print empty JSON object to indicate no session

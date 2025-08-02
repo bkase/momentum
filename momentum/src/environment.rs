@@ -43,13 +43,13 @@ impl Environment {
                 return Ok(path);
             }
         }
-        
+
         // Default to ~/Documents/vault
-        let mut path = dirs::home_dir()
-            .ok_or_else(|| anyhow::anyhow!("Could not find home directory"))?;
+        let mut path =
+            dirs::home_dir().ok_or_else(|| anyhow::anyhow!("Could not find home directory"))?;
         path.push("Documents");
         path.push("vault");
-        
+
         Ok(path)
     }
 

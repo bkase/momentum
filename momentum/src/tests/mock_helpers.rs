@@ -94,14 +94,17 @@ impl AethelStorage for MockAethelStorage {
     }
 
     async fn find_active_session(&self) -> Result<Option<Uuid>> {
-        Ok(self.active_session_uuid.lock().await.clone())
+        Ok(*self.active_session_uuid.lock().await)
     }
 
     async fn save_session(&self, session: &Session) -> Result<Uuid> {
         let existing_uuid = *self.active_session_uuid.lock().await;
         let uuid = if let Some(existing_uuid) = existing_uuid {
             // Update existing session
-            self.sessions.lock().await.insert(existing_uuid, session.clone());
+            self.sessions
+                .lock()
+                .await
+                .insert(existing_uuid, session.clone());
             existing_uuid
         } else {
             // Create new session
@@ -131,21 +134,13 @@ impl AethelStorage for MockAethelStorage {
         Ok(())
     }
 
-    async fn create_reflection(
-        &self,
-        _session: &Session,
-        body: String,
-    ) -> Result<Uuid> {
+    async fn create_reflection(&self, _session: &Session, body: String) -> Result<Uuid> {
         let uuid = Uuid::new_v4();
         self.reflections.lock().await.insert(uuid, (body, None));
         Ok(uuid)
     }
 
-    async fn update_reflection_analysis(
-        &self,
-        uuid: &Uuid,
-        analysis: Value,
-    ) -> Result<()> {
+    async fn update_reflection_analysis(&self, uuid: &Uuid, analysis: Value) -> Result<()> {
         let mut reflections = self.reflections.lock().await;
         if let Some((body, _)) = reflections.get(uuid).cloned() {
             reflections.insert(*uuid, (body, Some(analysis)));

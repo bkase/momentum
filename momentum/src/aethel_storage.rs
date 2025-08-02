@@ -1,5 +1,5 @@
-use anyhow::{anyhow, Result};
 use aethel_core::{apply_patch, read_doc, Patch, PatchMode};
+use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use serde_json::{json, Value};
@@ -27,18 +27,10 @@ pub trait AethelStorage: Send + Sync {
     async fn delete_session(&self, uuid: &Uuid) -> Result<()>;
 
     /// Create a reflection document
-    async fn create_reflection(
-        &self,
-        session: &Session,
-        body: String,
-    ) -> Result<Uuid>;
+    async fn create_reflection(&self, session: &Session, body: String) -> Result<Uuid>;
 
     /// Update reflection with analysis
-    async fn update_reflection_analysis(
-        &self,
-        uuid: &Uuid,
-        analysis: Value,
-    ) -> Result<()>;
+    async fn update_reflection_analysis(&self, uuid: &Uuid, analysis: Value) -> Result<()>;
 
     /// Get or create checklist document
     async fn get_or_create_checklist(&self) -> Result<(Uuid, ChecklistData)>;
@@ -65,25 +57,35 @@ impl RealAethelStorage {
 
         // Read all files in docs directory
         let entries = std::fs::read_dir(&docs_dir)?;
-        
+
         for entry in entries {
             let entry = entry?;
             let path = entry.path();
-            
+
             if path.extension().and_then(|s| s.to_str()) == Some("md") {
                 // Try to read as aethel document
                 if let Ok(content) = std::fs::read_to_string(&path) {
                     // Parse YAML frontmatter to check type
                     if let Some(frontmatter_end) = content.find("---\n").and_then(|start| {
-                        content[start + 4..].find("---\n").map(|end| start + 4 + end)
+                        content[start + 4..]
+                            .find("---\n")
+                            .map(|end| start + 4 + end)
                     }) {
                         let frontmatter = &content[4..frontmatter_end];
                         if frontmatter.contains("type: momentum.session") {
-                            // Extract UUID from frontmatter
-                            for line in frontmatter.lines() {
-                                if let Some(uuid_str) = line.strip_prefix("uuid: ") {
-                                    if let Ok(uuid) = Uuid::parse_str(uuid_str) {
-                                        return Ok(Some(uuid));
+                            // Check if session is archived
+                            let is_archived = frontmatter
+                                .lines()
+                                .any(|line| line.trim() == "archived: true");
+
+                            // Only return UUID if session is not archived
+                            if !is_archived {
+                                // Extract UUID from frontmatter
+                                for line in frontmatter.lines() {
+                                    if let Some(uuid_str) = line.strip_prefix("uuid: ") {
+                                        if let Ok(uuid) = Uuid::parse_str(uuid_str) {
+                                            return Ok(Some(uuid));
+                                        }
                                     }
                                 }
                             }
@@ -92,7 +94,7 @@ impl RealAethelStorage {
                 }
             }
         }
-        
+
         Ok(None)
     }
 
@@ -104,15 +106,17 @@ impl RealAethelStorage {
         }
 
         let entries = std::fs::read_dir(&docs_dir)?;
-        
+
         for entry in entries {
             let entry = entry?;
             let path = entry.path();
-            
+
             if path.extension().and_then(|s| s.to_str()) == Some("md") {
                 if let Ok(content) = std::fs::read_to_string(&path) {
                     if let Some(frontmatter_end) = content.find("---\n").and_then(|start| {
-                        content[start + 4..].find("---\n").map(|end| start + 4 + end)
+                        content[start + 4..]
+                            .find("---\n")
+                            .map(|end| start + 4 + end)
                     }) {
                         let frontmatter = &content[4..frontmatter_end];
                         if frontmatter.contains("type: momentum.checklist") {
@@ -128,10 +132,9 @@ impl RealAethelStorage {
                 }
             }
         }
-        
+
         Ok(None)
     }
-
 }
 
 #[async_trait]
@@ -147,7 +150,7 @@ impl AethelStorage for RealAethelStorage {
     async fn save_session(&self, session: &Session) -> Result<Uuid> {
         // Check if we already have a session document
         let existing_uuid = self.find_session_uuid().await?;
-        
+
         let patch = Patch {
             uuid: existing_uuid,
             doc_type: if existing_uuid.is_none() {
@@ -161,7 +164,8 @@ impl AethelStorage for RealAethelStorage {
                 "time_expected": session.time_expected,
                 "reflection_uuid": session.reflection_file_path,
             })),
-            body: Some(format!("# Active Session: {}\n\nStarted at: {}", 
+            body: Some(format!(
+                "# Active Session: {}\n\nStarted at: {}",
                 session.goal,
                 DateTime::<Utc>::from_timestamp(session.start_time as i64, 0)
                     .unwrap_or_default()
@@ -180,20 +184,20 @@ impl AethelStorage for RealAethelStorage {
 
     async fn read_session(&self, uuid: &Uuid) -> Result<Session> {
         let doc = read_doc(&self.vault_root, uuid)?;
-        
+
         let goal = doc.frontmatter_extra["goal"]
             .as_str()
             .ok_or_else(|| anyhow!("Session missing goal"))?
             .to_string();
-            
+
         let start_time = doc.frontmatter_extra["start_time"]
             .as_u64()
             .ok_or_else(|| anyhow!("Session missing start_time"))?;
-            
+
         let time_expected = doc.frontmatter_extra["time_expected"]
             .as_u64()
             .ok_or_else(|| anyhow!("Session missing time_expected"))?;
-            
+
         let reflection_file_path = doc.frontmatter_extra["reflection_uuid"]
             .as_str()
             .map(|s| s.to_string());
@@ -218,19 +222,15 @@ impl AethelStorage for RealAethelStorage {
             body: None,
             mode: PatchMode::MergeFrontmatter,
         };
-        
+
         apply_patch(&self.vault_root, patch)?;
         Ok(())
     }
 
-    async fn create_reflection(
-        &self,
-        session: &Session,
-        body: String,
-    ) -> Result<Uuid> {
+    async fn create_reflection(&self, session: &Session, body: String) -> Result<Uuid> {
         let end_time = Utc::now().timestamp() as u64;
         let time_actual = (end_time - session.start_time) / 60;
-        
+
         let patch = Patch {
             uuid: None,
             doc_type: Some("momentum.reflection".to_string()),
@@ -249,11 +249,7 @@ impl AethelStorage for RealAethelStorage {
         Ok(result.uuid)
     }
 
-    async fn update_reflection_analysis(
-        &self,
-        uuid: &Uuid,
-        analysis: Value,
-    ) -> Result<()> {
+    async fn update_reflection_analysis(&self, uuid: &Uuid, analysis: Value) -> Result<()> {
         let patch = Patch {
             uuid: Some(*uuid),
             doc_type: None,
@@ -263,7 +259,7 @@ impl AethelStorage for RealAethelStorage {
             body: None,
             mode: PatchMode::MergeFrontmatter,
         };
-        
+
         apply_patch(&self.vault_root, patch)?;
         Ok(())
     }
@@ -277,21 +273,23 @@ impl AethelStorage for RealAethelStorage {
                 .iter()
                 .map(|item| {
                     Ok((
-                        item["item"].as_str()
+                        item["item"]
+                            .as_str()
                             .ok_or_else(|| anyhow!("Invalid checklist item"))?
                             .to_string(),
-                        item["completed"].as_bool()
+                        item["completed"]
+                            .as_bool()
                             .ok_or_else(|| anyhow!("Invalid completed status"))?,
                     ))
                 })
                 .collect::<Result<Vec<_>>>()?;
-            
+
             Ok((uuid, ChecklistData { items }))
         } else {
             // Load template from the pack - need to find the right version
             let packs_dir = self.vault_root.join("packs");
             let mut pack_path = None;
-            
+
             // Find any momentum@* directory
             if let Ok(entries) = std::fs::read_dir(&packs_dir) {
                 for entry in entries {
@@ -305,20 +303,20 @@ impl AethelStorage for RealAethelStorage {
                     }
                 }
             }
-            
+
             let pack_path = pack_path.ok_or_else(|| {
                 anyhow!("Momentum pack not found. Please run momentum to install it first.")
             })?;
-            
+
             if !pack_path.exists() {
                 return Err(anyhow!(
                     "Checklist template not found at: {}",
                     pack_path.display()
                 ));
             }
-            
+
             let template_content = std::fs::read_to_string(&pack_path)?;
-            
+
             // Parse checklist items from the template - expecting markdown list
             let template_items = template_content
                 .lines()
@@ -330,13 +328,15 @@ impl AethelStorage for RealAethelStorage {
                         .map(|text| (text.to_string(), false))
                 })
                 .collect::<Vec<_>>();
-                
+
             if template_items.is_empty() {
                 return Err(anyhow!("Checklist template contains no items"));
             }
-            
-            let checklist = ChecklistData { items: template_items };
-            
+
+            let checklist = ChecklistData {
+                items: template_items,
+            };
+
             let patch = Patch {
                 uuid: None,
                 doc_type: Some("momentum.checklist".to_string()),
@@ -351,7 +351,7 @@ impl AethelStorage for RealAethelStorage {
                 body: Some("# Pre-Session Checklist\n\nComplete these items before starting your focus session.".to_string()),
                 mode: PatchMode::Create,
             };
-            
+
             let result = apply_patch(&self.vault_root, patch)?;
             Ok((result.uuid, checklist))
         }
@@ -372,7 +372,7 @@ impl AethelStorage for RealAethelStorage {
             body: None,
             mode: PatchMode::MergeFrontmatter,
         };
-        
+
         apply_patch(&self.vault_root, patch)?;
         Ok(())
     }

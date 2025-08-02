@@ -8,7 +8,7 @@ use uuid::Uuid;
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum State {
     Idle,
-    SessionActive { 
+    SessionActive {
         session: Session,
         #[serde(skip_serializing_if = "Option::is_none")]
         session_uuid: Option<Uuid>,
@@ -22,7 +22,7 @@ impl State {
         match env.aethel_storage.find_active_session().await? {
             Some(uuid) => {
                 let session = env.aethel_storage.read_session(&uuid).await?;
-                Ok(State::SessionActive { 
+                Ok(State::SessionActive {
                     session,
                     session_uuid: Some(uuid),
                 })
@@ -41,7 +41,10 @@ impl State {
                 }
                 Ok(None)
             }
-            State::SessionActive { session, session_uuid } => {
+            State::SessionActive {
+                session,
+                session_uuid,
+            } => {
                 // Save or update session document
                 let uuid = if let Some(existing_uuid) = session_uuid {
                     // Update existing
@@ -55,7 +58,7 @@ impl State {
             }
         }
     }
-    
+
     /// Load state from session.json if it exists (backwards compatibility)
     pub fn load_legacy(env: &Environment) -> Result<Self> {
         let session_path = env.get_session_path()?;
@@ -64,7 +67,7 @@ impl State {
         match env.file_system.read(&session_path) {
             Ok(content) => {
                 let session: Session = serde_json::from_str(&content)?;
-                Ok(State::SessionActive { 
+                Ok(State::SessionActive {
                     session,
                     session_uuid: None,
                 })

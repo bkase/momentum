@@ -37,7 +37,7 @@ struct AppFeature {
             case let .sessionDataLoaded(sessionData):
                 // Update shared session data
                 state.$sessionData.withLock { $0 = sessionData }
-                
+
                 // Set initial destination based on current state
                 if let analysis = state.analysisHistory.last {
                     state.destination = .analysis(AnalysisFeature.State(analysis: analysis))

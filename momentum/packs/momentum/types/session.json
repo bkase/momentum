@@ -17,7 +17,7 @@
       "description": "Expected duration in minutes"
     },
     "reflection_uuid": {
-      "type": "string",
+      "type": ["string", "null"],
       "format": "uuid",
       "description": "UUID of the reflection document for this session"
     }

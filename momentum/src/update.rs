@@ -59,7 +59,9 @@ pub fn update(state: State, action: Action, _env: &Environment) -> (State, Optio
 
         // Get current session (works in any state)
         (state, Action::GetSession) => {
-            let effect = Effect::PrintSession { state: state.clone() };
+            let effect = Effect::PrintSession {
+                state: state.clone(),
+            };
             (state, Some(effect))
         }
     }

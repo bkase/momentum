@@ -50,7 +50,7 @@ async fn test_load_checklist_creates_default() {
 
     // Check that checklist was created in aethel
     let (_uuid, checklist_data) = env.aethel_storage.get_or_create_checklist().await.unwrap();
-    
+
     // Verify default content from mock
     assert_eq!(checklist_data.items.len(), 2); // Mock returns 2 test items
     assert!(checklist_data.items.iter().all(|(_, on)| !on));
@@ -72,7 +72,10 @@ async fn test_load_checklist_reads_existing() {
 
     // Update the checklist in aethel mock storage
     let (uuid, _) = env.aethel_storage.get_or_create_checklist().await.unwrap();
-    env.aethel_storage.update_checklist(&uuid, &checklist_data).await.unwrap();
+    env.aethel_storage
+        .update_checklist(&uuid, &checklist_data)
+        .await
+        .unwrap();
 
     let effect = Effect::LoadAndPrintChecklist;
     let result = execute(effect, &env).await;
@@ -103,7 +106,10 @@ async fn test_toggle_checklist_item() {
 
     // Set up checklist in aethel storage
     let (uuid, _) = env.aethel_storage.get_or_create_checklist().await.unwrap();
-    env.aethel_storage.update_checklist(&uuid, &checklist_data).await.unwrap();
+    env.aethel_storage
+        .update_checklist(&uuid, &checklist_data)
+        .await
+        .unwrap();
 
     // Toggle item 1 (using item-1 format as per the effect implementation)
     let effect = Effect::ToggleChecklistItem {
@@ -132,7 +138,10 @@ async fn test_toggle_nonexistent_item() {
 
     // Set up checklist in aethel storage
     let (uuid, _) = env.aethel_storage.get_or_create_checklist().await.unwrap();
-    env.aethel_storage.update_checklist(&uuid, &checklist_data).await.unwrap();
+    env.aethel_storage
+        .update_checklist(&uuid, &checklist_data)
+        .await
+        .unwrap();
 
     // Try to toggle non-existent item
     let effect = Effect::ToggleChecklistItem {
@@ -160,7 +169,10 @@ async fn test_toggle_already_checked_item() {
 
     // Set up checklist in aethel storage
     let (uuid, _) = env.aethel_storage.get_or_create_checklist().await.unwrap();
-    env.aethel_storage.update_checklist(&uuid, &checklist_data).await.unwrap();
+    env.aethel_storage
+        .update_checklist(&uuid, &checklist_data)
+        .await
+        .unwrap();
 
     // Toggle the already checked item
     let effect = Effect::ToggleChecklistItem {
@@ -191,7 +203,10 @@ async fn test_start_with_incomplete_checklist() {
 
     // Set up checklist in aethel storage
     let (uuid, _) = env.aethel_storage.get_or_create_checklist().await.unwrap();
-    env.aethel_storage.update_checklist(&uuid, &checklist_data).await.unwrap();
+    env.aethel_storage
+        .update_checklist(&uuid, &checklist_data)
+        .await
+        .unwrap();
 
     // Try to start session
     let effect = Effect::ValidateChecklistAndStart {
@@ -216,14 +231,15 @@ async fn test_start_with_complete_checklist() {
 
     // Create checklist with all items checked
     let checklist_data = ChecklistData {
-        items: (0..3)
-            .map(|i| (format!("Item {}", i), true))
-            .collect(),
+        items: (0..3).map(|i| (format!("Item {i}"), true)).collect(),
     };
 
     // Set up checklist in aethel storage
     let (uuid, _) = env.aethel_storage.get_or_create_checklist().await.unwrap();
-    env.aethel_storage.update_checklist(&uuid, &checklist_data).await.unwrap();
+    env.aethel_storage
+        .update_checklist(&uuid, &checklist_data)
+        .await
+        .unwrap();
 
     // Try to start session
     let effect = Effect::ValidateChecklistAndStart {

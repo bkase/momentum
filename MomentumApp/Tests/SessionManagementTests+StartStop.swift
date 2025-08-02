@@ -97,6 +97,10 @@ extension SessionManagementTests {
         ) {
             AppFeature()
         } withDependencies: {
+            $0.rustCoreClient.getSession = {
+                // Return the session data that was set up in shared state
+                sessionData
+            }
             $0.rustCoreClient.stop = {
                 "/tmp/test-reflection.md"
             }

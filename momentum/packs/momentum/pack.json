@@ -2,22 +2,20 @@
   "name": "momentum",
   "version": "0.2.0",
   "protocolVersion": "0.1.0",
-  "description": "Document types for Momentum productivity app",
-  "author": "Momentum Team",
   "types": [
     {
-      "name": "session",
-      "description": "Active focus session state",
+      "id": "momentum.session",
+      "version": "1.0.0",
       "schema": "types/session.json"
     },
     {
-      "name": "reflection", 
-      "description": "Post-session reflection document",
+      "id": "momentum.reflection",
+      "version": "1.0.0", 
       "schema": "types/reflection.json"
     },
     {
-      "name": "checklist",
-      "description": "Pre-session checklist state",
+      "id": "momentum.checklist",
+      "version": "1.0.0",
       "schema": "types/checklist.json",
       "template": "templates/checklist.md"
     }

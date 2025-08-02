@@ -55,7 +55,9 @@ async fn test_state_load_with_session() {
     // Load should return SessionActive
     let state = State::load(&env).await.unwrap();
     match state {
-        State::SessionActive { session: loaded, .. } => {
+        State::SessionActive {
+            session: loaded, ..
+        } => {
             assert_eq!(loaded.goal, session.goal);
             assert_eq!(loaded.start_time, session.start_time);
         }

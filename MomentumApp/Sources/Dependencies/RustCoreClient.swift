@@ -90,24 +90,24 @@ extension RustCoreClient: DependencyKey {
         },
         getSession: {
             let result = try await executeCommand("get-session", arguments: [])
-            
+
             guard let sessionJson = result.output,
                 !sessionJson.isEmpty
             else {
                 // No output means no active session
                 return nil
             }
-            
+
             // Check if it's an empty JSON object (no session)
             let trimmed = sessionJson.trimmingCharacters(in: .whitespacesAndNewlines)
             if trimmed == "{}" {
                 return nil
             }
-            
+
             guard let data = sessionJson.data(using: .utf8) else {
                 throw RustCoreError.invalidOutput("get-session returned invalid UTF-8")
             }
-            
+
             do {
                 return try JSONDecoder().decode(SessionData.self, from: data)
             } catch {
@@ -150,13 +150,8 @@ extension RustCoreClient: DependencyKey {
             ])
         },
         getSession: {
-            // Return test session data if available
-            return SessionData(
-                goal: "Test Goal",
-                startTime: 1_700_000_000,
-                timeExpected: 30,
-                reflectionFilePath: nil
-            )
+            // Return nil by default for tests - tests can override if needed
+            return nil
         }
     )
 }
