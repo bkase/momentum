@@ -25,17 +25,29 @@ impl IndexManager {
             .join(format!("{}.index.json", Self::PACK_NAME))
     }
 
-    /// Read the index file, returning empty map if not found
+    /// Read the index file, returning empty map if not found or corrupted
     pub fn read_index(&self) -> Result<HashMap<String, String>> {
         let index_path = self.get_index_path();
         if !index_path.exists() {
             return Ok(HashMap::new());
         }
 
-        let content = std::fs::read_to_string(&index_path)?;
-        let index: HashMap<String, String> = serde_json::from_str(&content)
-            .unwrap_or_else(|_| HashMap::new());
-        Ok(index)
+        match std::fs::read_to_string(&index_path) {
+            Ok(content) => {
+                match serde_json::from_str::<HashMap<String, String>>(&content) {
+                    Ok(index) => Ok(index),
+                    Err(_) => {
+                        // Index is corrupted, log and return empty map
+                        eprintln!("Warning: Index file corrupted, rebuilding index");
+                        Ok(HashMap::new())
+                    }
+                }
+            }
+            Err(_) => {
+                // File read error, return empty map
+                Ok(HashMap::new())
+            }
+        }
     }
 
     /// Write the index file, creating directories as needed
