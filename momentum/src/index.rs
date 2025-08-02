@@ -18,7 +18,7 @@ impl IndexManager {
     }
 
     /// Get the path to the pack-namespaced index file
-    fn get_index_path(&self) -> PathBuf {
+    pub fn get_index_path(&self) -> PathBuf {
         self.vault_root
             .join(".aethel")
             .join("indexes")

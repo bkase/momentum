@@ -15,3 +15,6 @@ mod filename_tests;
 
 #[cfg(test)]
 mod checklist_tests;
+
+#[cfg(test)]
+mod index_tests;

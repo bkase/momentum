@@ -87,9 +87,9 @@ The solution creates a lightweight index file at `<vault>/.aethel/indexes/moment
 - [x] Replace get_or_create_checklist() to use index lookup instead of linear search  
 - [x] Update save_session() to maintain index when creating/updating session documents
 - [x] Update archive_session() to maintain index when archiving session documents
-- [ ] Update get_or_create_checklist() to maintain index when creating checklist documents
-- [ ] Add index migration logic to populate index from existing documents on first run
-- [ ] Add comprehensive tests for index management functions
+- [x] Update get_or_create_checklist() to maintain index when creating checklist documents
+- [x] Add index migration logic to populate index from existing documents on first run
+- [x] Add comprehensive tests for index management functions
 - [ ] Add integration tests verifying O(1) lookup performance vs O(n) linear search
 - [ ] Add error handling for index corruption and automatic rebuilding
 - [ ] User test: Verify session start/stop operations work with large vault (create test vault with 1000+ docs)
