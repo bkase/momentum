@@ -20,7 +20,12 @@ struct ChecklistRowView: View {
             item.text,
             isOn: .init(
                 get: { item.on },
-                set: { _ in onToggle() }
+                set: { newValue in 
+                    // Only allow checking (on: false -> true), never unchecking
+                    if !item.on && newValue {
+                        onToggle()
+                    }
+                }
             )
         )
         .toggleStyle(.checklist)
