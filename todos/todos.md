@@ -75,4 +75,3 @@ The workflow remains the same, but the implementation will now be cleaner and mo
     - When stopping a session, the code will read, update (by removing the `active_session` key), and write back to `momentum.index.json`.
 
 This is the perfect example of how an application should build upon Aethel. You're using the core L0 primitives for atomic document storage and the optional L2 conventions (`.aethel/` directory) for application-specific performance optimizations. This is a robust, scalable, and idiomatic solution. I will proceed with this improved design.
-
