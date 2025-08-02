@@ -83,10 +83,10 @@ The solution creates a lightweight index file at `<vault>/.aethel/indexes/moment
 - [x] Add get_index_path() function that returns <vault>/.aethel/indexes/momentum.index.json
 - [x] Add read_index() function to load existing index or return empty map
 - [x] Add write_index() function with directory creation and atomic writes
-- [ ] Replace find_active_session() to use index lookup instead of linear search
-- [ ] Replace get_or_create_checklist() to use index lookup instead of linear search  
-- [ ] Update save_session() to maintain index when creating/updating session documents
-- [ ] Update archive_session() to maintain index when archiving session documents
+- [x] Replace find_active_session() to use index lookup instead of linear search
+- [x] Replace get_or_create_checklist() to use index lookup instead of linear search  
+- [x] Update save_session() to maintain index when creating/updating session documents
+- [x] Update archive_session() to maintain index when archiving session documents
 - [ ] Update get_or_create_checklist() to maintain index when creating checklist documents
 - [ ] Add index migration logic to populate index from existing documents on first run
 - [ ] Add comprehensive tests for index management functions
