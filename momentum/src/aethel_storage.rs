@@ -48,47 +48,54 @@ impl RealAethelStorage {
         Self { vault_root }
     }
 
-    /// Find active session by looking for momentum.session documents
-    async fn find_session_uuid(&self) -> Result<Option<Uuid>> {
+    /// Parse frontmatter from document content, returning (frontmatter_text, is_archived)
+    fn parse_frontmatter(content: &str) -> Option<(&str, bool)> {
+        let frontmatter_end = content.find("---\n").and_then(|start| {
+            content[start + 4..]
+                .find("---\n")
+                .map(|end| start + 4 + end)
+        })?;
+
+        let frontmatter = &content[4..frontmatter_end];
+        let is_archived = frontmatter
+            .lines()
+            .any(|line| line.trim() == "archived: true");
+        Some((frontmatter, is_archived))
+    }
+
+    /// Extract UUID from frontmatter text
+    fn extract_uuid_from_frontmatter(frontmatter: &str) -> Option<Uuid> {
+        frontmatter
+            .lines()
+            .find_map(|line| line.strip_prefix("uuid: "))
+            .and_then(|uuid_str| Uuid::parse_str(uuid_str).ok())
+    }
+
+    /// Find document by type, optionally filtering out archived documents
+    async fn find_document_by_type(
+        &self,
+        doc_type: &str,
+        exclude_archived: bool,
+    ) -> Result<Option<Uuid>> {
         let docs_dir = self.vault_root.join("docs");
         if !docs_dir.exists() {
             return Ok(None);
         }
 
-        // Read all files in docs directory
-        let entries = std::fs::read_dir(&docs_dir)?;
-
-        for entry in entries {
-            let entry = entry?;
+        for entry in std::fs::read_dir(&docs_dir)?.flatten() {
             let path = entry.path();
+            if path.extension().and_then(|s| s.to_str()) != Some("md") {
+                continue;
+            }
 
-            if path.extension().and_then(|s| s.to_str()) == Some("md") {
-                // Try to read as aethel document
-                if let Ok(content) = std::fs::read_to_string(&path) {
-                    // Parse YAML frontmatter to check type
-                    if let Some(frontmatter_end) = content.find("---\n").and_then(|start| {
-                        content[start + 4..]
-                            .find("---\n")
-                            .map(|end| start + 4 + end)
-                    }) {
-                        let frontmatter = &content[4..frontmatter_end];
-                        if frontmatter.contains("type: momentum.session") {
-                            // Check if session is archived
-                            let is_archived = frontmatter
-                                .lines()
-                                .any(|line| line.trim() == "archived: true");
-
-                            // Only return UUID if session is not archived
-                            if !is_archived {
-                                // Extract UUID from frontmatter
-                                for line in frontmatter.lines() {
-                                    if let Some(uuid_str) = line.strip_prefix("uuid: ") {
-                                        if let Ok(uuid) = Uuid::parse_str(uuid_str) {
-                                            return Ok(Some(uuid));
-                                        }
-                                    }
-                                }
-                            }
+            if let Ok(content) = std::fs::read_to_string(&path) {
+                if let Some((frontmatter, is_archived)) = Self::parse_frontmatter(&content) {
+                    if frontmatter.contains(&format!("type: {doc_type}")) {
+                        if exclude_archived && is_archived {
+                            continue;
+                        }
+                        if let Some(uuid) = Self::extract_uuid_from_frontmatter(frontmatter) {
+                            return Ok(Some(uuid));
                         }
                     }
                 }
@@ -98,42 +105,82 @@ impl RealAethelStorage {
         Ok(None)
     }
 
-    /// Find checklist document UUID
-    async fn find_checklist_uuid(&self) -> Result<Option<Uuid>> {
-        let docs_dir = self.vault_root.join("docs");
-        if !docs_dir.exists() {
-            return Ok(None);
+    /// Create a patch with common settings
+    fn create_patch(
+        uuid: Option<Uuid>,
+        doc_type: Option<&str>,
+        frontmatter: Value,
+        body: Option<String>,
+    ) -> Patch {
+        Patch {
+            uuid,
+            doc_type: doc_type.map(|s| s.to_string()),
+            frontmatter: Some(frontmatter),
+            body,
+            mode: if uuid.is_none() {
+                PatchMode::Create
+            } else {
+                PatchMode::MergeFrontmatter
+            },
+        }
+    }
+
+    /// Convert checklist items to JSON format
+    fn checklist_to_json(items: &[(String, bool)]) -> Vec<Value> {
+        items
+            .iter()
+            .map(|(item, completed)| json!({ "item": item, "completed": completed }))
+            .collect()
+    }
+
+    /// Extract field from frontmatter with better error messages
+    fn extract_field<T>(
+        frontmatter: &Value,
+        field: &str,
+        parser: impl Fn(&Value) -> Option<T>,
+    ) -> Result<T> {
+        parser(&frontmatter[field])
+            .ok_or_else(|| anyhow!("Invalid or missing field '{field}' in document"))
+    }
+
+    /// Load checklist template from pack
+    fn load_checklist_template(&self) -> Result<Vec<(String, bool)>> {
+        let packs_dir = self.vault_root.join("packs");
+        let pack_path = std::fs::read_dir(&packs_dir)?
+            .flatten()
+            .find(|entry| {
+                entry.file_name().to_string_lossy().starts_with("momentum@")
+                    && entry.path().is_dir()
+            })
+            .map(|entry| entry.path().join("templates/checklist.md"))
+            .ok_or_else(|| {
+                anyhow!("Momentum pack not found. Please run momentum to install it first.")
+            })?;
+
+        if !pack_path.exists() {
+            return Err(anyhow!(
+                "Checklist template not found at: {}",
+                pack_path.display()
+            ));
         }
 
-        let entries = std::fs::read_dir(&docs_dir)?;
+        let template_content = std::fs::read_to_string(&pack_path)?;
+        let items: Vec<_> = template_content
+            .lines()
+            .filter_map(|line| {
+                line.trim_start()
+                    .strip_prefix("- ")
+                    .or_else(|| line.trim_start().strip_prefix("* "))
+                    .or_else(|| line.trim_start().strip_prefix("+ "))
+                    .map(|text| (text.to_string(), false))
+            })
+            .collect();
 
-        for entry in entries {
-            let entry = entry?;
-            let path = entry.path();
-
-            if path.extension().and_then(|s| s.to_str()) == Some("md") {
-                if let Ok(content) = std::fs::read_to_string(&path) {
-                    if let Some(frontmatter_end) = content.find("---\n").and_then(|start| {
-                        content[start + 4..]
-                            .find("---\n")
-                            .map(|end| start + 4 + end)
-                    }) {
-                        let frontmatter = &content[4..frontmatter_end];
-                        if frontmatter.contains("type: momentum.checklist") {
-                            for line in frontmatter.lines() {
-                                if let Some(uuid_str) = line.strip_prefix("uuid: ") {
-                                    if let Ok(uuid) = Uuid::parse_str(uuid_str) {
-                                        return Ok(Some(uuid));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        if items.is_empty() {
+            Err(anyhow!("Checklist template contains no items"))
+        } else {
+            Ok(items)
         }
-
-        Ok(None)
     }
 }
 
@@ -144,233 +191,116 @@ impl AethelStorage for RealAethelStorage {
     }
 
     async fn find_active_session(&self) -> Result<Option<Uuid>> {
-        self.find_session_uuid().await
+        self.find_document_by_type("momentum.session", true).await
     }
 
     async fn save_session(&self, session: &Session) -> Result<Uuid> {
-        // Check if we already have a session document
-        let existing_uuid = self.find_session_uuid().await?;
+        let existing_uuid = self.find_document_by_type("momentum.session", true).await?;
 
-        let patch = Patch {
-            uuid: existing_uuid,
-            doc_type: if existing_uuid.is_none() {
-                Some("momentum.session".to_string())
+        let frontmatter = json!({
+            "goal": session.goal,
+            "start_time": session.start_time,
+            "time_expected": session.time_expected,
+            "reflection_uuid": session.reflection_file_path,
+        });
+
+        let body = format!(
+            "# Active Session: {}\n\nStarted at: {}",
+            session.goal,
+            DateTime::<Utc>::from_timestamp(session.start_time as i64, 0)
+                .unwrap_or_default()
+                .format("%Y-%m-%d %H:%M:%S UTC")
+        );
+
+        let patch = Self::create_patch(
+            existing_uuid,
+            if existing_uuid.is_none() {
+                Some("momentum.session")
             } else {
                 None
             },
-            frontmatter: Some(json!({
-                "goal": session.goal,
-                "start_time": session.start_time,
-                "time_expected": session.time_expected,
-                "reflection_uuid": session.reflection_file_path,
-            })),
-            body: Some(format!(
-                "# Active Session: {}\n\nStarted at: {}",
-                session.goal,
-                DateTime::<Utc>::from_timestamp(session.start_time as i64, 0)
-                    .unwrap_or_default()
-                    .format("%Y-%m-%d %H:%M:%S UTC")
-            )),
-            mode: if existing_uuid.is_none() {
-                PatchMode::Create
-            } else {
-                PatchMode::MergeFrontmatter
-            },
-        };
+            frontmatter,
+            Some(body),
+        );
 
-        let result = apply_patch(&self.vault_root, patch)?;
-        Ok(result.uuid)
+        Ok(apply_patch(&self.vault_root, patch)?.uuid)
     }
 
     async fn read_session(&self, uuid: &Uuid) -> Result<Session> {
         let doc = read_doc(&self.vault_root, uuid)?;
-
-        let goal = doc.frontmatter_extra["goal"]
-            .as_str()
-            .ok_or_else(|| anyhow!("Session missing goal"))?
-            .to_string();
-
-        let start_time = doc.frontmatter_extra["start_time"]
-            .as_u64()
-            .ok_or_else(|| anyhow!("Session missing start_time"))?;
-
-        let time_expected = doc.frontmatter_extra["time_expected"]
-            .as_u64()
-            .ok_or_else(|| anyhow!("Session missing time_expected"))?;
-
-        let reflection_file_path = doc.frontmatter_extra["reflection_uuid"]
-            .as_str()
-            .map(|s| s.to_string());
+        let fm = &doc.frontmatter_extra;
 
         Ok(Session {
-            goal,
-            start_time,
-            time_expected,
-            reflection_file_path,
+            goal: Self::extract_field(fm, "goal", |v| v.as_str().map(|s| s.to_string()))?,
+            start_time: Self::extract_field(fm, "start_time", |v| v.as_u64())?,
+            time_expected: Self::extract_field(fm, "time_expected", |v| v.as_u64())?,
+            reflection_file_path: fm["reflection_uuid"].as_str().map(|s| s.to_string()),
         })
     }
 
     async fn delete_session(&self, uuid: &Uuid) -> Result<()> {
-        // In aethel, we don't delete documents, we could mark them as archived
-        // For now, we'll clear the session data
-        let patch = Patch {
-            uuid: Some(*uuid),
-            doc_type: None,
-            frontmatter: Some(json!({
-                "archived": true,
-            })),
-            body: None,
-            mode: PatchMode::MergeFrontmatter,
-        };
-
+        let patch = Self::create_patch(Some(*uuid), None, json!({"archived": true}), None);
         apply_patch(&self.vault_root, patch)?;
         Ok(())
     }
 
     async fn create_reflection(&self, session: &Session, body: String) -> Result<Uuid> {
         let end_time = Utc::now().timestamp() as u64;
-        let time_actual = (end_time - session.start_time) / 60;
+        let frontmatter = json!({
+            "goal": session.goal,
+            "start_time": session.start_time,
+            "end_time": end_time,
+            "time_expected": session.time_expected,
+            "time_actual": (end_time - session.start_time) / 60,
+        });
 
-        let patch = Patch {
-            uuid: None,
-            doc_type: Some("momentum.reflection".to_string()),
-            frontmatter: Some(json!({
-                "goal": session.goal,
-                "start_time": session.start_time,
-                "end_time": end_time,
-                "time_expected": session.time_expected,
-                "time_actual": time_actual,
-            })),
-            body: Some(body),
-            mode: PatchMode::Create,
-        };
-
-        let result = apply_patch(&self.vault_root, patch)?;
-        Ok(result.uuid)
+        let patch = Self::create_patch(None, Some("momentum.reflection"), frontmatter, Some(body));
+        Ok(apply_patch(&self.vault_root, patch)?.uuid)
     }
 
     async fn update_reflection_analysis(&self, uuid: &Uuid, analysis: Value) -> Result<()> {
-        let patch = Patch {
-            uuid: Some(*uuid),
-            doc_type: None,
-            frontmatter: Some(json!({
-                "analysis": analysis,
-            })),
-            body: None,
-            mode: PatchMode::MergeFrontmatter,
-        };
-
+        let patch = Self::create_patch(Some(*uuid), None, json!({"analysis": analysis}), None);
         apply_patch(&self.vault_root, patch)?;
         Ok(())
     }
 
     async fn get_or_create_checklist(&self) -> Result<(Uuid, ChecklistData)> {
-        if let Some(uuid) = self.find_checklist_uuid().await? {
+        if let Some(uuid) = self
+            .find_document_by_type("momentum.checklist", false)
+            .await?
+        {
             let doc = read_doc(&self.vault_root, &uuid)?;
-            let items = doc.frontmatter_extra["items"]
-                .as_array()
-                .ok_or_else(|| anyhow!("Checklist missing items"))?
-                .iter()
-                .map(|item| {
-                    Ok((
-                        item["item"]
-                            .as_str()
-                            .ok_or_else(|| anyhow!("Invalid checklist item"))?
-                            .to_string(),
-                        item["completed"]
-                            .as_bool()
-                            .ok_or_else(|| anyhow!("Invalid completed status"))?,
-                    ))
+            let items = Self::extract_field(&doc.frontmatter_extra, "items", |v| {
+                v.as_array().map(|arr| {
+                    arr.iter()
+                        .filter_map(|item| {
+                            Some((
+                                item["item"].as_str()?.to_string(),
+                                item["completed"].as_bool()?,
+                            ))
+                        })
+                        .collect()
                 })
-                .collect::<Result<Vec<_>>>()?;
+            })?;
 
             Ok((uuid, ChecklistData { items }))
         } else {
-            // Load template from the pack - need to find the right version
-            let packs_dir = self.vault_root.join("packs");
-            let mut pack_path = None;
+            let items = self.load_checklist_template()?;
+            let checklist = ChecklistData { items };
 
-            // Find any momentum@* directory
-            if let Ok(entries) = std::fs::read_dir(&packs_dir) {
-                for entry in entries.flatten() {
-                    let file_name = entry.file_name();
-                    let name_str = file_name.to_string_lossy();
-                    if name_str.starts_with("momentum@") && entry.path().is_dir() {
-                        pack_path = Some(entry.path().join("templates/checklist.md"));
-                        break;
-                    }
-                }
-            }
+            let frontmatter = json!({ "items": Self::checklist_to_json(&checklist.items) });
+            let body = "# Pre-Session Checklist\n\nComplete these items before starting your focus session.".to_string();
 
-            let pack_path = pack_path.ok_or_else(|| {
-                anyhow!("Momentum pack not found. Please run momentum to install it first.")
-            })?;
-
-            if !pack_path.exists() {
-                return Err(anyhow!(
-                    "Checklist template not found at: {}",
-                    pack_path.display()
-                ));
-            }
-
-            let template_content = std::fs::read_to_string(&pack_path)?;
-
-            // Parse checklist items from the template - expecting markdown list
-            let template_items = template_content
-                .lines()
-                .filter_map(|line| {
-                    line.trim_start()
-                        .strip_prefix("- ")
-                        .or_else(|| line.trim_start().strip_prefix("* "))
-                        .or_else(|| line.trim_start().strip_prefix("+ "))
-                        .map(|text| (text.to_string(), false))
-                })
-                .collect::<Vec<_>>();
-
-            if template_items.is_empty() {
-                return Err(anyhow!("Checklist template contains no items"));
-            }
-
-            let checklist = ChecklistData {
-                items: template_items,
-            };
-
-            let patch = Patch {
-                uuid: None,
-                doc_type: Some("momentum.checklist".to_string()),
-                frontmatter: Some(json!({
-                    "items": checklist.items.iter().map(|(item, completed)| {
-                        json!({
-                            "item": item,
-                            "completed": completed,
-                        })
-                    }).collect::<Vec<_>>(),
-                })),
-                body: Some("# Pre-Session Checklist\n\nComplete these items before starting your focus session.".to_string()),
-                mode: PatchMode::Create,
-            };
-
+            let patch =
+                Self::create_patch(None, Some("momentum.checklist"), frontmatter, Some(body));
             let result = apply_patch(&self.vault_root, patch)?;
             Ok((result.uuid, checklist))
         }
     }
 
     async fn update_checklist(&self, uuid: &Uuid, checklist: &ChecklistData) -> Result<()> {
-        let patch = Patch {
-            uuid: Some(*uuid),
-            doc_type: None,
-            frontmatter: Some(json!({
-                "items": checklist.items.iter().map(|(item, completed)| {
-                    json!({
-                        "item": item,
-                        "completed": completed,
-                    })
-                }).collect::<Vec<_>>(),
-            })),
-            body: None,
-            mode: PatchMode::MergeFrontmatter,
-        };
-
+        let frontmatter = json!({ "items": Self::checklist_to_json(&checklist.items) });
+        let patch = Self::create_patch(Some(*uuid), None, frontmatter, None);
         apply_patch(&self.vault_root, patch)?;
         Ok(())
     }
