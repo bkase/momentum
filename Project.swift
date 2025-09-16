@@ -13,7 +13,8 @@ let project = Project(
         .remote(
             url: "https://github.com/pointfreeco/swift-composable-architecture",
             requirement: .upToNextMajor(from: "1.15.0")
-        )
+        ),
+        .local(path: "/Users/bkase/Documents/aethel/AethelSwift")
     ],
     settings: .settings(
         base: [
@@ -64,10 +65,10 @@ let project = Project(
                             source "$HOME/.zshrc"
                         fi
 
-                        echo "Building Rust CLI..."
+                        echo "Building Rust CLI for analyze command..."
                         cd "$SRCROOT"
 
-                        # Build Rust and copy binary
+                        # Build Rust CLI (still needed for analyze command with Claude)
                         make rust-build || { echo "Error: make rust-build failed"; exit 1; }
                         make copy-rust-binary || { echo "Error: make copy-rust-binary failed"; exit 1; }
 
@@ -77,9 +78,9 @@ let project = Project(
                             exit 1
                         fi
 
-                        echo "✓ Rust CLI build complete"
+                        echo "✓ Rust CLI build complete (for analyze command)"
                         """,
-                    name: "Build Rust CLI",
+                    name: "Build Rust CLI (for analyze)",
                     inputPaths: [
                         "$(SRCROOT)/momentum/Cargo.toml",
                         "$(SRCROOT)/momentum/src",
@@ -91,7 +92,8 @@ let project = Project(
                 )
             ],
             dependencies: [
-                .package(product: "ComposableArchitecture")
+                .package(product: "ComposableArchitecture"),
+                .package(product: "A4CoreSwift")
             ]
         ),
         .target(

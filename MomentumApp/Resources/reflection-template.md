@@ -1,8 +1,3 @@
-# Focus Session: {{goal}}
-
-- **Time Taken:** {{time_taken}} minutes
-- **Expected Time:** {{time_expected}} minutes
-
 ## Reflection
 
 1. Goal Achievement: Did you accomplish the specific goal you set at the start of the session? If not, why? Reflect on whether the goal was realistic, clear, or if distractions or other obstacles hindered progress.

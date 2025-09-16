@@ -3,7 +3,7 @@ import Foundation
 import A4CoreSwift
 
 @DependencyClient
-struct RustCoreClient {
+struct AethelClient {
     var start: @Sendable (String, Int) async throws -> SessionData
     var stop: @Sendable () async throws -> String
     var analyze: @Sendable (String) async throws -> AnalysisResult
@@ -12,16 +12,73 @@ struct RustCoreClient {
     var getSession: @Sendable () async throws -> SessionData?
 }
 
-extension RustCoreClient: DependencyKey {
+extension AethelClient: DependencyKey {
     static let liveValue = Self(
         start: { goal, minutes in
-            // Create session
+            // Find or create the vault
+            let (vault, _) = try Vault.resolve(
+                cliPath: nil,
+                env: ProcessInfo.processInfo.environment,
+                cwd: URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            )
+
+            // Create session in vault
             let now = Date()
             let session = SessionData(
                 goal: goal,
                 startTime: UInt64(now.timeIntervalSince1970),
                 timeExpected: UInt64(minutes),
                 reflectionFilePath: nil
+            )
+
+            // Save session to daily note
+            let utcDay = Dates.utcDay(from: now)
+            let (year, yearMonth, filename) = Dates.dailyPathComponents(for: utcDay)
+            let dailyPath = "capture/\(year)/\(yearMonth)/\(filename)"
+            let dailyURL = try vault.resolveRelative(dailyPath)
+
+            // Create anchor for session start
+            let hhmm = Dates.localHHMM(from: now)
+            let anchor = try AnchorToken(parse: "session-start-\(hhmm)")
+
+            // Format session content
+            let content = """
+            **Goal:** \(goal)
+            **Duration:** \(minutes) minutes
+            **Started:** \(now.formatted())
+            """
+
+            // Ensure the capture directory structure exists
+            let captureDir = vault.root.appendingPathComponent("capture/\(year)/\(yearMonth)")
+            try FileManager.default.createDirectory(
+                at: captureDir,
+                withIntermediateDirectories: true,
+                attributes: nil
+            )
+
+            // Create daily note if it doesn't exist
+            if !FileManager.default.fileExists(atPath: dailyURL.path) {
+                let initialContent = """
+                ---
+                date: \(now.ISO8601Format())
+                ---
+
+                # Daily Note - \(now.formatted(date: .complete, time: .omitted))
+
+                ## Sessions
+                """
+                try initialContent.write(to: dailyURL, atomically: true, encoding: .utf8)
+            }
+
+            // Append session to daily note
+            try Append.appendBlock(
+                vault: vault,
+                targetFile: dailyURL,
+                opts: AppendOptions(
+                    heading: "Sessions",
+                    anchor: anchor,
+                    content: content.data(using: .utf8)!
+                )
             )
 
             // Save session state locally for retrieval
@@ -66,12 +123,9 @@ extension RustCoreClient: DependencyKey {
 
             // Create reflection file
             let now = Date()
-            let filenameDateFormatter = DateFormatter()
-            filenameDateFormatter.dateFormat = "yyyy-MM-dd"
-            let filenameDateString = filenameDateFormatter.string(from: now)
-
-            // Use title slug format for filename
-            let filename = "focus-\(session.goal.lowercased().replacingOccurrences(of: " ", with: "-"))-\(filenameDateString).md"
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd-HHmm"
+            let filename = "\(formatter.string(from: now))-\(session.goal.lowercased().replacingOccurrences(of: " ", with: "-")).md"
 
             let reflectionsDir = vault.root.appendingPathComponent("reflections")
             try FileManager.default.createDirectory(
@@ -88,181 +142,55 @@ extension RustCoreClient: DependencyKey {
                 throw RustCoreError.invalidOutput("Reflection template not found")
             }
 
-            // Calculate session details
+            // Create reflection content
             let startTime = Date(timeIntervalSince1970: TimeInterval(session.startTime))
             let duration = Int(now.timeIntervalSince(startTime) / 60)
 
-            // Create reflection content with session details and template
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "yyyy-MM-dd"
-            let dateString = dateFormatter.string(from: now)
-
-            let reflectionContent = """
-            ---
-            goal: \(session.goal)
-            start_time: \(startTime.ISO8601Format())
-            end_time: \(now.ISO8601Format())
-            duration_minutes: \(duration)
-            expected_minutes: \(session.timeExpected)
-            ---
-
-            # Focus: \(session.goal) \(dateString)
-
-            **Duration:** \(duration) minutes (expected: \(session.timeExpected) minutes)
-
-            \(template
+            let reflection = template
                 .replacingOccurrences(of: "{{goal}}", with: session.goal)
                 .replacingOccurrences(of: "{{duration}}", with: "\(duration) minutes")
-                .replacingOccurrences(of: "{{date}}", with: now.formatted(date: .complete, time: .shortened)))
-            """
+                .replacingOccurrences(of: "{{date}}", with: now.formatted(date: .complete, time: .shortened))
 
-            try reflectionContent.write(to: reflectionPath, atomically: true, encoding: .utf8)
+            try reflection.write(to: reflectionPath, atomically: true, encoding: .utf8)
 
-            // Add single summary entry to daily note
+            // Update daily note with session end
             let utcDay = Dates.utcDay(from: now)
             let (year, yearMonth, dailyFilename) = Dates.dailyPathComponents(for: utcDay)
             let dailyPath = "capture/\(year)/\(yearMonth)/\(dailyFilename)"
             let dailyURL = try vault.resolveRelative(dailyPath)
 
-            // Ensure the capture directory structure exists
-            let captureDir = vault.root.appendingPathComponent("capture/\(year)/\(yearMonth)")
-            try FileManager.default.createDirectory(
-                at: captureDir,
-                withIntermediateDirectories: true,
-                attributes: nil
-            )
-
-            // Create daily note if it doesn't exist
-            if !FileManager.default.fileExists(atPath: dailyURL.path) {
-                // Try to use template first
-                let templatePath = vault.root.appendingPathComponent("routines/templates/daily.md")
-                var initialContent: String
-
-                if FileManager.default.fileExists(atPath: templatePath.path),
-                   let template = try? String(contentsOf: templatePath, encoding: .utf8) {
-                    // Fill in template variables
-                    let dateFormatter = ISO8601DateFormatter()
-                    let nowUTC = dateFormatter.string(from: now)
-
-                    let dayFormatter = DateFormatter()
-                    dayFormatter.dateFormat = "yyyy-MM-dd"
-                    dayFormatter.timeZone = TimeZone(identifier: "UTC")
-                    let yyyyMMdd = dayFormatter.string(from: now)
-
-                    let timeFormatter = DateFormatter()
-                    timeFormatter.dateFormat = "HHmm"
-                    timeFormatter.timeZone = TimeZone.current
-                    let hhmm = timeFormatter.string(from: now)
-
-                    initialContent = template
-                        .replacingOccurrences(of: "{{now_utc}}", with: nowUTC)
-                        .replacingOccurrences(of: "{{YYYY-MM-DD}}", with: yyyyMMdd)
-                        .replacingOccurrences(of: "{{hhmm}}", with: hhmm)
-
-                    // Add Focus heading if not present
-                    if !initialContent.contains("## Focus") {
-                        initialContent.append("\n## Focus\n")
-                    }
-                } else {
-                    // Fallback if template not found
-                    initialContent = """
-                    ---
-                    kind: capture.day
-                    created: \(now.ISO8601Format())
-                    tags: [daily]
-                    ---
-                    # Daily Note \(now.formatted(date: .complete, time: .omitted))
-
-                    ## Focus
-                    """
-                }
-
-                try initialContent.write(to: dailyURL, atomically: true, encoding: .utf8)
-            }
-
             let hhmm = Dates.localHHMM(from: now)
-            let anchor = try AnchorToken(parse: "focus-\(hhmm)")
+            let anchor = try AnchorToken(parse: "session-end-\(hhmm)")
 
-            // Create session summary for daily note
-            // Build the title slug for the link
-            let linkDateFormatter = DateFormatter()
-            linkDateFormatter.dateFormat = "yyyy-MM-dd"
-            let linkDateString = linkDateFormatter.string(from: now)
-
-            // Create slug from "Focus: <task> YYYY-MM-DD"
-            let titleSlug = "focus-\(session.goal.lowercased().replacingOccurrences(of: " ", with: "-"))-\(linkDateString)"
-
-            let sessionSummary = """
-            **\(session.goal)** (\(duration) min)
-            [[\(titleSlug)|Focus: \(session.goal)]]
+            let endContent = """
+            **Session Completed:** \(session.goal)
+            **Duration:** \(duration) minutes
+            **Reflection:** [View](\(reflectionPath.path))
             """
 
             try Append.appendBlock(
                 vault: vault,
                 targetFile: dailyURL,
                 opts: AppendOptions(
-                    heading: "Focus",
+                    heading: "Sessions",
                     anchor: anchor,
-                    content: sessionSummary.data(using: .utf8)!
+                    content: endContent.data(using: .utf8)!
                 )
             )
 
             // Delete session file
             try FileManager.default.removeItem(at: sessionPath)
 
-            // Reset checklist state
-            let checklistStatePath = FileManager.default
-                .homeDirectoryForCurrentUser
-                .appendingPathComponent("Library/Application Support/Momentum/checklist-state.json")
-
-            if FileManager.default.fileExists(atPath: checklistStatePath.path) {
-                try FileManager.default.removeItem(at: checklistStatePath)
-            }
-
             return reflectionPath.path
         },
         analyze: { filePath in
-            // For Claude analysis, we still need to use the CLI tool
-            // The A4CoreSwift library doesn't handle AI analysis
-            let result = try await executeCommand("analyze", arguments: ["--file", filePath])
-
-            guard let analysisJson = result.output,
-                !analysisJson.isEmpty,
-                let data = analysisJson.data(using: .utf8)
-            else {
-                throw RustCoreError.invalidOutput("analyze command returned no JSON")
-            }
-
-            let analysisResult: AnalysisResult
-            do {
-                analysisResult = try JSONDecoder().decode(AnalysisResult.self, from: data)
-            } catch {
-                throw RustCoreError.decodingFailed(error)
-            }
-
-            // Append analysis to the reflection file
-            let reflectionURL = URL(fileURLWithPath: filePath)
-            var reflectionContent = try String(contentsOf: reflectionURL, encoding: .utf8)
-
-            // Add analysis section to reflection
-            let analysisSection = """
-
-            ## AI Analysis
-
-            ### Summary
-            \(analysisResult.summary)
-
-            ### Suggestion
-            \(analysisResult.suggestion)
-
-            ### Reasoning
-            \(analysisResult.reasoning)
-            """
-
-            reflectionContent.append(analysisSection)
-            try reflectionContent.write(to: reflectionURL, atomically: true, encoding: .utf8)
-
-            return analysisResult
+            // For now, return a placeholder since Claude integration would need separate handling
+            // The actual Claude analysis would need to be done via the Claude CLI still
+            AnalysisResult(
+                summary: "Analysis requires Claude CLI integration",
+                suggestion: "Please use the Claude CLI directly for AI analysis",
+                reasoning: "AI analysis is not yet integrated with the Swift library"
+            )
         },
         checkList: {
             // Load checklist from bundle
@@ -271,13 +199,8 @@ extension RustCoreClient: DependencyKey {
                 throw RustCoreError.invalidOutput("Checklist not found")
             }
 
-            struct ChecklistItemJSON: Decodable {
-                let id: String
-                let text: String
-            }
-
             let decoder = JSONDecoder()
-            let items = try decoder.decode([ChecklistItemJSON].self, from: data)
+            let items = try decoder.decode([String].self, from: data)
 
             // Load saved state if exists
             let statePath = FileManager.default
@@ -291,11 +214,11 @@ extension RustCoreClient: DependencyKey {
                 checkedItems = Set(state)
             }
 
-            let checklistItems = items.map { item in
+            let checklistItems = items.enumerated().map { index, text in
                 ChecklistItem(
-                    id: item.id,
-                    text: item.text,
-                    on: checkedItems.contains(item.id)
+                    id: "item-\(index)",
+                    text: text,
+                    on: checkedItems.contains("item-\(index)")
                 )
             }
 
@@ -308,13 +231,8 @@ extension RustCoreClient: DependencyKey {
                 throw RustCoreError.invalidOutput("Checklist not found")
             }
 
-            struct ChecklistItemJSON: Decodable {
-                let id: String
-                let text: String
-            }
-
             let decoder = JSONDecoder()
-            let items = try decoder.decode([ChecklistItemJSON].self, from: data)
+            let items = try decoder.decode([String].self, from: data)
 
             // Load and update state
             let statePath = FileManager.default
@@ -349,11 +267,11 @@ extension RustCoreClient: DependencyKey {
             try stateData.write(to: statePath)
 
             // Return updated checklist
-            let checklistItems = items.map { item in
+            let checklistItems = items.enumerated().map { index, text in
                 ChecklistItem(
-                    id: item.id,
-                    text: item.text,
-                    on: checkedItems.contains(item.id)
+                    id: "item-\(index)",
+                    text: text,
+                    on: checkedItems.contains("item-\(index)")
                 )
             }
 
@@ -378,7 +296,7 @@ extension RustCoreClient: DependencyKey {
             SessionData(
                 goal: goal,
                 startTime: 1_700_000_000,
-                timeExpected: UInt64(minutes),  // Rust expects minutes, not seconds
+                timeExpected: UInt64(minutes),
                 reflectionFilePath: nil
             )
         },
@@ -393,29 +311,26 @@ extension RustCoreClient: DependencyKey {
             )
         },
         checkList: {
-            // Return minimal checklist for tests
             ChecklistState(items: [
                 ChecklistItem(id: "test-1", text: "Test item 1", on: false),
                 ChecklistItem(id: "test-2", text: "Test item 2", on: false),
             ])
         },
         checkToggle: { id in
-            // Return checklist with toggled item
             ChecklistState(items: [
                 ChecklistItem(id: "test-1", text: "Test item 1", on: id == "test-1"),
                 ChecklistItem(id: "test-2", text: "Test item 2", on: id == "test-2"),
             ])
         },
         getSession: {
-            // Return nil by default for tests - tests can override if needed
-            return nil
+            nil
         }
     )
 }
 
 extension DependencyValues {
-    var rustCoreClient: RustCoreClient {
-        get { self[RustCoreClient.self] }
-        set { self[RustCoreClient.self] = newValue }
+    var aethelClient: AethelClient {
+        get { self[AethelClient.self] }
+        set { self[AethelClient.self] = newValue }
     }
 }
