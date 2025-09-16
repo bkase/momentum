@@ -28,8 +28,8 @@ struct SessionData: Equatable, Codable {
 
 struct AnalysisResult: Equatable, Codable {
     let summary: String
-    let suggestion: String
-    let reasoning: String
+    let suggestions: String
+    let questions: String
 }
 
 // MARK: - Checklist Models

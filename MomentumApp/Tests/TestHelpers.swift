@@ -65,8 +65,8 @@ extension SessionData {
 extension AnalysisResult {
     static let mock = AnalysisResult(
         summary: "Test Summary",
-        suggestion: "Test Suggestion",
-        reasoning: "Test Reasoning"
+        suggestions: "Test Suggestions",
+        questions: "Test Questions"
     )
 }
 

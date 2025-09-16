@@ -27,13 +27,13 @@ struct AnalysisResultView: View {
                             .padding(.horizontal, .momentumSpacingSmall)
                     }
 
-                    // Suggestion section
+                    // Actionable suggestions section
                     VStack(alignment: .leading, spacing: .momentumSpacingMedium) {
-                        Text("SUGGESTION")
+                        Text("ACTIONABLE SUGGESTIONS")
                             .font(.sectionLabel)
                             .foregroundStyle(Color.textSecondary)
 
-                        Text(store.analysis.suggestion)
+                        Text(store.analysis.suggestions)
                             .font(.system(size: 14))
                             .foregroundStyle(Color.textPrimary)
                             .lineSpacing(4)
@@ -41,13 +41,13 @@ struct AnalysisResultView: View {
                             .padding(.horizontal, .momentumSpacingSmall)
                     }
 
-                    // Reasoning section
+                    // Deeper questions section
                     VStack(alignment: .leading, spacing: .momentumSpacingMedium) {
-                        Text("REASONING")
+                        Text("DEEPER QUESTIONS")
                             .font(.sectionLabel)
                             .foregroundStyle(Color.textSecondary)
 
-                        Text(store.analysis.reasoning)
+                        Text(store.analysis.questions)
                             .font(.system(size: 14))
                             .foregroundStyle(Color.textPrimary)
                             .lineSpacing(4)

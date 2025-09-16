@@ -29,8 +29,8 @@ struct ProcessRunner: DependencyKey {
             let analysisJson = """
                 {
                     "summary": "Test analysis summary",
-                    "suggestion": "Test suggestion",
-                    "reasoning": "Test reasoning"
+                    "suggestions": "Test suggestions",
+                    "questions": "Test questions"
                 }
                 """
             return ProcessResult(

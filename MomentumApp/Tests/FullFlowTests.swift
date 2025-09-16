@@ -49,8 +49,8 @@ struct FullFlowTests {
             $0.a4Client.analyze = { _ in
                 AnalysisResult(
                     summary: "Test analysis summary",
-                    suggestion: "Test suggestion",
-                    reasoning: "Test reasoning"
+                    suggestions: "Test suggestions",
+                    questions: "Test questions"
                 )
             }
             $0.a4Client.checkList = {
@@ -134,8 +134,8 @@ struct FullFlowTests {
                                 .analysisRequested(
                                     analysisResult: AnalysisResult(
                                         summary: "Test analysis summary",
-                                        suggestion: "Test suggestion",
-                                        reasoning: "Test reasoning"
+                                        suggestions: "Test suggestions",
+                                        questions: "Test questions"
                                     ))))))
             ) {
                 $0.isLoading = false
@@ -145,8 +145,8 @@ struct FullFlowTests {
                     AnalysisFeature.State(
                         analysis: AnalysisResult(
                             summary: "Test analysis summary",
-                            suggestion: "Test suggestion",
-                            reasoning: "Test reasoning"
+                            suggestions: "Test suggestions",
+                            questions: "Test questions"
                         )))
             }
 

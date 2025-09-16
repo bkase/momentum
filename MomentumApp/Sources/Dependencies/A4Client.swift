@@ -235,45 +235,84 @@ extension A4Client: DependencyKey {
             return reflectionPath.path
         },
         analyze: { filePath in
-            // For Claude analysis, we still need to use the CLI tool
-            // The A4CoreSwift library doesn't handle AI analysis
-            let result = try await executeCommand("analyze", arguments: ["--file", filePath])
+            let reflectionURL = URL(fileURLWithPath: filePath)
+            let reflectionContent = try String(contentsOf: reflectionURL, encoding: .utf8)
 
-            guard let analysisJson = result.output,
+            let prompt = """
+                You are an AI productivity coach analyzing a focus session reflection.
+
+                Please analyze the following reflection and provide:
+                1. A brief summary of what happened during the session
+                2. Specific actionable suggestions for improvement + reasoning
+                3. More reflection questions to go deeper
+                Reflection:
+                \(reflectionContent)
+
+                Respond in JSON format with these exact fields:
+                {
+                    "summary": "brief summary of the session",
+                    "suggestions": "specific actionable suggestions",
+                    "questions": "deeper reflection questions"
+                }
+                """
+
+            let escapedPrompt = escapeForSingleQuotes(prompt)
+            let command = "source ~/.zshrc && eval \"$(mise hook-env -s zsh)\" && claude -p '\(escapedPrompt)'"
+
+            let result = try await runZshCommand(command)
+
+            guard result.exitCode == 0 else {
+                throw RustCoreError.commandFailed(
+                    command: "claude",
+                    exitCode: result.exitCode,
+                    stderr: result.error
+                )
+            }
+
+            guard let analysisJson = result.output?.trimmingCharacters(in: .whitespacesAndNewlines),
                 !analysisJson.isEmpty,
                 let data = analysisJson.data(using: .utf8)
             else {
-                throw RustCoreError.invalidOutput("analyze command returned no JSON")
+                throw RustCoreError.invalidOutput("Claude returned no JSON content")
             }
 
+            let decoder = JSONDecoder()
             let analysisResult: AnalysisResult
             do {
-                analysisResult = try JSONDecoder().decode(AnalysisResult.self, from: data)
+                analysisResult = try decoder.decode(AnalysisResult.self, from: data)
             } catch {
-                throw RustCoreError.decodingFailed(error)
+                guard
+                    let extracted = extractJSONObject(from: analysisJson),
+                    let extractedData = extracted.data(using: .utf8),
+                    let fallback = try? decoder.decode(AnalysisResult.self, from: extractedData)
+                else {
+                    throw RustCoreError.decodingFailed(error)
+                }
+                analysisResult = fallback
             }
 
-            // Append analysis to the reflection file
-            let reflectionURL = URL(fileURLWithPath: filePath)
-            var reflectionContent = try String(contentsOf: reflectionURL, encoding: .utf8)
+            var updatedReflection = reflectionContent
+            if !updatedReflection.hasSuffix("\n") {
+                updatedReflection.append("\n")
+            }
 
-            // Add analysis section to reflection
-            let analysisSection = """
+            let analysisSection =
+            """
+            ## AI Analysis
 
-                ## AI Analysis
+            \(analysisResult.summary)
 
-                ### Summary
-                \(analysisResult.summary)
+            ### Actionable Suggestions
 
-                ### Suggestion
-                \(analysisResult.suggestion)
+            \(analysisResult.suggestions)
 
-                ### Reasoning
-                \(analysisResult.reasoning)
-                """
+            ### Deeper Questions
 
-            reflectionContent.append(analysisSection)
-            try reflectionContent.write(to: reflectionURL, atomically: true, encoding: .utf8)
+            \(analysisResult.questions)
+            """
+
+            updatedReflection.append(analysisSection)
+            try updatedReflection.write(to: reflectionURL, atomically: true, encoding: .utf8)
 
             return analysisResult
         },
@@ -405,8 +444,8 @@ extension A4Client: DependencyKey {
         analyze: { _ in
             AnalysisResult(
                 summary: "Test analysis summary",
-                suggestion: "Test suggestion",
-                reasoning: "Test reasoning"
+                suggestions: "Test suggestions",
+                questions: "Test questions"
             )
         },
         checkList: {
@@ -435,4 +474,56 @@ extension DependencyValues {
         get { self[A4Client.self] }
         set { self[A4Client.self] = newValue }
     }
+}
+
+// MARK: - Private Helpers
+
+private func escapeForSingleQuotes(_ input: String) -> String {
+    input.replacingOccurrences(of: "'", with: "'\"'\"'")
+}
+
+private func runZshCommand(_ command: String) async throws -> ProcessResult {
+    try await withCheckedThrowingContinuation { continuation in
+        Task.detached {
+            do {
+                let process = Process()
+                process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+                process.arguments = ["-lc", command]
+
+                let stdoutPipe = Pipe()
+                let stderrPipe = Pipe()
+                process.standardOutput = stdoutPipe
+                process.standardError = stderrPipe
+
+                try process.run()
+                process.waitUntilExit()
+
+                let outputData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
+                let errorData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+
+                let outputString = String(data: outputData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+                let errorString = String(data: errorData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                let result = ProcessResult(
+                    output: outputString,
+                    error: errorString,
+                    exitCode: process.terminationStatus
+                )
+
+                continuation.resume(returning: result)
+            } catch {
+                continuation.resume(throwing: error)
+            }
+        }
+    }
+}
+
+private func extractJSONObject(from text: String) -> String? {
+    guard
+        let start = text.firstIndex(of: "{"),
+        let end = text.lastIndex(of: "}")
+    else {
+        return nil
+    }
+    return String(text[start...end])
 }
