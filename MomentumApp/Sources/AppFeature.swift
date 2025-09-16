@@ -39,6 +39,7 @@ struct AppFeature {
                 state.$sessionData.withLock { $0 = sessionData }
 
                 // Set initial destination based on current state
+                var effects: [Effect<Action>] = []
                 if let analysis = state.analysisHistory.last {
                     state.destination = .analysis(AnalysisFeature.State(analysis: analysis))
                 } else if let reflectionPath = state.reflectionPath {
@@ -57,7 +58,23 @@ struct AppFeature {
                             timeInput: state.lastTimeMinutes
                         ))
                 }
-                return .none
+                if sessionData != nil {
+                    state.menuBarPhase = .normal
+                    effects.append(.run { _ in
+                        await MainActor.run {
+                            NotificationCenter.default.post(name: .menuBarSetNormalIcon, object: nil)
+                        }
+                    })
+                    effects.append(.send(.destination(.presented(.activeSession(.startTimers)))))
+                } else if state.menuBarPhase != .normal {
+                    state.menuBarPhase = .normal
+                    effects.append(.run { _ in
+                        await MainActor.run {
+                            NotificationCenter.default.post(name: .menuBarSetNormalIcon, object: nil)
+                        }
+                    })
+                }
+                return .merge(effects)
 
             case let .destination(.presented(.preparation(.goalChanged(goal)))):
                 // Save goal to shared state
@@ -85,7 +102,15 @@ struct AppFeature {
                         startTime: sessionData.startDate,
                         expectedMinutes: sessionData.expectedMinutes
                     ))
-                return .none
+                state.menuBarPhase = .normal
+                return .merge(
+                    .run { _ in
+                        await MainActor.run {
+                            NotificationCenter.default.post(name: .menuBarSetNormalIcon, object: nil)
+                        }
+                    },
+                    .send(.destination(.presented(.activeSession(.startTimers))))
+                )
 
             case let .destination(.presented(.preparation(.delegate(.sessionFailedToStart(error))))):
                 // Handle failed session start from PreparationFeature
@@ -104,6 +129,14 @@ struct AppFeature {
                 state.$sessionData.withLock { $0 = nil }
                 state.reflectionPath = reflectionPath
                 state.destination = .reflection(ReflectionFeature.State(reflectionPath: reflectionPath))
+                if state.menuBarPhase != .normal {
+                    state.menuBarPhase = .normal
+                    return .run { _ in
+                        await MainActor.run {
+                            NotificationCenter.default.post(name: .menuBarSetNormalIcon, object: nil)
+                        }
+                    }
+                }
                 return .none
 
             case let .destination(.presented(.activeSession(.delegate(.sessionFailedToStop(error))))):
@@ -111,6 +144,39 @@ struct AppFeature {
                 state.isLoading = false
                 // Error handled in ActiveSessionView
                 return .none
+
+            case .destination(.presented(.activeSession(.delegate(.approachFired)))):
+                if state.menuBarPhase == .timeout {
+                    return .none
+                }
+                state.menuBarPhase = .approach
+                return .merge(
+                    .run { _ in
+                        await MainActor.run {
+                            NotificationCenter.default.post(name: .menuBarSetApproachIcon, object: nil)
+                        }
+                    },
+                    .run { _ in
+                        await MainActor.run {
+                            NotificationCenter.default.post(name: .showApproachMicroPopover, object: nil)
+                        }
+                    }
+                )
+
+            case .destination(.presented(.activeSession(.delegate(.timeoutFired)))):
+                state.menuBarPhase = .timeout
+                return .merge(
+                    .run { _ in
+                        await MainActor.run {
+                            NotificationCenter.default.post(name: .menuBarSetTimeoutIcon, object: nil)
+                        }
+                    },
+                    .run { _ in
+                        await MainActor.run {
+                            NotificationCenter.default.post(name: .showTimeoutMicroPopover, object: nil)
+                        }
+                    }
+                )
 
             case .destination(.presented(.reflection(.analyzeButtonTapped))):
                 // ReflectionFeature will handle the analysis
@@ -166,6 +232,17 @@ struct AppFeature {
                         goal: state.lastGoal,
                         timeInput: state.lastTimeMinutes
                     ))
+                if state.menuBarPhase != .normal {
+                    state.menuBarPhase = .normal
+                    return .merge(
+                        .cancel(id: CancelID.rustOperation),
+                        .run { _ in
+                            await MainActor.run {
+                                NotificationCenter.default.post(name: .menuBarSetNormalIcon, object: nil)
+                            }
+                        }
+                    )
+                }
                 return .cancel(id: CancelID.rustOperation)
 
             case .cancelCurrentOperation:

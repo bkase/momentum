@@ -60,4 +60,5 @@ struct ActiveSessionFeatureTests {
             $0.operationError = nil
         }
     }
+
 }
