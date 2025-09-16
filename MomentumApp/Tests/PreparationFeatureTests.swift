@@ -121,7 +121,7 @@ struct PreparationFeatureTests {
 
         await store.send(.startButtonTapped)
         await store.receive(.startSessionResponse(.failure(RustCoreError.binaryNotFound))) {
-            $0.operationError = "Momentum CLI binary not found in app bundle"
+            $0.operationError = "Momentum CLI has been removed; operations now rely on Swift A4Core functionality"
         }
 
         // Advance clock to trigger error dismissal
