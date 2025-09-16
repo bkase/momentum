@@ -17,7 +17,7 @@ struct ActiveSessionFeatureTests {
         ) {
             ActiveSessionFeature()
         } withDependencies: {
-            $0.rustCoreClient.stop = {
+            $0.a4Client.stop = {
                 "/test/reflection/path.md"
             }
         }
@@ -43,7 +43,7 @@ struct ActiveSessionFeatureTests {
         ) {
             ActiveSessionFeature()
         } withDependencies: {
-            $0.rustCoreClient.stop = {
+            $0.a4Client.stop = {
                 throw TestError()
             }
             $0.continuousClock = clock

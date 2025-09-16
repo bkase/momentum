@@ -73,7 +73,7 @@ enum RustCoreError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .binaryNotFound:
-            "Momentum CLI binary not found in app bundle"
+            "Momentum CLI has been removed; operations now rely on Swift A4Core functionality"
         case let .invalidOutput(message):
             "Invalid output from command: \(message)"
         case let .commandFailed(command, exitCode, stderr):

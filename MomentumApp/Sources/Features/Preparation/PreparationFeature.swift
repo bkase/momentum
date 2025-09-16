@@ -18,9 +18,13 @@ struct PreparationFeature {
         var operationError: String?
 
         var goalValidationError: String? {
-            let invalidCharacters = CharacterSet(charactersIn: "/:*?\"<>|")
-            if goal.rangeOfCharacter(from: invalidCharacters) != nil {
-                return "Goal contains invalid characters. Please avoid: / : * ? \" < > |"
+            // Only allow A-Z, a-z, 0-9, and space
+            let allowedCharacters = CharacterSet(
+                charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ")
+            let goalCharacterSet = CharacterSet(charactersIn: goal)
+
+            if !allowedCharacters.isSuperset(of: goalCharacterSet) {
+                return "Goal can only contain letters, numbers, and spaces"
             }
             return nil
         }
@@ -82,7 +86,7 @@ struct PreparationFeature {
     }
 
     @Dependency(\.continuousClock) var clock
-    @Dependency(\.rustCoreClient) var rustCoreClient
+    @Dependency(\.a4Client) var a4Client
 
     enum CancelID { case errorDismissal }
 
@@ -100,7 +104,7 @@ struct PreparationFeature {
                     await send(
                         .checklistResponse(
                             TaskResult {
-                                try await rustCoreClient.checkList()
+                                try await a4Client.checkList()
                             }
                         )
                     )
@@ -165,7 +169,7 @@ struct PreparationFeature {
 
                 return .run { send in
                     let result = await TaskResult {
-                        try await rustCoreClient.checkToggle(id)
+                        try await a4Client.checkToggle(id)
                     }
                     await send(.checklistToggleResponse(slotId: slotId, result))
                 }
@@ -223,7 +227,11 @@ struct PreparationFeature {
                 return .none
 
             case let .goalChanged(newGoal):
-                state.goal = newGoal
+                // Filter input to only allow letters, numbers, and spaces
+                let allowedCharacters = CharacterSet(
+                    charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ")
+                let filtered = newGoal.unicodeScalars.filter { allowedCharacters.contains($0) }
+                state.goal = String(String.UnicodeScalarView(filtered))
                 // Clear operation error when user types
                 state.operationError = nil
                 return .none
@@ -258,7 +266,7 @@ struct PreparationFeature {
                     await send(
                         .startSessionResponse(
                             TaskResult {
-                                try await rustCoreClient.start(goal, Int(minutes))
+                                try await a4Client.start(goal, Int(minutes))
                             }
                         )
                     )

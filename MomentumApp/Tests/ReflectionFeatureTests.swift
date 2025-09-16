@@ -21,7 +21,7 @@ struct ReflectionFeatureTests {
         ) {
             ReflectionFeature()
         } withDependencies: {
-            $0.rustCoreClient.analyze = { _ in
+            $0.a4Client.analyze = { _ in
                 analysisResult
             }
         }
@@ -45,7 +45,7 @@ struct ReflectionFeatureTests {
         ) {
             ReflectionFeature()
         } withDependencies: {
-            $0.rustCoreClient.analyze = { _ in
+            $0.a4Client.analyze = { _ in
                 throw TestError()
             }
             $0.continuousClock = clock

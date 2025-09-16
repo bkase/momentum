@@ -42,7 +42,7 @@ struct PreparationFeatureTests {
         ) {
             PreparationFeature()
         } withDependencies: {
-            $0.rustCoreClient.start = { goal, minutes in
+            $0.a4Client.start = { goal, minutes in
                 #expect(goal == "Test goal")
                 #expect(minutes == 30)
                 return testSessionData
@@ -113,7 +113,7 @@ struct PreparationFeatureTests {
         ) {
             PreparationFeature()
         } withDependencies: {
-            $0.rustCoreClient.start = { _, _ in
+            $0.a4Client.start = { _, _ in
                 throw RustCoreError.binaryNotFound
             }
             $0.continuousClock = clock
@@ -121,7 +121,7 @@ struct PreparationFeatureTests {
 
         await store.send(.startButtonTapped)
         await store.receive(.startSessionResponse(.failure(RustCoreError.binaryNotFound))) {
-            $0.operationError = "Momentum CLI binary not found in app bundle"
+            $0.operationError = "Momentum CLI has been removed; operations now rely on Swift A4Core functionality"
         }
 
         // Advance clock to trigger error dismissal
@@ -146,7 +146,7 @@ struct PreparationFeatureTests {
         ) {
             PreparationFeature()
         } withDependencies: {
-            $0.rustCoreClient.start = { _, _ in
+            $0.a4Client.start = { _, _ in
                 throw TestError()
             }
             $0.continuousClock = clock

@@ -1,3 +1,4 @@
-[submodule "external/aethel"]
-	path = external/aethel
+[submodule "external/Aethel"]
+	path = external/Aethel
 	url = https://github.com/bkase/aethel.git
+	branch = main

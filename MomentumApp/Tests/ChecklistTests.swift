@@ -33,7 +33,7 @@ struct ChecklistTests {
         let store = TestStore(initialState: PreparationFeature.State()) {
             PreparationFeature()
         } withDependencies: {
-            $0.rustCoreClient.checkList = {
+            $0.a4Client.checkList = {
                 mockChecklist
             }
         }
@@ -81,7 +81,7 @@ struct ChecklistTests {
         ) {
             PreparationFeature()
         } withDependencies: {
-            $0.rustCoreClient.checkToggle = { id in
+            $0.a4Client.checkToggle = { id in
                 #expect(id == "0")
                 return toggledChecklist
             }
@@ -162,7 +162,7 @@ struct ChecklistTests {
             PreparationFeature()
         } withDependencies: {
             let currentItems = LockIsolated(uncheckedItems)
-            $0.rustCoreClient.checkToggle = { id in
+            $0.a4Client.checkToggle = { id in
                 // Toggle the specific item
                 currentItems.withValue { items in
                     items = items.map { item in
@@ -223,7 +223,7 @@ struct ChecklistTests {
         }
         state.timeInput = "30"
 
-        // Test various invalid characters
+        // Test various invalid characters (anything besides letters, numbers, and spaces)
         let invalidGoals = [
             "Test/Goal",
             "Test:Goal",
@@ -232,6 +232,10 @@ struct ChecklistTests {
             "Test\"Goal",
             "Test<Goal>",
             "Test|Goal",
+            "Test-Goal",  // hyphen not allowed
+            "Test_Goal",  // underscore not allowed
+            "Test.Goal",  // period not allowed
+            "Test@Goal",  // @ not allowed
         ]
 
         for invalidGoal in invalidGoals {
@@ -250,12 +254,12 @@ struct ChecklistTests {
         }
         state.timeInput = "30"
 
-        // Test valid goals
+        // Test valid goals (only letters, numbers, and spaces allowed)
         let validGoals = [
             "Test Goal",
             "Implement new feature",
             "Fix bug 123",
-            "test_goal-123",
+            "test goal 123",
             "UPPERCASE GOAL",
             "Goal with numbers 456",
         ]
@@ -278,7 +282,7 @@ struct ChecklistTests {
         state.goal = "Invalid/Goal"
 
         #expect(state.isStartButtonEnabled == false)
-        #expect(state.goalValidationError == "Goal contains invalid characters. Please avoid: / : * ? \" < > |")
+        #expect(state.goalValidationError == "Goal can only contain letters, numbers, and spaces")
     }
 
 }

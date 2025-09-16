@@ -35,7 +35,7 @@ struct FullFlowTests {
         let store = TestStore(initialState: AppFeature.State()) {
             AppFeature()
         } withDependencies: {
-            $0.rustCoreClient.start = { goal, minutes in
+            $0.a4Client.start = { goal, minutes in
                 SessionData(
                     goal: goal,
                     startTime: fixedTime,
@@ -43,17 +43,17 @@ struct FullFlowTests {
                     reflectionFilePath: nil
                 )
             }
-            $0.rustCoreClient.stop = {
+            $0.a4Client.stop = {
                 "/tmp/test-reflection.md"
             }
-            $0.rustCoreClient.analyze = { _ in
+            $0.a4Client.analyze = { _ in
                 AnalysisResult(
                     summary: "Test analysis summary",
                     suggestion: "Test suggestion",
                     reasoning: "Test reasoning"
                 )
             }
-            $0.rustCoreClient.checkList = {
+            $0.a4Client.checkList = {
                 ChecklistState(
                     items: (0..<10).map { i in
                         ChecklistItem(id: String(i), text: "Item \(i)", on: true)

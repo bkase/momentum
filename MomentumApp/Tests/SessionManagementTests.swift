@@ -30,7 +30,7 @@ struct SessionManagementTests {
         ) {
             AppFeature()
         } withDependencies: {
-            $0.rustCoreClient.analyze = { _ in
+            $0.a4Client.analyze = { _ in
                 AnalysisResult.mock
             }
         }
@@ -80,7 +80,7 @@ struct SessionManagementTests {
         ) {
             AppFeature()
         } withDependencies: {
-            $0.rustCoreClient.stop = {
+            $0.a4Client.stop = {
                 "/tmp/test-reflection.md"
             }
         }

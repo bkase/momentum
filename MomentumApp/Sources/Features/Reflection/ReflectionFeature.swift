@@ -24,7 +24,7 @@ struct ReflectionFeature {
         }
     }
 
-    @Dependency(\.rustCoreClient) var rustCoreClient
+    @Dependency(\.a4Client) var a4Client
     @Dependency(\.continuousClock) var clock
 
     enum CancelID { case errorDismissal }
@@ -38,7 +38,7 @@ struct ReflectionFeature {
                     await send(
                         .analyzeResponse(
                             TaskResult {
-                                try await rustCoreClient.analyze(reflectionPath)
+                                try await a4Client.analyze(reflectionPath)
                             }
                         )
                     )

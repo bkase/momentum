@@ -61,7 +61,7 @@ extension PreparationFeature {
             var slots = state.checklistSlots
             slots[slotId].isTransitioning = true
             state.checklistSlots = slots
-            
+
             // Find next unchecked item that isn't already reserved or in slots
             let uncheckedItems = updatedItems.filter { !$0.on }
             let currentSlotIds = state.checklistSlots.compactMap { $0.item?.id }

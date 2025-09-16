@@ -3,7 +3,7 @@ import Foundation
 
 @Reducer
 struct AppFeature {
-    @Dependency(\.rustCoreClient) var rustCoreClient
+    @Dependency(\.a4Client) var a4Client
     #if DEBUG
         @Dependency(\.testServer) var testServer
     #endif
@@ -25,7 +25,7 @@ struct AppFeature {
                 // Load session data from aethel first
                 return .run { send in
                     do {
-                        let sessionData = try await rustCoreClient.getSession()
+                        let sessionData = try await a4Client.getSession()
                         await send(.sessionDataLoaded(sessionData))
                     } catch {
                         // Log error but continue - no session is valid state

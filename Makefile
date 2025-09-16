@@ -1,4 +1,4 @@
-.PHONY: all test build clean rust-test rust-build rust-lint rust-format swift-test swift-build swift-format swift-lint format lint install-tools tail-logs
+.PHONY: all test build clean swift-test swift-build swift-format swift-lint format lint install-tools tail-logs
 
 # Default target
 all: build test
@@ -7,39 +7,8 @@ all: build test
 install-tools:
 	@echo "Installing required tools via mise..."
 	@mise install
-	@eval "$$(mise activate bash)" && rustup component add rustfmt clippy
 	@echo "Building swift-format..."
 	@cd BuildTools && swift build
-
-# Rust targets
-rust-test:
-	@echo "Running Rust tests..."
-	@eval "$$(mise activate bash)" && cd momentum && cargo test
-
-rust-format:
-	@echo "Formatting Rust code..."
-	@eval "$$(mise activate bash)" && cd momentum && cargo fmt
-
-rust-lint:
-	@echo "Checking Rust formatting..."
-	@eval "$$(mise activate bash)" && cd momentum && cargo fmt -- --check
-	@echo "Running Clippy..."
-	@eval "$$(mise activate bash)" && cd momentum && cargo clippy -- -D warnings
-
-rust-build:
-	@echo "Building Rust release binary..."
-	@eval "$$(mise activate bash)" && cd momentum && cargo build --release
-
-rust-dev:
-	@echo "Building Rust debug binary..."
-	@eval "$$(mise activate bash)" && cd momentum && cargo build
-
-# Binary management
-copy-rust-binary:
-	@echo "Copying Rust binary to Resources..."
-	@mkdir -p MomentumApp/Resources
-	@cp momentum/target/release/momentum MomentumApp/Resources/
-	@chmod +x MomentumApp/Resources/momentum
 
 # Swift targets
 swift-format:
@@ -73,23 +42,22 @@ swift-test-only:
 		-quiet
 
 # Convenience targets that build everything
-swift-build: rust-build copy-rust-binary swift-build-only
+swift-build: swift-build-only
 
-swift-test: rust-build copy-rust-binary swift-test-only
+swift-test: swift-test-only
 
 # Combined targets
-format: rust-format swift-format
 
-lint: rust-lint swift-lint
+lint: swift-lint
 
-build: rust-build swift-generate swift-build
+build: swift-generate swift-build
 
-test: rust-test lint swift-test
+test: lint swift-test
 
 # Clean build artifacts
+
 clean:
 	@echo "Cleaning build artifacts..."
-	@cd momentum && cargo clean
 	@rm -rf MomentumApp/Resources/momentum
 	@if [ -d "Momentum.xcworkspace" ]; then \
 		xcodebuild -workspace Momentum.xcworkspace -scheme MomentumApp clean -quiet; \
