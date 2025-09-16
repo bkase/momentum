@@ -7,6 +7,8 @@ final class StatusBarController: NSObject {
     private var statusItem: NSStatusItem?
     private let store: StoreOf<AppFeature>
     private var popover: NSPopover?
+    private var miniPopover: NSPopover?
+    private var miniDismissWorkItem: DispatchWorkItem?
 
     init(store: StoreOf<AppFeature>) {
         self.store = store
@@ -52,6 +54,7 @@ final class StatusBarController: NSObject {
     }
 
     private func showPopover() {
+        closeMiniPopover()
         let popover = NSPopover()
         popover.behavior = .transient
         popover.animates = false
@@ -66,5 +69,72 @@ final class StatusBarController: NSObject {
         }
 
         self.popover = popover
+    }
+
+    func setNormalIcon() {
+        statusItem?.button?.image = NSImage(systemSymbolName: "timer", accessibilityDescription: "Momentum")
+        closeMiniPopover()
+    }
+
+    func setApproachIcon() {
+        let image = NSImage(systemSymbolName: "hourglass", accessibilityDescription: "Approaching end")
+            ?? NSImage(systemSymbolName: "timer", accessibilityDescription: "Approaching end")
+        statusItem?.button?.image = image
+    }
+
+    func setTimeoutIcon() {
+        let image = NSImage(systemSymbolName: "hourglass.bottomhalf.filled", accessibilityDescription: "Session complete")
+            ?? NSImage(systemSymbolName: "hourglass", accessibilityDescription: "Session complete")
+        statusItem?.button?.image = image
+    }
+
+    func showMini(text: String) {
+        guard (popover?.isShown ?? false) == false else { return }
+
+        miniDismissWorkItem?.cancel()
+        closeMiniPopover()
+
+        let miniPopover = NSPopover()
+        miniPopover.behavior = .transient
+        miniPopover.animates = false
+        miniPopover.contentViewController = NSHostingController(
+            rootView: MiniPopoverView(message: text)
+        )
+
+        if let button = statusItem?.button {
+            miniPopover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        }
+
+        self.miniPopover = miniPopover
+
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.closeMiniPopover()
+        }
+        miniDismissWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 7, execute: workItem)
+    }
+
+    private func closeMiniPopover() {
+        miniDismissWorkItem?.cancel()
+        miniDismissWorkItem = nil
+        if let miniPopover, miniPopover.isShown {
+            miniPopover.performClose(nil)
+        }
+        miniPopover = nil
+    }
+}
+
+private struct MiniPopoverView: View {
+    let message: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(message)
+                .font(.system(size: 15, weight: .medium, design: .serif))
+                .foregroundStyle(Color.textPrimary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .frame(minWidth: 220, maxWidth: 260, alignment: .leading)
     }
 }

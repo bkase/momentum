@@ -291,6 +291,11 @@ import Network
     extension Notification.Name {
         static let testServerShowMenu = Notification.Name("testServerShowMenu")
         static let testServerRefreshState = Notification.Name("testServerRefreshState")
+        static let menuBarSetApproachIcon = Notification.Name("menuBarSetApproachIcon")
+        static let menuBarSetTimeoutIcon = Notification.Name("menuBarSetTimeoutIcon")
+        static let menuBarSetNormalIcon = Notification.Name("menuBarSetNormalIcon")
+        static let showApproachMicroPopover = Notification.Name("showApproachMicroPopover")
+        static let showTimeoutMicroPopover = Notification.Name("showTimeoutMicroPopover")
     }
 
     // MARK: - Test Logger

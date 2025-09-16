@@ -8,6 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let store = Store(initialState: AppFeature.State()) {
         AppFeature()
     }
+    private var notificationObservers: [NSObjectProtocol] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Initialize status bar controller
@@ -15,6 +16,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Hide dock icon (menu bar app)
         NSApp.setActivationPolicy(.accessory)
+
+        registerMenuBarObservers()
 
         #if DEBUG
             // Start test server
@@ -46,30 +49,102 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
 
             // Listen for test server notifications
-            NotificationCenter.default.addObserver(
-                forName: .testServerShowMenu,
-                object: nil,
-                queue: .main
-            ) { [weak self] _ in
-                Task { @MainActor in
-                    self?.statusBarController?.showMenu()
+            let center = NotificationCenter.default
+            notificationObservers.append(
+                center.addObserver(
+                    forName: .testServerShowMenu,
+                    object: nil,
+                    queue: .main
+                ) { [weak self] _ in
+                    Task { @MainActor in
+                        self?.statusBarController?.showMenu()
+                    }
                 }
-            }
+            )
 
-            NotificationCenter.default.addObserver(
-                forName: .testServerRefreshState,
-                object: nil,
-                queue: .main
-            ) { [weak store] _ in
-                Task { @MainActor in
-                    store?.send(.testServerRefreshState)
+            notificationObservers.append(
+                center.addObserver(
+                    forName: .testServerRefreshState,
+                    object: nil,
+                    queue: .main
+                ) { [weak store] _ in
+                    Task { @MainActor in
+                        store?.send(.testServerRefreshState)
+                    }
                 }
-            }
+            )
         #endif
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        // Clean up if needed
+        let center = NotificationCenter.default
+        notificationObservers.forEach { center.removeObserver($0) }
+        notificationObservers.removeAll()
+    }
+
+    private func registerMenuBarObservers() {
+        guard let statusBarController else { return }
+        let center = NotificationCenter.default
+
+        notificationObservers.append(
+            center.addObserver(
+                forName: .menuBarSetNormalIcon,
+                object: nil,
+                queue: .main
+            ) { [weak statusBarController] _ in
+                Task { @MainActor in
+                    statusBarController?.setNormalIcon()
+                }
+            }
+        )
+
+        notificationObservers.append(
+            center.addObserver(
+                forName: .menuBarSetApproachIcon,
+                object: nil,
+                queue: .main
+            ) { [weak statusBarController] _ in
+                Task { @MainActor in
+                    statusBarController?.setApproachIcon()
+                }
+            }
+        )
+
+        notificationObservers.append(
+            center.addObserver(
+                forName: .menuBarSetTimeoutIcon,
+                object: nil,
+                queue: .main
+            ) { [weak statusBarController] _ in
+                Task { @MainActor in
+                    statusBarController?.setTimeoutIcon()
+                }
+            }
+        )
+
+        notificationObservers.append(
+            center.addObserver(
+                forName: .showApproachMicroPopover,
+                object: nil,
+                queue: .main
+            ) { [weak statusBarController] _ in
+                Task { @MainActor in
+                    statusBarController?.showMini(text: "5 minutes remaining")
+                }
+            }
+        )
+
+        notificationObservers.append(
+            center.addObserver(
+                forName: .showTimeoutMicroPopover,
+                object: nil,
+                queue: .main
+            ) { [weak statusBarController] _ in
+                Task { @MainActor in
+                    statusBarController?.showMini(text: "Time is up")
+                }
+            }
+        )
     }
 }
 

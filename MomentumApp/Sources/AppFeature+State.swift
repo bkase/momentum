@@ -4,6 +4,8 @@ import Observation
 import Sharing
 
 extension AppFeature {
+    enum MenuBarPhase: Equatable { case normal, approach, timeout }
+
     @ObservableState
     struct State: Equatable {
         @Shared(.sessionData) var sessionData: SessionData? = nil
@@ -15,6 +17,7 @@ extension AppFeature {
 
         var isLoading = false
         var reflectionPath: String?
+        var menuBarPhase: MenuBarPhase = .normal
 
         init() {
             // Initialize destination based on shared state
