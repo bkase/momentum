@@ -17,69 +17,8 @@ on:
       - '*.md'
 
 jobs:
-  rust:
-    name: Rust Build and Test
-    runs-on: macos-14
-    
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
-    
-    - name: Install mise
-      run: |
-        curl https://mise.run | sh
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
-        
-    - name: Install tools via mise
-      run: |
-        mise install
-        eval "$(mise activate bash)"
-        rustc --version
-        rustup component add rustfmt clippy
-        
-    - name: Setup test vault
-      run: |
-        export MOMENTUM_VAULT_PATH="${{ runner.temp }}/test-vault"
-        mkdir -p "$MOMENTUM_VAULT_PATH/docs"
-        mkdir -p "$MOMENTUM_VAULT_PATH/packs"
-        # Copy momentum pack to test vault
-        cp -r momentum/packs/momentum "$MOMENTUM_VAULT_PATH/packs/momentum@0.2.0"
-        echo "MOMENTUM_VAULT_PATH=$MOMENTUM_VAULT_PATH" >> $GITHUB_ENV
-        
-    - name: Cache Cargo dependencies
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          momentum/target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        
-    - name: Run Rust tests
-      run: make rust-test
-        
-    - name: Run Rust linting
-      run: make rust-lint
-        
-    - name: Build Rust release binary
-      run: make rust-build
-        
-    - name: Verify binary exists
-      run: |
-        test -f momentum/target/release/momentum
-        
-    - name: Upload Rust binary
-      uses: actions/upload-artifact@v4
-      with:
-        name: momentum-binary
-        path: momentum/target/release/momentum
-
   swift:
     name: Swift Build and Test
-    needs: rust
     runs-on: macos-14
     
     steps:
@@ -96,35 +35,18 @@ jobs:
       run: |
         curl https://mise.run | sh
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-      
-    - name: Install tools via mise
-      run: |
-        mise install
-        eval "$(mise activate bash)"
-        tuist version
-        
-    - name: Build swift-format
-      run: |
-        cd BuildTools && swift build
-        
+
+    - name: Install build tools
+      run: make install-tools
+
     - name: Generate Xcode project
       run: make swift-generate
-        
-    - name: Download Rust binary
-      uses: actions/download-artifact@v4
-      with:
-        name: momentum-binary
-        path: momentum/target/release/
-        
-    - name: Copy Rust binary to Resources
-      run: make copy-rust-binary
-        
+
     - name: Run Swift linting
       run: make swift-lint
-      
-    - name: Build Swift app  
+
+    - name: Build Swift app
       run: make swift-build-only
-          
+
     - name: Run Swift tests
       run: make swift-test-only
-
