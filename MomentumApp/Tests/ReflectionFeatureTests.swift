@@ -10,8 +10,8 @@ struct ReflectionFeatureTests {
     func analyzeReflection_Success() async {
         let analysisResult = AnalysisResult(
             summary: "Test summary",
-            suggestion: "Test suggestion",
-            reasoning: "Test reasoning"
+            suggestions: "Test suggestions",
+            questions: "Test questions"
         )
 
         let store = TestStore(
