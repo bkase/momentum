@@ -33,7 +33,7 @@ struct ChecklistTests {
         let store = TestStore(initialState: PreparationFeature.State()) {
             PreparationFeature()
         } withDependencies: {
-            $0.rustCoreClient.checkList = {
+            $0.a4Client.checkList = {
                 mockChecklist
             }
         }
@@ -81,7 +81,7 @@ struct ChecklistTests {
         ) {
             PreparationFeature()
         } withDependencies: {
-            $0.rustCoreClient.checkToggle = { id in
+            $0.a4Client.checkToggle = { id in
                 #expect(id == "0")
                 return toggledChecklist
             }
@@ -162,7 +162,7 @@ struct ChecklistTests {
             PreparationFeature()
         } withDependencies: {
             let currentItems = LockIsolated(uncheckedItems)
-            $0.rustCoreClient.checkToggle = { id in
+            $0.a4Client.checkToggle = { id in
                 // Toggle the specific item
                 currentItems.withValue { items in
                     items = items.map { item in

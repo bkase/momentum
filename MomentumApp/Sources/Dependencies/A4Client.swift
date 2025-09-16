@@ -3,7 +3,7 @@ import Foundation
 import A4CoreSwift
 
 @DependencyClient
-struct RustCoreClient {
+struct A4Client {
     var start: @Sendable (String, Int) async throws -> SessionData
     var stop: @Sendable () async throws -> String
     var analyze: @Sendable (String) async throws -> AnalysisResult
@@ -12,7 +12,7 @@ struct RustCoreClient {
     var getSession: @Sendable () async throws -> SessionData?
 }
 
-extension RustCoreClient: DependencyKey {
+extension A4Client: DependencyKey {
     static let liveValue = Self(
         start: { goal, minutes in
             // Create session
@@ -414,8 +414,8 @@ extension RustCoreClient: DependencyKey {
 }
 
 extension DependencyValues {
-    var rustCoreClient: RustCoreClient {
-        get { self[RustCoreClient.self] }
-        set { self[RustCoreClient.self] = newValue }
+    var a4Client: A4Client {
+        get { self[A4Client.self] }
+        set { self[A4Client.self] = newValue }
     }
 }

@@ -26,7 +26,7 @@ struct ActiveSessionFeature {
         }
     }
 
-    @Dependency(\.rustCoreClient) var rustCoreClient
+    @Dependency(\.a4Client) var a4Client
     @Dependency(\.continuousClock) var clock
 
     enum CancelID { case errorDismissal }
@@ -43,7 +43,7 @@ struct ActiveSessionFeature {
                     await send(
                         .stopSessionResponse(
                             TaskResult {
-                                try await rustCoreClient.stop()
+                                try await a4Client.stop()
                             }
                         )
                     )

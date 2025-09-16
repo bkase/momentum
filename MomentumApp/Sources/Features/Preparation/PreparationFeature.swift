@@ -85,7 +85,7 @@ struct PreparationFeature {
     }
 
     @Dependency(\.continuousClock) var clock
-    @Dependency(\.rustCoreClient) var rustCoreClient
+    @Dependency(\.a4Client) var a4Client
 
     enum CancelID { case errorDismissal }
 
@@ -103,7 +103,7 @@ struct PreparationFeature {
                     await send(
                         .checklistResponse(
                             TaskResult {
-                                try await rustCoreClient.checkList()
+                                try await a4Client.checkList()
                             }
                         )
                     )
@@ -168,7 +168,7 @@ struct PreparationFeature {
 
                 return .run { send in
                     let result = await TaskResult {
-                        try await rustCoreClient.checkToggle(id)
+                        try await a4Client.checkToggle(id)
                     }
                     await send(.checklistToggleResponse(slotId: slotId, result))
                 }
@@ -264,7 +264,7 @@ struct PreparationFeature {
                     await send(
                         .startSessionResponse(
                             TaskResult {
-                                try await rustCoreClient.start(goal, Int(minutes))
+                                try await a4Client.start(goal, Int(minutes))
                             }
                         )
                     )

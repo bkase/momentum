@@ -18,7 +18,7 @@ extension SessionManagementTests {
         ) {
             AppFeature()
         } withDependencies: {
-            $0.rustCoreClient.checkList = {
+            $0.a4Client.checkList = {
                 ChecklistState(
                     items: (0..<10).map { i in
                         ChecklistItem(id: String(i), text: "Item \(i)", on: true)
@@ -97,11 +97,11 @@ extension SessionManagementTests {
         ) {
             AppFeature()
         } withDependencies: {
-            $0.rustCoreClient.getSession = {
+            $0.a4Client.getSession = {
                 // Return the session data that was set up in shared state
                 sessionData
             }
-            $0.rustCoreClient.stop = {
+            $0.a4Client.stop = {
                 "/tmp/test-reflection.md"
             }
         }
