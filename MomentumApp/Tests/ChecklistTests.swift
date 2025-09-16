@@ -232,10 +232,10 @@ struct ChecklistTests {
             "Test\"Goal",
             "Test<Goal>",
             "Test|Goal",
-            "Test-Goal",     // hyphen not allowed
-            "Test_Goal",     // underscore not allowed
-            "Test.Goal",     // period not allowed
-            "Test@Goal",     // @ not allowed
+            "Test-Goal",  // hyphen not allowed
+            "Test_Goal",  // underscore not allowed
+            "Test.Goal",  // period not allowed
+            "Test@Goal",  // @ not allowed
         ]
 
         for invalidGoal in invalidGoals {

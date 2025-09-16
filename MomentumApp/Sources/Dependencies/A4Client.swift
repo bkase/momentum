@@ -1,6 +1,6 @@
+import A4CoreSwift
 import ComposableArchitecture
 import Foundation
-import A4CoreSwift
 
 @DependencyClient
 struct A4Client {
@@ -71,20 +71,26 @@ extension A4Client: DependencyKey {
             let filenameDateString = filenameDateFormatter.string(from: now)
 
             // Use title slug format for filename
-            let filename = "focus-\(session.goal.lowercased().replacingOccurrences(of: " ", with: "-"))-\(filenameDateString).md"
+            let filename =
+                "focus-\(session.goal.lowercased().replacingOccurrences(of: " ", with: "-"))-\(filenameDateString).md"
 
-            let reflectionsDir = vault.root.appendingPathComponent("reflections")
+            // Create calendar hierarchy in collections/focus
+            let focusYear = filenameDateFormatter.string(from: now).prefix(4)
+            let focusMonth = filenameDateFormatter.string(from: now).dropFirst(5).prefix(2)
+
+            let focusDir = vault.root.appendingPathComponent("collections/focus/\(focusYear)/\(focusMonth)")
             try FileManager.default.createDirectory(
-                at: reflectionsDir,
+                at: focusDir,
                 withIntermediateDirectories: true,
                 attributes: nil
             )
 
-            let reflectionPath = reflectionsDir.appendingPathComponent(filename)
+            let reflectionPath = focusDir.appendingPathComponent(filename)
 
             // Load reflection template
             guard let templatePath = Bundle.main.path(forResource: "reflection-template", ofType: "md"),
-                  let template = try? String(contentsOfFile: templatePath) else {
+                let template = try? String(contentsOfFile: templatePath)
+            else {
                 throw RustCoreError.invalidOutput("Reflection template not found")
             }
 
@@ -98,23 +104,23 @@ extension A4Client: DependencyKey {
             let dateString = dateFormatter.string(from: now)
 
             let reflectionContent = """
-            ---
-            goal: \(session.goal)
-            start_time: \(startTime.ISO8601Format())
-            end_time: \(now.ISO8601Format())
-            duration_minutes: \(duration)
-            expected_minutes: \(session.timeExpected)
-            ---
+                ---
+                goal: \(session.goal)
+                start_time: \(startTime.ISO8601Format())
+                end_time: \(now.ISO8601Format())
+                duration_minutes: \(duration)
+                expected_minutes: \(session.timeExpected)
+                ---
 
-            # Focus: \(session.goal) \(dateString)
+                # Focus: \(session.goal) \(dateString)
 
-            **Duration:** \(duration) minutes (expected: \(session.timeExpected) minutes)
+                **Duration:** \(duration) minutes (expected: \(session.timeExpected) minutes)
 
-            \(template
+                \(template
                 .replacingOccurrences(of: "{{goal}}", with: session.goal)
                 .replacingOccurrences(of: "{{duration}}", with: "\(duration) minutes")
                 .replacingOccurrences(of: "{{date}}", with: now.formatted(date: .complete, time: .shortened)))
-            """
+                """
 
             try reflectionContent.write(to: reflectionPath, atomically: true, encoding: .utf8)
 
@@ -139,22 +145,28 @@ extension A4Client: DependencyKey {
                 var initialContent: String
 
                 if FileManager.default.fileExists(atPath: templatePath.path),
-                   let template = try? String(contentsOf: templatePath, encoding: .utf8) {
+                    let template = try? String(contentsOf: templatePath, encoding: .utf8)
+                {
                     // Fill in template variables
-                    let dateFormatter = ISO8601DateFormatter()
-                    let nowUTC = dateFormatter.string(from: now)
+                    let isoFormatter = ISO8601DateFormatter()
+                    isoFormatter.timeZone = TimeZone(identifier: "UTC")
+                    isoFormatter.formatOptions = [.withInternetDateTime]
+                    let nowUTC = isoFormatter.string(from: now)
 
-                    let dayFormatter = DateFormatter()
-                    dayFormatter.dateFormat = "yyyy-MM-dd"
-                    dayFormatter.timeZone = TimeZone(identifier: "UTC")
-                    let yyyyMMdd = dayFormatter.string(from: now)
+                    let yyyyMMdd = String(
+                        format: "%04d-%02d-%02d",
+                        utcDay.year,
+                        utcDay.month,
+                        utcDay.day
+                    )
 
                     let timeFormatter = DateFormatter()
                     timeFormatter.dateFormat = "HHmm"
                     timeFormatter.timeZone = TimeZone.current
                     let hhmm = timeFormatter.string(from: now)
 
-                    initialContent = template
+                    initialContent =
+                        template
                         .replacingOccurrences(of: "{{now_utc}}", with: nowUTC)
                         .replacingOccurrences(of: "{{YYYY-MM-DD}}", with: yyyyMMdd)
                         .replacingOccurrences(of: "{{hhmm}}", with: hhmm)
@@ -166,15 +178,15 @@ extension A4Client: DependencyKey {
                 } else {
                     // Fallback if template not found
                     initialContent = """
-                    ---
-                    kind: capture.day
-                    created: \(now.ISO8601Format())
-                    tags: [daily]
-                    ---
-                    # Daily Note \(now.formatted(date: .complete, time: .omitted))
+                        ---
+                        kind: capture.day
+                        created: \(now.ISO8601Format())
+                        tags: [daily]
+                        ---
+                        # Daily Note \(now.formatted(date: .complete, time: .omitted))
 
-                    ## Focus
-                    """
+                        ## Focus
+                        """
                 }
 
                 try initialContent.write(to: dailyURL, atomically: true, encoding: .utf8)
@@ -190,12 +202,13 @@ extension A4Client: DependencyKey {
             let linkDateString = linkDateFormatter.string(from: now)
 
             // Create slug from "Focus: <task> YYYY-MM-DD"
-            let titleSlug = "focus-\(session.goal.lowercased().replacingOccurrences(of: " ", with: "-"))-\(linkDateString)"
+            let titleSlug =
+                "focus-\(session.goal.lowercased().replacingOccurrences(of: " ", with: "-"))-\(linkDateString)"
 
             let sessionSummary = """
-            **\(session.goal)** (\(duration) min)
-            [[\(titleSlug)|Focus: \(session.goal)]]
-            """
+                **\(session.goal)** (\(duration) min)
+                [[\(titleSlug)|Focus: \(session.goal)]]
+                """
 
             try Append.appendBlock(
                 vault: vault,
@@ -247,17 +260,17 @@ extension A4Client: DependencyKey {
             // Add analysis section to reflection
             let analysisSection = """
 
-            ## AI Analysis
+                ## AI Analysis
 
-            ### Summary
-            \(analysisResult.summary)
+                ### Summary
+                \(analysisResult.summary)
 
-            ### Suggestion
-            \(analysisResult.suggestion)
+                ### Suggestion
+                \(analysisResult.suggestion)
 
-            ### Reasoning
-            \(analysisResult.reasoning)
-            """
+                ### Reasoning
+                \(analysisResult.reasoning)
+                """
 
             reflectionContent.append(analysisSection)
             try reflectionContent.write(to: reflectionURL, atomically: true, encoding: .utf8)
@@ -267,7 +280,8 @@ extension A4Client: DependencyKey {
         checkList: {
             // Load checklist from bundle
             guard let checklistPath = Bundle.main.path(forResource: "checklist", ofType: "json"),
-                  let data = try? Data(contentsOf: URL(fileURLWithPath: checklistPath)) else {
+                let data = try? Data(contentsOf: URL(fileURLWithPath: checklistPath))
+            else {
                 throw RustCoreError.invalidOutput("Checklist not found")
             }
 
@@ -286,8 +300,9 @@ extension A4Client: DependencyKey {
 
             var checkedItems: Set<String> = []
             if FileManager.default.fileExists(atPath: statePath.path),
-               let stateData = try? Data(contentsOf: statePath),
-               let state = try? JSONDecoder().decode([String].self, from: stateData) {
+                let stateData = try? Data(contentsOf: statePath),
+                let state = try? JSONDecoder().decode([String].self, from: stateData)
+            {
                 checkedItems = Set(state)
             }
 
@@ -304,7 +319,8 @@ extension A4Client: DependencyKey {
         checkToggle: { id in
             // Load checklist
             guard let checklistPath = Bundle.main.path(forResource: "checklist", ofType: "json"),
-                  let data = try? Data(contentsOf: URL(fileURLWithPath: checklistPath)) else {
+                let data = try? Data(contentsOf: URL(fileURLWithPath: checklistPath))
+            else {
                 throw RustCoreError.invalidOutput("Checklist not found")
             }
 
@@ -323,8 +339,9 @@ extension A4Client: DependencyKey {
 
             var checkedItems: Set<String> = []
             if FileManager.default.fileExists(atPath: statePath.path),
-               let stateData = try? Data(contentsOf: statePath),
-               let state = try? JSONDecoder().decode([String].self, from: stateData) {
+                let stateData = try? Data(contentsOf: statePath),
+                let state = try? JSONDecoder().decode([String].self, from: stateData)
+            {
                 checkedItems = Set(state)
             }
 

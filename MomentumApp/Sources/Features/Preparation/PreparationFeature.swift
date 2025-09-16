@@ -19,7 +19,8 @@ struct PreparationFeature {
 
         var goalValidationError: String? {
             // Only allow A-Z, a-z, 0-9, and space
-            let allowedCharacters = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ")
+            let allowedCharacters = CharacterSet(
+                charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ")
             let goalCharacterSet = CharacterSet(charactersIn: goal)
 
             if !allowedCharacters.isSuperset(of: goalCharacterSet) {
@@ -227,7 +228,8 @@ struct PreparationFeature {
 
             case let .goalChanged(newGoal):
                 // Filter input to only allow letters, numbers, and spaces
-                let allowedCharacters = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ")
+                let allowedCharacters = CharacterSet(
+                    charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ")
                 let filtered = newGoal.unicodeScalars.filter { allowedCharacters.contains($0) }
                 state.goal = String(String.UnicodeScalarView(filtered))
                 // Clear operation error when user types

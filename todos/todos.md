@@ -1,5 +1,13 @@
 # Todos
 
+## -1. Five minute warning
+
+We need a gentle 5-minute warning alarm so that we can have a little bit of pressure (healthy pressure) to stop what we are doing, make a handoff doc, and take a break. I think this should work by having the window pop up and then having something change in the timer view.
+
+## 0. Add Discover/Design/Do selection at the beginning
+
+Every piece of work is either discover, design, or do and those are separate modes of working.
+
 ## 1. Loading spinner for AI analysis
 
 The loading spinner isn't sufficient for such a long-running process -- we need to make the ux affordance better somehow.
@@ -50,28 +58,28 @@ For the `momentum` pack, the path would be:
 The workflow remains the same, but the implementation will now be cleaner and more robust.
 
 1. **Create a Namespaced Index Helper:**
-    - In `momentum/src/aethel_storage.rs`, the helper functions for the index should be designed to work specifically for the `momentum` pack.
-    - Define a constant for the pack name: `const PACK_NAME: &str = "momentum";`
-    - The `get_index_path()` function will now construct the path like this:
+   - In `momentum/src/aethel_storage.rs`, the helper functions for the index should be designed to work specifically for the `momentum` pack.
+   - Define a constant for the pack name: `const PACK_NAME: &str = "momentum";`
+   - The `get_index_path()` function will now construct the path like this:
 
-      ```rust
-      fn get_index_path(vault_root: &Path) -> PathBuf {
-          vault_root
-              .join(".aethel")
-              .join("indexes")
-              .join(format!("{}.index.json", PACK_NAME))
-      }
-      ```
+     ```rust
+     fn get_index_path(vault_root: &Path) -> PathBuf {
+         vault_root
+             .join(".aethel")
+             .join("indexes")
+             .join(format!("{}.index.json", PACK_NAME))
+     }
+     ```
 
-    - When writing the index, ensure the `.aethel/indexes/` directory is created first using `std::fs::create_dir_all()`.
+   - When writing the index, ensure the `.aethel/indexes/` directory is created first using `std::fs::create_dir_all()`.
 
 2. **Refactor `find_active_session`:**
-    - The logic is identical, but it now reads from the new, namespaced path: `<vault>/.aethel/indexes/momentum.index.json`.
+   - The logic is identical, but it now reads from the new, namespaced path: `<vault>/.aethel/indexes/momentum.index.json`.
 
 3. **Refactor `save_session`:**
-    - After `apply_patch` returns the new session `Doc`'s UUID, the code will read, update, and write to `momentum.index.json`.
+   - After `apply_patch` returns the new session `Doc`'s UUID, the code will read, update, and write to `momentum.index.json`.
 
 4. **Refactor `delete_session`:**
-    - When stopping a session, the code will read, update (by removing the `active_session` key), and write back to `momentum.index.json`.
+   - When stopping a session, the code will read, update (by removing the `active_session` key), and write back to `momentum.index.json`.
 
 This is the perfect example of how an application should build upon Aethel. You're using the core L0 primitives for atomic document storage and the optional L2 conventions (`.aethel/` directory) for application-specific performance optimizations. This is a robust, scalable, and idiomatic solution. I will proceed with this improved design.

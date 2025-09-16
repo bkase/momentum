@@ -14,7 +14,7 @@ let project = Project(
             url: "https://github.com/pointfreeco/swift-composable-architecture",
             requirement: .upToNextMajor(from: "1.15.0")
         ),
-        .local(path: "/Users/bkase/Documents/aethel/AethelSwift")
+        .local(path: "external/Aethel/AethelSwift"),
     ],
     settings: .settings(
         base: [
@@ -51,49 +51,12 @@ let project = Project(
             resources: [
                 "MomentumApp/Resources/checklist.json",
                 "MomentumApp/Resources/reflection-template.md",
-                "MomentumApp/Resources/momentum",
             ],
             entitlements: .file(path: "MomentumApp/Resources/Momentum.entitlements"),
-            scripts: [
-                .pre(
-                    script: """
-                        #!/bin/zsh
-                        set -e
-
-                        # Source user's zsh configuration to get mise/cargo in PATH
-                        if [ -f "$HOME/.zshrc" ]; then
-                            source "$HOME/.zshrc"
-                        fi
-
-                        echo "Building Rust CLI for analyze command..."
-                        cd "$SRCROOT"
-
-                        # Build Rust CLI (still needed for analyze command with Claude)
-                        make rust-build || { echo "Error: make rust-build failed"; exit 1; }
-                        make copy-rust-binary || { echo "Error: make copy-rust-binary failed"; exit 1; }
-
-                        # Verify the binary was copied
-                        if [ ! -f "$SRCROOT/MomentumApp/Resources/momentum" ]; then
-                            echo "Error: Failed to copy momentum binary"
-                            exit 1
-                        fi
-
-                        echo "✓ Rust CLI build complete (for analyze command)"
-                        """,
-                    name: "Build Rust CLI (for analyze)",
-                    inputPaths: [
-                        "$(SRCROOT)/momentum/Cargo.toml",
-                        "$(SRCROOT)/momentum/src",
-                    ],
-                    outputPaths: [
-                        "$(SRCROOT)/MomentumApp/Resources/momentum"
-                    ],
-                    basedOnDependencyAnalysis: false
-                )
-            ],
+            scripts: [],
             dependencies: [
                 .package(product: "ComposableArchitecture"),
-                .package(product: "A4CoreSwift")
+                .package(product: "A4CoreSwift"),
             ]
         ),
         .target(
